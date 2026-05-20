@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kids Checkin - Login</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; padding: 20px; background: #f0f2f5; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        input, button { display: block; width: 100%; margin: 10px 0; padding: 10px; font-size: 16px; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; border-radius: 5px; }
+        button:hover { background: #0056b3; }
+        .error { color: red; margin-top: 10px; }
+        hr { margin: 20px 0; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Kids Checkin</h2>
+    <h3>Login</h3>
+    <input type="email" id="email" placeholder="E-mail">
+    <input type="password" id="password" placeholder="Senha">
+    <button onclick="login()">Entrar</button>
+    <hr>
+    <h3>Cadastro de Pai/Mãe</h3>
+    <input type="email" id="signupEmail" placeholder="E-mail">
+    <input type="password" id="signupPassword" placeholder="Senha">
+    <input type="text" id="fullName" placeholder="Nome completo">
+    <button onclick="signUp()">Cadastrar</button>
+    <div id="message" class="error"></div>
+</div>
+
+<script>
+    async function login() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) {
+            document.getElementById('message').innerText = error.message;
+            return;
+        }
+        // Buscar role do perfil
+        const { data: profile, error: profileError } = await window.supabaseClient
+            .from('kids_profiles')
+            .select('role')
+            .eq('id', data.user.id)
+            .single();
+        if (profileError) {
+            document.getElementById('message').innerText = 'Erro ao buscar perfil';
+            return;
+        }
+        if (profile.role === 'staff') {
+            window.location.href = 'equipe.html';
+        } else {
+            window.location.href = 'pais.html';
+        }
+    }
+
+    async function signUp() {
+        const email = document.getElementById('signupEmail').value;
+        const password = document.getElementById('signupPassword').value;
+        const fullName = document.getElementById('fullName').value;
+        if (!email || !password || !fullName) {
+            document.getElementById('message').innerText = 'Preencha todos os campos';
+            return;
+        }
+        const { data, error } = await window.supabaseClient.auth.signUp({
+            email,
+            password,
+            options: {
+                data: { full_name: fullName, role: 'parent' }
+            }
+        });
+        if (error) {
+            document.getElementById('message').innerText = error.message;
+        } else {
+            document.getElementById('message').innerText = 'Cadastro realizado! Verifique seu e-mail para confirmar.';
+        }
+    }
+</script>
+</body>
+</html>
