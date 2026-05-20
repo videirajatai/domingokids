@@ -616,7 +616,8 @@
             }
             const token = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
             const expiresAt = new Date();
-            expiresAt.setMinutes(expiresAt.getMinutes() + 2); // 2 minutos de validade
+            //expiresAt.setMinutes(expiresAt.getMinutes() + 2); // 2 minutos de validade
+            expiresAt.setHours(expiresAt.getHours() + 4); // 4 horas de validade
 
             const { error } = await supabaseClient
                 .from('kids_temporary_tokens')
