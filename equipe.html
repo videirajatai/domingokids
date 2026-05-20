@@ -102,11 +102,6 @@
             padding: 1.5rem;
         }
         input, select { width: 100%; padding: 0.7rem; border-radius: 1rem; margin: 0.4rem 0; border: 1px solid #cbd5e1; }
-        @media print {
-            body * { visibility: hidden; }
-            #printArea, #printArea * { visibility: visible; }
-            #printArea { position: absolute; top: 0; left: 0; width: 58mm; padding: 2mm; font-size: 10pt; }
-        }
         .badge { font-size: 0.7rem; background: #e2e8f0; padding: 0.2rem 0.5rem; border-radius: 2rem; }
     </style>
 </head>
@@ -143,7 +138,6 @@
     <div class="fab-visitante" onclick="openVisitanteModal()">➕📝</div>
     <div class="fab-visitante fab-sessao" style="bottom: 7rem;" onclick="openSessionModal()">📅+</div>
 
-    <!-- Modal visitante -->
     <div id="visitanteModal" class="modal">
         <div class="modal-content">
             <h3>Visitante rápido</h3>
@@ -155,7 +149,6 @@
         </div>
     </div>
 
-    <!-- Modal nova sessão -->
     <div id="sessionModal" class="modal">
         <div class="modal-content">
             <h3>Nova Sessão</h3>
@@ -167,8 +160,6 @@
             <button class="btn-outline" onclick="closeSessionModal()">Cancelar</button>
         </div>
     </div>
-
-    <div id="printArea" style="display: none;"></div>
 
     <script>
         let currentStaffId = null, currentSessionId = null, html5QrCode = null, scannerActive = false;
@@ -200,7 +191,6 @@
             await loadPresentList();
         }
 
-        // ========== SCANNER QR ==========
         async function startScanner() {
             if (scannerActive) return;
             html5QrCode = new Html5Qrcode("reader");
@@ -223,19 +213,15 @@
         }
 
         async function onScanSuccess(decodedText) {
-            stopScanner(); // pausa para processar
+            stopScanner();
             await processToken(decodedText);
-            // Reinicia a câmera após 3 segundos
-            autoRestartScanner = setTimeout(() => {
-                startScanner();
-            }, 3000);
+            autoRestartScanner = setTimeout(() => startScanner(), 3000);
         }
 
         function onScanError(err) { console.log(err); }
 
-        // ========== PROCESSAMENTO DO TOKEN (mesmo QR para entrada e saída) ==========
         async function processToken(token) {
-            // 1. Buscar token na tabela (inclui child e family)
+            // Busca o token
             const { data: tokenData, error } = await supabaseClient
                 .from('kids_temporary_tokens')
                 .select('*, child:child_id(id, name, allergies, family_id)')
@@ -247,21 +233,19 @@
                 return;
             }
 
-            // Verificar expiração
             if (new Date(tokenData.expires_at) < new Date()) {
-                document.getElementById('scanResult').innerHTML = '❌ QR expirado. Gere um novo.';
+                document.getElementById('scanResult').innerHTML = '❌ QR expirado.';
                 return;
             }
 
-            // Caso 1: Token já usado para checkout -> não faz nada
+            // Se já usado para checkout, avisa
             if (tokenData.used_for_checkout) {
-                document.getElementById('scanResult').innerHTML = '⚠️ Este QR já foi utilizado para saída.';
+                document.getElementById('scanResult').innerHTML = '⚠️ QR já utilizado para saída.';
                 return;
             }
 
-            // Caso 2: Token já usado para check-in (mas não checkout) -> fazer CHECKOUT
-            if (tokenData.used_for_checkin && !tokenData.used_for_checkout) {
-                // Buscar o check-in associado
+            // Se já usado para check-in, faz checkout
+            if (tokenData.used_for_checkin && tokenData.checkin_id) {
                 const { data: checkin, error: chError } = await supabaseClient
                     .from('kids_check_ins')
                     .select('*, child:child_id(name)')
@@ -270,17 +254,16 @@
                     .single();
 
                 if (chError || !checkin) {
-                    document.getElementById('scanResult').innerHTML = '❌ Check-out inválido: registro não encontrado.';
+                    document.getElementById('scanResult').innerHTML = '❌ Check-out inválido.';
                     return;
                 }
 
-                // Realizar checkout
+                // Realiza checkout
                 await supabaseClient
                     .from('kids_check_ins')
                     .update({ checked_out_at: new Date().toISOString() })
                     .eq('id', tokenData.checkin_id);
 
-                // Marcar token como usado para checkout
                 await supabaseClient
                     .from('kids_temporary_tokens')
                     .update({ used_for_checkout: true })
@@ -291,10 +274,10 @@
                 return;
             }
 
-            // Caso 3: Token novo (não usado para check-in) -> fazer CHECK-IN
+            // Se não usado para check-in, faz check-in
             if (!tokenData.used_for_checkin) {
-                // Verificar se a criança já possui check-in ativo nesta sessão (trava anti duplicidade)
-                const { data: existingCheckin } = await supabaseClient
+                // Verifica se já existe check-in ativo para essa criança nesta sessão
+                const { data: existing } = await supabaseClient
                     .from('kids_check_ins')
                     .select('id')
                     .eq('child_id', tokenData.child_id)
@@ -302,12 +285,12 @@
                     .is('checked_out_at', null)
                     .maybeSingle();
 
-                if (existingCheckin) {
-                    document.getElementById('scanResult').innerHTML = `⚠️ ${tokenData.child.name} já está com check-in ativo! (saída pendente)`;
+                if (existing) {
+                    document.getElementById('scanResult').innerHTML = `⚠️ ${tokenData.child.name} já está com check-in ativo!`;
                     return;
                 }
 
-                // Realizar check-in
+                // Cria check-in
                 const { data: checkin, error: ciError } = await supabaseClient
                     .from('kids_check_ins')
                     .insert({
@@ -324,7 +307,7 @@
                     return;
                 }
 
-                // Atualizar token: usado para check-in e guardar o checkin_id
+                // Atualiza token
                 await supabaseClient
                     .from('kids_temporary_tokens')
                     .update({ used_for_checkin: true, checkin_id: checkin.id })
@@ -333,66 +316,102 @@
                 document.getElementById('scanResult').innerHTML = `✅ Check-in: ${tokenData.child.name}`;
                 await loadPresentList();
 
-                // Perguntar se quer imprimir etiqueta
+                // Pergunta se quer imprimir etiqueta
                 if (confirm(`Imprimir etiqueta para ${tokenData.child.name}?`)) {
-                    await printLabelWithSameQR(token, tokenData.child.name, tokenData.child.allergies, null, null, checkin.id);
+                    printLabel(token, tokenData.child.name, tokenData.child.allergies, checkin.id);
                 }
                 return;
             }
         }
 
-        // ========== IMPRESSÃO DE ETIQUETA COM O MESMO QR ==========
-        async function printLabelWithSameQR(qrToken, childName, allergies, responsibleName, responsiblePhone, checkinId) {
+        // Função de impressão usando iframe para não conflitar
+        function printLabel(qrToken, childName, allergies, checkinId) {
             const sessionName = document.getElementById('sessionSelect').selectedOptions[0]?.text || 'Culto';
             const now = new Date().toLocaleString();
-            
-            // Criar um elemento temporário para gerar o QR code como imagem
+            // Criar um elemento temporário para gerar o QR code
             const tempDiv = document.createElement('div');
-            const qrCode = new QRCode(tempDiv, {
-                text: qrToken,
-                width: 120,
-                height: 120
-            });
+            new QRCode(tempDiv, { text: qrToken, width: 120, height: 120 });
             
-            // Aguardar a geração do QR (pode levar alguns ms)
+            // Aguardar o QR ser gerado
             setTimeout(() => {
                 let qrImageSrc = '';
-                // Tentar obter a imagem gerada
-                const img = tempDiv.querySelector('img');
-                if (img && img.src) {
-                    qrImageSrc = img.src;
+                const canvas = tempDiv.querySelector('canvas');
+                if (canvas) {
+                    qrImageSrc = canvas.toDataURL();
                 } else {
-                    // Fallback: tentar canvas
-                    const canvas = tempDiv.querySelector('canvas');
-                    if (canvas) {
-                        qrImageSrc = canvas.toDataURL();
-                    }
+                    const img = tempDiv.querySelector('img');
+                    if (img && img.src) qrImageSrc = img.src;
+                }
+                if (!qrImageSrc) {
+                    alert('Erro ao gerar QR para impressão');
+                    return;
                 }
                 
-                const labelHTML = `
-                    <div style="width: 58mm; padding: 2mm; font-family: monospace; font-size: 10pt;">
-                        <div style="text-align: center; font-weight: bold;">⛪ Kids Checkin</div>
-                        <div><strong>Criança:</strong> ${escapeHtml(childName)}</div>
-                        ${allergies ? `<div><strong>Alergias:</strong> ${escapeHtml(allergies)}</div>` : ''}
-                        <div><strong>Responsável:</strong> ${responsibleName || 'Família cadastrada'}</div>
-                        ${responsiblePhone ? `<div><strong>Telefone:</strong> ${responsiblePhone}</div>` : ''}
-                        <div><strong>Sessão:</strong> ${sessionName}</div>
-                        <div><strong>Check-in:</strong> ${now}</div>
-                        <div style="text-align: center; margin-top: 4px;">
-                            <img src="${qrImageSrc}" width="80" height="80" alt="QR para saída">
-                            <div style="font-size: 8pt;">Escanear para saída</div>
+                const printHtml = `
+                    <html>
+                    <head>
+                        <title>Etiqueta Kids</title>
+                        <style>
+                            body { margin: 0; padding: 0; font-family: monospace; }
+                            .label {
+                                width: 58mm;
+                                padding: 2mm;
+                                font-size: 10pt;
+                            }
+                            .label div { margin-bottom: 2px; }
+                            .qr { text-align: center; margin-top: 4px; }
+                            img { width: 80px; height: 80px; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="label">
+                            <div style="text-align:center; font-weight:bold;">⛪ Kids Checkin</div>
+                            <div><strong>Criança:</strong> ${escapeHtml(childName)}</div>
+                            ${allergies ? `<div><strong>Alergias:</strong> ${escapeHtml(allergies)}</div>` : ''}
+                            <div><strong>Sessão:</strong> ${sessionName}</div>
+                            <div><strong>Check-in:</strong> ${now}</div>
+                            <div class="qr">
+                                <img src="${qrImageSrc}" alt="QR"><br>
+                                <small>Escanear para saída</small>
+                            </div>
                         </div>
-                    </div>
+                    </body>
+                    </html>
                 `;
-                const printDiv = document.getElementById('printArea');
-                printDiv.innerHTML = labelHTML;
-                printDiv.style.display = 'block';
-                window.print();
-                printDiv.style.display = 'none';
+                
+                // Usar iframe para impressão
+                const iframe = document.createElement('iframe');
+                iframe.style.position = 'absolute';
+                iframe.style.width = '0px';
+                iframe.style.height = '0px';
+                iframe.style.border = 'none';
+                document.body.appendChild(iframe);
+                const iframeDoc = iframe.contentWindow.document;
+                iframeDoc.open();
+                iframeDoc.write(printHtml);
+                iframeDoc.close();
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+                setTimeout(() => {
+                    document.body.removeChild(iframe);
+                }, 1000);
             }, 500);
         }
 
-        // ========== LISTA DE PRESENTES ==========
+        // Reimpressão manual
+        async function reprintLabelFromList(checkinId) {
+            const { data: token } = await supabaseClient
+                .from('kids_temporary_tokens')
+                .select('token, child:child_id(name, allergies)')
+                .eq('checkin_id', checkinId)
+                .single();
+            if (token) {
+                printLabel(token.token, token.child.name, token.child.allergies, checkinId);
+            } else {
+                alert('Token não encontrado para reimpressão.');
+            }
+        }
+
         async function loadPresentList() {
             if (!currentSessionId) return;
             const { data: checkins } = await supabaseClient
@@ -410,18 +429,11 @@
             if (checkins?.length) {
                 html += `<h4>👶 Crianças cadastradas</h4>`;
                 for (const c of checkins) {
-                    // Buscar o token associado para reimprimir etiqueta
-                    const { data: tokenData } = await supabaseClient
-                        .from('kids_temporary_tokens')
-                        .select('token')
-                        .eq('checkin_id', c.id)
-                        .single();
-                    const token = tokenData?.token || '';
                     html += `
                         <div class="present-item">
-                            <div><strong>${escapeHtml(c.child.name)}</strong> ${c.child.allergies ? `<span class="badge">⚠️</span>` : ''}<br><small>${new Date(c.checked_in_at).toLocaleTimeString()}</small></div>
+                            <div><strong>${escapeHtml(c.child.name)}</strong> ${c.child.allergies ? '<span class="badge">⚠️</span>' : ''}<br><small>${new Date(c.checked_in_at).toLocaleTimeString()}</small></div>
                             <div>
-                                <button class="btn-print" onclick="reprintLabel('${token}', '${escapeHtml(c.child.name)}', '${escapeHtml(c.child.allergies || '')}', '${c.id}')">🖨️ Etiqueta</button>
+                                <button class="btn-print" onclick="reprintLabelFromList('${c.id}')">🖨️ Etiqueta</button>
                                 <button class="btn-checkout" onclick="checkoutManual('${c.id}')">Check-out</button>
                             </div>
                         </div>
@@ -433,9 +445,7 @@
                 html += visitants.map(v => `
                     <div class="present-item visitant-item">
                         <div><strong>${escapeHtml(v.child_name)}</strong> (${escapeHtml(v.responsible_name)})<br><small>${new Date(v.checked_in_at).toLocaleTimeString()}</small></div>
-                        <div>
-                            <button class="btn-checkout" onclick="removeVisitant('${v.id}')">Finalizar</button>
-                        </div>
+                        <div><button class="btn-checkout" onclick="removeVisitant('${v.id}')">Finalizar</button></div>
                     </div>
                 `).join('');
             }
@@ -443,21 +453,12 @@
             document.getElementById('presentList').innerHTML = html;
         }
 
-        async function reprintLabel(token, childName, allergies, checkinId) {
-            if (!token) {
-                alert('Token não encontrado para reimpressão.');
-                return;
-            }
-            await printLabelWithSameQR(token, childName, allergies, null, null, checkinId);
-        }
-
         async function checkoutManual(checkinId) {
             await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', checkinId);
-            // Marcar token associado como checkout
             const { data: token } = await supabaseClient.from('kids_temporary_tokens').select('id').eq('checkin_id', checkinId).single();
             if (token) await supabaseClient.from('kids_temporary_tokens').update({ used_for_checkout: true }).eq('id', token.id);
             await loadPresentList();
-            document.getElementById('scanResult').innerHTML = '✅ Check-out manual realizado.';
+            document.getElementById('scanResult').innerHTML = '✅ Check-out manual.';
         }
 
         async function removeVisitant(id) {
@@ -465,7 +466,6 @@
             await loadPresentList();
         }
 
-        // ========== VISITANTE (sem QR, apenas registro) ==========
         async function registerVisitant() {
             const childName = document.getElementById('visitantName').value.trim();
             const respName = document.getElementById('respName').value.trim();
@@ -487,7 +487,6 @@
             document.getElementById('respPhone').value = '';
         }
 
-        // ========== CRIAÇÃO DE SESSÃO ==========
         function openSessionModal() { document.getElementById('sessionModal').style.display = 'flex'; }
         function closeSessionModal() { document.getElementById('sessionModal').style.display = 'none'; }
         async function createSession() {
