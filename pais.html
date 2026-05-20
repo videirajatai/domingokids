@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel dos Pais</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="app.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .card { border: 1px solid #ddd; margin: 10px 0; padding: 10px; border-radius: 8px; background: #f9f9f9; }
+        button { padding: 8px 12px; margin: 5px; cursor: pointer; background: #28a745; color: white; border: none; border-radius: 4px; }
+        button.danger { background: #dc3545; }
+        #qrcode { margin-top: 20px; padding: 10px; background: #fff; display: inline-block; border: 1px solid #ccc; }
+        input, select { padding: 8px; margin: 5px; }
+        .header { display: flex; justify-content: space-between; align-items: center; }
+        hr { margin: 20px 0; }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h2>Área dos Pais</h2>
+    <button onclick="logout()">Sair</button>
+</div>
+<hr>
+
+<h3>Minha Família</h3>
+<div id="familyInfo"></div>
+
+<h3>Minhas Crianças</h3>
+<div id="childrenList"></div>
+<button onclick="addChild()">+ Adicionar Criança</button>
+
+<h3>Gerar QR Code para Check-in (válido por 2 minutos)</h3>
+<select id="childSelect"></select>
+<button onclick="generateQR()">Gerar QR Code</button>
+<div id="qrcode"></div>
+
+<h3>Histórico de Presenças</h3>
+<div id="history"></div>
+
+<script>
+    let currentUser = null;
+    let familyId = null;
+
+    async function checkAuth() {
+        const { data: { user } } = await window.supabaseClient.auth.getUser();
+        if (!user) {
+            window.location.href = 'index.html';
+            return;
+        }
+        currentUser = user;
+        await loadFamilyAndProfile();
+    }
+
+    async function loadFamilyAndProfile() {
+        // Buscar perfil do usuário
+        const { data: profile, error } = await window.supabaseClient
+            .from('kids_profiles')
+            .select('family_id')
+            .eq('id', currentUser.id)
+            .single();
+        if (error) {
+            console.error(error);
+            document.getElementById('familyInfo').innerHTML = '<p>Erro ao carregar perfil.</p>';
+            return;
+        }
+        if (!profile.family_id) {
+            document.getElementById('familyInfo').innerHTML = `<p>Você ainda não possui uma família. <button onclick="createFamily()">Criar Família</button></p>`;
+            familyId = null;
+            document.getElementById('childrenList').innerHTML = '<p>Nenhuma criança cadastrada. Crie uma família primeiro.</p>';
+            return;
+        }
+        familyId = profile.family_id;
+        // Buscar dados da família
+        const { data: family } = await window.supabaseClient
+            .from('kids_families')
+            .select('family_name')
+            .eq('id', familyId)
+            .single();
+        document.getElementById('familyInfo').innerHTML = `<strong>${family?.family_name || 'Família'}</strong> (ID: ${familyId})`;
+        loadChildren();
+        loadHistory();
+    }
+
+    async function loadChildren() {
+        const { data, error } = await window.supabaseClient
+            .from('kids_children')
+            .select('*')
+            .eq('family_id', familyId);
+        if (error) {
+            console.error(error);
+            return;
+        }
+        const listDiv = document.getElementById('childrenList');
+        const select = document.getElementById('childSelect');
+        if (data && data.length) {
+            listDiv.innerHTML = data.map(c => `
+                <div class="card">
+                    <strong>${c.name}</strong> ${c.birth_date ? `- ${c.birth_date}` : ''}<br>
+                    Alergias: ${c.allergies || 'Nenhuma'}<br>
+                    Necessidades especiais: ${c.special_needs || 'Nenhuma'}
+                </div>
+            `).join('');
+            select.innerHTML = data.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        } else {
+            listDiv.innerHTML = '<p>Nenhuma criança cadastrada.</p>';
+            select.innerHTML = '<option disabled>Adicione uma criança primeiro</option>';
+        }
+    }
+
+    async function addChild() {
+        const name = prompt('Nome da criança:');
+        if (!name) return;
+        const birthDate = prompt('Data de nascimento (AAAA-MM-DD):');
+        const allergies = prompt('Alergias (opcional):');
+        const specialNeeds = prompt('Necessidades especiais (opcional):');
+        await window.supabaseClient.from('kids_children').insert({
+            name,
+            birth_date: birthDate || null,
+            allergies: allergies || null,
+            special_needs: specialNeeds || null,
+            family_id: familyId
+        });
+        loadChildren();
+    }
+
+    async function createFamily() {
+        const familyName = prompt('Nome da família (ex: Família Silva):');
+        if (!familyName) return;
+        const { data: family, error } = await window.supabaseClient
+            .from('kids_families')
+            .insert({ family_name: familyName })
+            .select('id')
+            .single();
+        if (error) {
+            alert('Erro ao criar família: ' + error.message);
+            return;
+        }
+        // Atualizar perfil do usuário
+        await window.supabaseClient
+            .from('kids_profiles')
+            .update({ family_id: family.id })
+            .eq('id', currentUser.id);
+        familyId = family.id;
+        loadFamilyAndProfile();
+    }
+
+    async function generateQR() {
+        const childSelect = document.getElementById('childSelect');
+        if (!childSelect.value) {
+            alert('Selecione uma criança primeiro');
+            return;
+        }
+        // Gerar token único
+        const token = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
+        const expiresAt = new Date();
+        expiresAt.setMinutes(expiresAt.getMinutes() + 2);
+        const { error } = await window.supabaseClient
+            .from('kids_temporary_tokens')
+            .insert({
+                family_id: familyId,
+                token: token,
+                expires_at: expiresAt.toISOString(),
+                is_used: false
+            });
+        if (error) {
+            alert('Erro ao gerar QR Code: ' + error.message);
+            return;
+        }
+        // Gerar QR Code na tela
+        document.getElementById('qrcode').innerHTML = '';
+        new QRCode(document.getElementById('qrcode'), {
+            text: token,
+            width: 200,
+            height: 200
+        });
+        alert('QR Code gerado! Mostre para a equipe escanear. Válido por 2 minutos.');
+    }
+
+    async function loadHistory() {
+        const { data: children } = await window.supabaseClient
+            .from('kids_children')
+            .select('id, name')
+            .eq('family_id', familyId);
+        if (!children || children.length === 0) {
+            document.getElementById('history').innerHTML = '<p>Nenhum histórico disponível.</p>';
+            return;
+        }
+        const childIds = children.map(c => c.id);
+        const { data: checkins } = await window.supabaseClient
+            .from('kids_check_ins')
+            .select(`
+                *,
+                child:child_id(name),
+                session:session_id(name, session_date)
+            `)
+            .in('child_id', childIds)
+            .order('checked_in_at', { ascending: false });
+        const historyDiv = document.getElementById('history');
+        if (checkins && checkins.length) {
+            historyDiv.innerHTML = checkins.map(ci => `
+                <div class="card">
+                    <strong>${ci.child.name}</strong> - ${ci.session.name} (${ci.session.session_date})<br>
+                    Check-in: ${new Date(ci.checked_in_at).toLocaleString()}
+                    ${ci.checked_out_at ? `<br>Check-out: ${new Date(ci.checked_out_at).toLocaleString()}` : ''}
+                </div>
+            `).join('');
+        } else {
+            historyDiv.innerHTML = '<p>Nenhum check-in registrado ainda.</p>';
+        }
+    }
+
+    async function logout() {
+        await window.supabaseClient.auth.signOut();
+        window.location.href = 'index.html';
+    }
+
+    checkAuth();
+</script>
+</body>
+</html>
