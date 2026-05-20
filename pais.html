@@ -3,75 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Minha Família | Kids Checkin</title>
+    <title>Painel da Família | Kids Checkin</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="app.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
-        body { background: #f3f4f6; padding-bottom: 5rem; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: #f3f4f6;
+            padding-bottom: 5rem;
+        }
+
+        /* Header */
         .header {
             background: linear-gradient(135deg, #1e293b, #0f172a);
             color: white;
-            padding: 1.5rem 1.5rem 1rem;
+            padding: 1.8rem 1.5rem;
             border-radius: 0 0 2rem 2rem;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
             position: relative;
         }
-        .header h1 { font-size: 1.6rem; font-weight: 600; letter-spacing: -0.3px; }
-        .header p { opacity: 0.8; margin-top: 0.3rem; font-size: 0.85rem; }
-        .edit-family-btn {
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+        }
+        .header p {
+            opacity: 0.8;
+            margin-top: 0.3rem;
+            font-size: 0.9rem;
+        }
+        .logout-btn {
             position: absolute;
             top: 1.2rem;
             right: 1.5rem;
             background: rgba(255,255,255,0.2);
             border: none;
             color: white;
-            padding: 0.4rem 0.8rem;
+            padding: 0.4rem 1rem;
             border-radius: 2rem;
             cursor: pointer;
-            font-size: 0.8rem;
             backdrop-filter: blur(4px);
+            font-weight: 500;
+            transition: 0.2s;
         }
-        .logout-btn {
-            position: absolute;
-            top: 1.2rem;
-            left: 1.5rem;
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            padding: 0.4rem 0.8rem;
-            border-radius: 2rem;
-            cursor: pointer;
-            font-size: 0.8rem;
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
         }
-        .container { max-width: 700px; margin: 1.2rem auto; padding: 0 1rem; }
+
+        /* Container principal */
+        .container {
+            max-width: 700px;
+            margin: 1.5rem auto;
+            padding: 0 1rem;
+        }
+
+        /* Cards */
         .card {
             background: white;
             border-radius: 1.5rem;
             padding: 1.2rem;
             margin-bottom: 1.2rem;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            transition: 0.2s;
+            transition: all 0.2s;
             border: 1px solid #eef2ff;
+            animation: fadeIn 0.3s ease;
         }
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 20px rgba(0,0,0,0.08);
+        }
+
+        /* Lista de crianças */
         .child-item {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 0.8rem 0;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eef2ff;
         }
-        .child-info { flex: 1; }
-        .child-name { font-weight: 700; font-size: 1.1rem; }
-        .child-meta { font-size: 0.75rem; color: #4b5563; }
-        .child-actions button {
+        .child-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .child-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+        .child-info {
+            flex: 1;
+        }
+        .child-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #0f172a;
+        }
+        .allergy {
+            font-size: 0.75rem;
+            color: #b91c1c;
+            background: #fee2e2;
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 2rem;
+            margin-top: 0.3rem;
+        }
+        .special-need {
+            font-size: 0.75rem;
+            color: #1e40af;
+            background: #dbeafe;
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 2rem;
+            margin-top: 0.3rem;
+            margin-left: 0.4rem;
+        }
+        .child-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .btn-icon {
             background: none;
             border: none;
-            font-size: 1.2rem;
             cursor: pointer;
-            margin-left: 0.5rem;
-            padding: 0.2rem;
+            font-size: 1.2rem;
+            padding: 0.3rem;
+            border-radius: 50%;
+            transition: 0.2s;
         }
+        .btn-icon:hover {
+            background: #f1f5f9;
+        }
+
+        /* QR Code */
+        .qr-preview {
+            background: #f8fafc;
+            border-radius: 1rem;
+            padding: 1rem;
+            text-align: center;
+            margin-top: 0.8rem;
+            border: 1px dashed #cbd5e1;
+        }
+        .btn-generate {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 0.7rem 1rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            margin: 0.5rem 0;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.2s;
+        }
+        .btn-generate:hover {
+            background: #059669;
+            transform: scale(1.01);
+        }
+
+        /* Histórico */
+        .history-item {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0.6rem 0;
+            font-size: 0.9rem;
+            color: #334155;
+        }
+
+        /* FAB (botão flutuante) */
         .fab {
             position: fixed;
             bottom: 2rem;
@@ -87,231 +199,286 @@
             box-shadow: 0 8px 16px rgba(102,126,234,0.4);
             cursor: pointer;
             font-size: 2rem;
-            transition: 0.2s;
+            transition: all 0.2s;
             border: none;
             z-index: 100;
         }
+        .fab:hover {
+            transform: scale(1.05);
+            background: linear-gradient(120deg, #5a67d8, #6b46a0);
+        }
+
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: rgba(0,0,0,0.5);
             align-items: center;
             justify-content: center;
             z-index: 200;
+            backdrop-filter: blur(4px);
         }
         .modal-content {
             background: white;
             width: 90%;
             max-width: 500px;
-            max-height: 85vh;
-            overflow-y: auto;
             border-radius: 1.8rem;
             padding: 1.5rem;
+            max-height: 90vh;
+            overflow-y: auto;
         }
-        .modal-content h3 { margin-bottom: 1rem; }
-        input, textarea, select {
+        .modal-content h3 {
+            margin-bottom: 1rem;
+            color: #0f172a;
+        }
+        .modal-content input, 
+        .modal-content textarea,
+        .modal-content select {
             width: 100%;
             padding: 0.7rem;
             border-radius: 1rem;
             border: 1px solid #cbd5e1;
             margin: 0.4rem 0 0.8rem;
+            font-size: 0.9rem;
         }
-        button.btn-primary {
-            background: #667eea;
+        .modal-content textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        .btn-primary {
+            background: #3b82f6;
             color: white;
             border: none;
             padding: 0.7rem;
             border-radius: 2rem;
-            width: 100%;
             font-weight: 600;
             cursor: pointer;
+            width: 100%;
             margin-top: 0.5rem;
         }
-        .btn-secondary {
-            background: #e2e8f0;
-            color: #1e293b;
-            border: none;
-            padding: 0.6rem;
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            padding: 0.7rem;
             border-radius: 2rem;
-            width: 100%;
+            font-weight: 500;
             cursor: pointer;
+            width: 100%;
+            margin-top: 0.5rem;
         }
-        .qr-preview { background: #f8fafc; border-radius: 1rem; padding: 1rem; text-align: center; margin-top: 1rem; }
-        .btn-generate { background: #10b981; color: white; border: none; padding: 0.6rem; border-radius: 2rem; width: 100%; margin-top: 0.5rem; cursor: pointer; }
-        .history-item { border-bottom: 1px solid #e2e8f0; padding: 0.6rem 0; font-size: 0.85rem; }
-        .empty-state { text-align: center; color: #6c757d; padding: 1rem; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; } }
-        .card, .modal-content { animation: fadeIn 0.2s ease; }
-        .photo-preview { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; margin-right: 0.8rem; vertical-align: middle; }
+        .photo-preview {
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+        .photo-preview img {
+            max-width: 100px;
+            border-radius: 50%;
+            border: 2px solid #e2e8f0;
+        }
+        select, .child-selector {
+            width: 100%;
+            padding: 0.7rem;
+            border-radius: 1rem;
+            border: 1px solid #cbd5e1;
+            margin: 0.5rem 0;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <button class="logout-btn" onclick="logout()">Sair</button>
-        <button class="edit-family-btn" onclick="openEditFamilyModal()">✏️ Editar Família</button>
-        <h1>👨‍👩‍👧‍👦 <span id="familyNameDisplay">Família</span></h1>
-        <p>Gerencie seus filhos e faça check-in</p>
+        <h1>👨‍👩‍👧 Família</h1>
+        <p>Gerencie seus filhos e faça check-in rápido</p>
     </div>
+
     <div class="container">
+        <!-- Lista de crianças -->
         <div class="card">
-            <h3>👶 Meus filhos</h3>
+            <h3>📋 Meus filhos</h3>
             <div id="childrenList">Carregando...</div>
         </div>
 
-        <div id="qrCard" style="display: none;" class="card">
-            <h3>🔐 Check-in com QR Code</h3>
-            <select id="childSelect"></select>
-            <button class="btn-generate" onclick="generateQR()">📱 Gerar QR (válido 2 min)</button>
-            <div id="qrcode" class="qr-preview"></div>
+        <!-- Gerador QR Code (só aparece se houver família) -->
+        <div id="qrSection" style="display:none;">
+            <div class="card">
+                <h3>🔐 Check-in com QR Code</h3>
+                <label>Selecione a criança:</label>
+                <select id="childSelect"></select>
+                <button class="btn-generate" onclick="generateQR()">📱 Gerar QR Code (válido 2 min)</button>
+                <div id="qrcode" class="qr-preview"></div>
+                <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">Mostre o QR para a equipe no momento do check-in.</p>
+            </div>
         </div>
 
+        <!-- Histórico -->
         <div class="card">
-            <h3>📋 Histórico de presenças</h3>
+            <h3>📜 Histórico de presenças</h3>
             <div id="historyList">Carregando...</div>
         </div>
     </div>
 
+    <!-- Botão flutuante para adicionar criança -->
     <div class="fab" onclick="openAddChildModal()">+</div>
 
-    <!-- Modal de edição da família -->
-    <div id="familyModal" class="modal">
+    <!-- Modal de criança (adicionar/editar) -->
+    <div id="childModal" class="modal">
         <div class="modal-content">
-            <h3>✏️ Dados da Família</h3>
-            <input type="text" id="familyName" placeholder="Nome da família (ex: Família Silva)">
-            <input type="tel" id="mainPhone" placeholder="Telefone principal">
-            <input type="email" id="mainEmail" placeholder="E-mail principal">
-            <button class="btn-primary" onclick="saveFamily()">Salvar</button>
-            <button class="btn-secondary" onclick="closeModal('familyModal')">Cancelar</button>
+            <h3 id="modalTitle">Adicionar Criança</h3>
+            <input type="hidden" id="childId" value="">
+            
+            <label>Nome da criança *</label>
+            <input type="text" id="childName" placeholder="Ex: Maria Silva" required>
+            
+            <label>Data de nascimento</label>
+            <input type="date" id="childBirthDate">
+            
+            <label>Alergias (opcional)</label>
+            <textarea id="childAllergies" placeholder="Ex: leite, amendoim, lactose..."></textarea>
+            
+            <label>Necessidades especiais (opcional)</label>
+            <textarea id="childSpecialNeeds" placeholder="Ex: autismo, TDAH, mobilidade reduzida..."></textarea>
+            
+            <label>Foto da criança</label>
+            <input type="file" id="childPhoto" accept="image/jpeg, image/png, image/webp">
+            <div id="currentPhotoPreview" class="photo-preview"></div>
+            
+            <button class="btn-primary" onclick="saveChild()">Salvar</button>
+            <button class="btn-outline" onclick="closeChildModal()">Cancelar</button>
         </div>
     </div>
 
-    <!-- Modal para adicionar/editar criança -->
-        <div id="childModal" class="modal" style="display: none;">
-            <div class="modal-content">
-                <h3 id="modalTitle">Adicionar Criança</h3>
-                <input type="hidden" id="childId" value="">
-                <input type="text" id="childName" placeholder="Nome da criança *" required>
-                <input type="date" id="childBirthDate">
-                <textarea id="childAllergies" placeholder="Alergias (ex: leite, amendoim)"></textarea>
-                <textarea id="childSpecialNeeds" placeholder="Necessidades especiais"></textarea>
-                
-                <!-- Campo de upload de foto -->
-                <div style="margin: 10px 0;">
-                    <label>Foto da criança:</label>
-                    <input type="file" id="childPhoto" accept="image/*">
-                    <div id="currentPhotoPreview" style="margin-top: 5px;"></div>
-                </div>
-        
-                <button class="btn-primary" onclick="saveChild()">Salvar</button>
-                <button class="btn-outline" onclick="closeChildModal()">Cancelar</button>
-            </div>
-        </div>
-
     <script>
-        let currentFamily = { id: null, family_name: '', main_phone: '', main_email: '' };
+        // ==================== VARIÁVEIS GLOBAIS ====================
+        let currentFamilyId = null;
         let currentUser = null;
+        const IMGBB_API_KEY = 'd3ec802e2dfc1896a26e44b80d489f17'; // Sua chave imgBB
 
-        async function loadFamilyAndUser() {
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            if (!user) { window.location.href = 'index.html'; return; }
+        // ==================== INICIALIZAÇÃO ====================
+        async function loadUserAndFamily() {
+            const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+            if (userError || !user) {
+                window.location.href = 'index.html';
+                return;
+            }
             currentUser = user;
-            const { data: profile } = await supabaseClient
+
+            // Buscar perfil do usuário
+            const { data: profile, error: profileError } = await supabaseClient
                 .from('kids_profiles')
                 .select('family_id')
                 .eq('id', user.id)
                 .single();
+
+            if (profileError) {
+                console.error(profileError);
+                document.getElementById('childrenList').innerHTML = '<div class="card">Erro ao carregar perfil. Contate o suporte.</div>';
+                return;
+            }
+
             if (profile?.family_id) {
-                currentFamily.id = profile.family_id;
-                await fetchFamilyDetails();
+                currentFamilyId = profile.family_id;
+                document.getElementById('qrSection').style.display = 'block';
                 await loadChildren();
                 await loadHistory();
-                document.getElementById('qrCard').style.display = 'block';
             } else {
-                // Sem família: mostrar formulário para criar
-                document.getElementById('childrenList').innerHTML = `<div class="card">Nenhuma família vinculada. Clique em "Editar Família" para criar.</div>`;
-                openEditFamilyModal(); // força criação
+                // Mostrar opção de criar família
+                document.getElementById('childrenList').innerHTML = `
+                    <div class="card">
+                        <p>Você ainda não possui uma família vinculada.</p>
+                        <button class="btn-primary" onclick="createFamily()">Criar nova família</button>
+                    </div>
+                `;
+                document.getElementById('qrSection').style.display = 'none';
             }
         }
 
-        async function fetchFamilyDetails() {
-            const { data, error } = await supabaseClient
+        // Criar nova família
+        async function createFamily() {
+            const familyName = prompt('Digite um nome para sua família (ex: Família Souza):');
+            if (!familyName) return;
+
+            const { data: family, error } = await supabaseClient
                 .from('kids_families')
-                .select('*')
-                .eq('id', currentFamily.id)
+                .insert({ family_name: familyName })
+                .select()
                 .single();
-            if (data) {
-                currentFamily = { ...currentFamily, ...data };
-                document.getElementById('familyNameDisplay').innerText = currentFamily.family_name || 'Família';
-                document.getElementById('familyName').value = currentFamily.family_name || '';
-                document.getElementById('mainPhone').value = currentFamily.main_phone || '';
-                document.getElementById('mainEmail').value = currentFamily.main_email || '';
+
+            if (error) {
+                alert('Erro ao criar família: ' + error.message);
+                return;
             }
+
+            // Atualizar o perfil do usuário com o family_id
+            const { error: updateError } = await supabaseClient
+                .from('kids_profiles')
+                .update({ family_id: family.id })
+                .eq('id', currentUser.id);
+
+            if (updateError) {
+                alert('Erro ao vincular família: ' + updateError.message);
+                return;
+            }
+
+            currentFamilyId = family.id;
+            alert('Família criada com sucesso!');
+            document.getElementById('qrSection').style.display = 'block';
+            await loadChildren();
+            await loadHistory();
         }
 
-        async function saveFamily() {
-            const familyName = document.getElementById('familyName').value.trim();
-            const mainPhone = document.getElementById('mainPhone').value.trim();
-            const mainEmail = document.getElementById('mainEmail').value.trim();
-            if (!familyName) { alert('Nome da família é obrigatório'); return; }
-            if (!currentFamily.id) {
-                // criar nova família
-                const { data, error } = await supabaseClient
-                    .from('kids_families')
-                    .insert({ family_name: familyName, main_phone: mainPhone, main_email: mainEmail })
-                    .select()
-                    .single();
-                if (error) { alert('Erro: ' + error.message); return; }
-                currentFamily.id = data.id;
-                // vincular ao perfil do usuário
-                await supabaseClient.from('kids_profiles').update({ family_id: data.id }).eq('id', currentUser.id);
-                currentFamily = { ...currentFamily, ...data };
-            } else {
-                // atualizar
-                const { error } = await supabaseClient
-                    .from('kids_families')
-                    .update({ family_name: familyName, main_phone: mainPhone, main_email: mainEmail })
-                    .eq('id', currentFamily.id);
-                if (error) { alert('Erro ao atualizar: ' + error.message); return; }
-                currentFamily.family_name = familyName;
-                currentFamily.main_phone = mainPhone;
-                currentFamily.main_email = mainEmail;
-            }
-            document.getElementById('familyNameDisplay').innerText = currentFamily.family_name;
-            closeModal('familyModal');
-            await loadChildren(); // recarrega a lista (caso tenha mudado algo)
-        }
-
-       // Função loadChildren atualizada para exibir a foto
+        // ==================== CRUD DE CRIANÇAS ====================
         async function loadChildren() {
-            // ... (código de busca igual ao anterior)
+            if (!currentFamilyId) return;
+            const { data, error } = await supabaseClient
+                .from('kids_children')
+                .select('*')
+                .eq('family_id', currentFamilyId)
+                .order('name');
+
+            if (error) {
+                console.error(error);
+                document.getElementById('childrenList').innerHTML = '<p>Erro ao carregar crianças.</p>';
+                return;
+            }
+
+            const container = document.getElementById('childrenList');
+            const select = document.getElementById('childSelect');
+
             if (data && data.length) {
                 container.innerHTML = data.map(child => `
-                    <div class="card">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            ${child.photo_url ? `<img src="${child.photo_url}" width="48" height="48" style="border-radius: 50%; object-fit: cover;">` : '<div style="width:48px; height:48px; background:#e2e8f0; border-radius:50%; display:flex; align-items:center; justify-content:center;">👶</div>'}
-                            <div>
-                                <div class="child-name">${escapeHtml(child.name)}</div>
-                                ${child.allergies ? `<div class="allergy">⚠️ Alergia: ${escapeHtml(child.allergies)}</div>` : ''}
-                                ${child.special_needs ? `<div>🔹 Necessidade especial: ${escapeHtml(child.special_needs)}</div>` : ''}
-                                <div style="margin-top: 8px;">
-                                    <button onclick="editChild(${JSON.stringify(child).replace(/"/g, '&quot;')})" style="background:#3b82f6; color:white; border:none; padding:4px 12px; border-radius:16px; margin-right:8px;">✏️ Editar</button>
-                                    <button onclick="deleteChild('${child.id}')" style="background:#ef4444; color:white; border:none; padding:4px 12px; border-radius:16px;">🗑️ Excluir</button>
-                                </div>
-                            </div>
+                    <div class="child-item">
+                        <div class="child-avatar">
+                            ${child.photo_url ? `<img src="${child.photo_url}" style="width:56px; height:56px; border-radius:50%; object-fit:cover;">` : '👶'}
+                        </div>
+                        <div class="child-info">
+                            <div class="child-name">${escapeHtml(child.name)}</div>
+                            ${child.allergies ? `<div class="allergy">⚠️ ${escapeHtml(child.allergies)}</div>` : ''}
+                            ${child.special_needs ? `<div class="special-need">🔹 ${escapeHtml(child.special_needs)}</div>` : ''}
+                            ${child.birth_date ? `<div style="font-size:0.7rem; color:#64748b;">📅 ${new Date(child.birth_date).toLocaleDateString()}</div>` : ''}
+                        </div>
+                        <div class="child-actions">
+                            <button class="btn-icon" onclick="editChild('${child.id}')" title="Editar">✏️</button>
+                            <button class="btn-icon" onclick="deleteChild('${child.id}')" title="Excluir">🗑️</button>
                         </div>
                     </div>
                 `).join('');
-                select.innerHTML = data.filter(c => c.is_active).map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-                if (select.options.length === 0) select.innerHTML = '<option disabled>Nenhuma criança ativa</option>';
+                select.innerHTML = data.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
             } else {
-                container.innerHTML = '<div class="empty-state">Nenhuma criança cadastrada. Clique no botão + para adicionar.</div>';
-                select.innerHTML = '<option disabled>Adicione uma criança</option>';
+                container.innerHTML = '<p>Nenhuma criança cadastrada. Clique no botão + para adicionar.</p>';
+                select.innerHTML = '<option>-- selecione --</option>';
             }
         }
 
-        // Abre o modal para adicionar uma nova criança
+        // Abrir modal para adicionar nova criança
         function openAddChildModal() {
             document.getElementById('modalTitle').innerText = 'Adicionar Criança';
             document.getElementById('childId').value = '';
@@ -319,37 +486,39 @@
             document.getElementById('childBirthDate').value = '';
             document.getElementById('childAllergies').value = '';
             document.getElementById('childSpecialNeeds').value = '';
-            document.getElementById('childPhoto').value = ''; // Limpa o campo de arquivo
+            document.getElementById('childPhoto').value = '';
             document.getElementById('currentPhotoPreview').innerHTML = '';
             document.getElementById('childModal').style.display = 'flex';
         }
-        
-        // Carrega os dados da criança para edição
-        async function editChild(child) {
+
+        // Editar criança existente
+        async function editChild(childId) {
+            const { data: child, error } = await supabaseClient
+                .from('kids_children')
+                .select('*')
+                .eq('id', childId)
+                .single();
+            if (error) {
+                alert('Erro ao carregar dados da criança.');
+                return;
+            }
             document.getElementById('modalTitle').innerText = 'Editar Criança';
             document.getElementById('childId').value = child.id;
-            document.getElementById('childName').value = child.name;
+            document.getElementById('childName').value = child.name || '';
             document.getElementById('childBirthDate').value = child.birth_date || '';
             document.getElementById('childAllergies').value = child.allergies || '';
             document.getElementById('childSpecialNeeds').value = child.special_needs || '';
-            
-            // Preview da foto atual, se existir
+            document.getElementById('childPhoto').value = '';
             const previewDiv = document.getElementById('currentPhotoPreview');
             if (child.photo_url) {
-                previewDiv.innerHTML = `<img src="${child.photo_url}" width="100" style="border-radius: 8px;"><br><small>Foto atual</small>`;
+                previewDiv.innerHTML = `<img src="${child.photo_url}" width="80" style="border-radius: 50%;"><br><small>Foto atual</small>`;
             } else {
                 previewDiv.innerHTML = '';
             }
-            
-            document.getElementById('childPhoto').value = ''; // Limpa o input de arquivo
             document.getElementById('childModal').style.display = 'flex';
         }
 
-        // Função para fechar o modal
-        function closeChildModal() {
-            document.getElementById('childModal').style.display = 'none';
-        }
-
+        // Salvar criança (com upload de foto se houver)
         async function saveChild() {
             const childId = document.getElementById('childId').value;
             const name = document.getElementById('childName').value.trim();
@@ -357,42 +526,36 @@
             const allergies = document.getElementById('childAllergies').value.trim();
             const specialNeeds = document.getElementById('childSpecialNeeds').value.trim();
             const photoFile = document.getElementById('childPhoto').files[0];
-        
+
             if (!name) {
                 alert('O nome da criança é obrigatório.');
                 return;
             }
-        
+
             let photoUrl = null;
-        
-            // 1. Se houver uma foto selecionada, faz o upload primeiro
+
+            // Se houver uma nova foto, faz upload para imgBB
             if (photoFile) {
                 const formData = new FormData();
                 formData.append('image', photoFile);
-                // ⚠️ Use a variável com sua chave da API imgBB que você me passou
-                const IMGBB_API_KEY = 'd3ec802e2dfc1896a26e44b80d489f17';
-        
                 try {
                     const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
                         method: 'POST',
                         body: formData
                     });
                     const result = await response.json();
-        
                     if (result.success) {
-                        photoUrl = result.data.url; // URL pública da imagem
-                        console.log('Upload bem-sucedido:', photoUrl);
+                        photoUrl = result.data.url;
                     } else {
-                        throw new Error('Falha no upload da imagem para o imgBB');
+                        throw new Error('Falha no upload da imagem');
                     }
-                } catch (error) {
-                    console.error('Erro no upload:', error);
+                } catch (err) {
+                    console.error(err);
                     alert('Erro ao enviar a foto. Tente novamente.');
                     return;
                 }
             }
-        
-            // 2. Prepara os dados para salvar no Supabase
+
             const childData = {
                 name: name,
                 birth_date: birthDate || null,
@@ -401,13 +564,8 @@
                 family_id: currentFamilyId,
                 is_active: true
             };
-        
-            // Adiciona a URL da foto, se tiver
-            if (photoUrl) {
-                childData.photo_url = photoUrl;
-            }
-        
-            // 3. Salva no Supabase (INSERT ou UPDATE)
+            if (photoUrl) childData.photo_url = photoUrl;
+
             let result;
             if (childId) {
                 // Edição
@@ -416,84 +574,126 @@
                     .update(childData)
                     .eq('id', childId);
             } else {
-                // Criação
+                // Inserção
                 result = await supabaseClient
                     .from('kids_children')
                     .insert([childData]);
             }
-        
+
             if (result.error) {
-                console.error('Erro ao salvar:', result.error);
-                alert('Erro ao salvar os dados da criança.');
+                alert('Erro ao salvar: ' + result.error.message);
             } else {
-                alert('Criança salva com sucesso!');
+                alert(childId ? 'Criança atualizada!' : 'Criança adicionada!');
                 closeChildModal();
-                loadChildren(); // Recarrega a lista
+                await loadChildren();
             }
         }
 
-        async function toggleChildActive(childId, newActiveStatus) {
+        // Excluir criança
+        async function deleteChild(childId) {
+            if (!confirm('Tem certeza que deseja excluir esta criança? Todos os check-ins associados também serão removidos.')) return;
             const { error } = await supabaseClient
                 .from('kids_children')
-                .update({ is_active: newActiveStatus })
+                .delete()
                 .eq('id', childId);
-            if (error) alert('Erro ao alterar status');
-            else loadChildren();
+            if (error) {
+                alert('Erro ao excluir: ' + error.message);
+            } else {
+                alert('Criança removida.');
+                await loadChildren();
+                await loadHistory();
+            }
         }
 
+        function closeChildModal() {
+            document.getElementById('childModal').style.display = 'none';
+        }
+
+        // ==================== QR CODE TEMPORÁRIO ====================
         async function generateQR() {
-            const select = document.getElementById('childSelect');
-            if (!select.value || select.selectedIndex === -1 || select.options[0].disabled) {
-                alert('Selecione uma criança ativa para gerar QR');
+            const childSelect = document.getElementById('childSelect');
+            if (!childSelect.value || !currentFamilyId) {
+                alert('Selecione uma criança para gerar o QR Code.');
                 return;
             }
-            const token = crypto.randomUUID();
+            const token = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
             const expiresAt = new Date();
-            expiresAt.setMinutes(expiresAt.getMinutes() + 2);
+            expiresAt.setMinutes(expiresAt.getMinutes() + 2); // 2 minutos de validade
+
             const { error } = await supabaseClient
                 .from('kids_temporary_tokens')
-                .insert({ family_id: currentFamily.id, token, expires_at: expiresAt.toISOString(), is_used: false });
-            if (error) { alert('Erro: ' + error.message); return; }
-            document.getElementById('qrcode').innerHTML = '';
-            new QRCode(document.getElementById('qrcode'), { text: token, width: 180, height: 180 });
-            alert('QR gerado! Mostre para a equipe. Válido por 2 minutos.');
-        }
+                .insert({
+                    family_id: currentFamilyId,
+                    token: token,
+                    expires_at: expiresAt.toISOString(),
+                    is_used: false
+                });
 
-        async function loadHistory() {
-            const { data: children } = await supabaseClient
-                .from('kids_children')
-                .select('id, name')
-                .eq('family_id', currentFamily.id);
-            if (!children?.length) {
-                document.getElementById('historyList').innerHTML = '<div class="empty-state">Sem histórico</div>';
+            if (error) {
+                alert('Erro ao gerar QR: ' + error.message);
                 return;
             }
-            const ids = children.map(c => c.id);
-            const { data: checkins } = await supabaseClient
+
+            const qrDiv = document.getElementById('qrcode');
+            qrDiv.innerHTML = '';
+            new QRCode(qrDiv, {
+                text: token,
+                width: 200,
+                height: 200
+            });
+            alert('QR Code gerado! Mostre para a equipe escanear. Válido por 2 minutos.');
+        }
+
+        // ==================== HISTÓRICO DE CHECK-INS ====================
+        async function loadHistory() {
+            if (!currentFamilyId) return;
+            const { data: children, error: childrenError } = await supabaseClient
+                .from('kids_children')
+                .select('id, name')
+                .eq('family_id', currentFamilyId);
+            if (childrenError || !children?.length) {
+                document.getElementById('historyList').innerHTML = '<p>Nenhum check-in registrado.</p>';
+                return;
+            }
+            const childIds = children.map(c => c.id);
+            const { data: checkins, error: checkError } = await supabaseClient
                 .from('kids_check_ins')
                 .select('*, child:child_id(name), session:session_id(name, session_date)')
-                .in('child_id', ids)
+                .in('child_id', childIds)
                 .order('checked_in_at', { ascending: false })
                 .limit(20);
+
             const historyDiv = document.getElementById('historyList');
-            if (checkins?.length) {
+            if (checkins && checkins.length) {
                 historyDiv.innerHTML = checkins.map(ci => `
                     <div class="history-item">
-                        ✅ ${ci.child.name} - ${ci.session.name} (${new Date(ci.checked_in_at).toLocaleString()})
+                        ✅ <strong>${ci.child.name}</strong> - ${ci.session.name} (${new Date(ci.checked_in_at).toLocaleString()})
+                        ${ci.checked_out_at ? ` - Saída: ${new Date(ci.checked_out_at).toLocaleTimeString()}` : ''}
                     </div>
                 `).join('');
             } else {
-                historyDiv.innerHTML = '<div class="empty-state">Nenhum check-in registrado ainda</div>';
+                historyDiv.innerHTML = '<p>Ainda não há check-ins.</p>';
             }
         }
 
-        function openEditFamilyModal() { document.getElementById('familyModal').style.display = 'flex'; }
-        function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
-        function formatDate(dateStr) { return new Date(dateStr).toLocaleDateString('pt-BR'); }
-        function escapeHtml(str) { return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m;}); }
-        async function logout() { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; }
+        // ==================== UTILITÁRIOS ====================
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
 
-        loadFamilyAndUser();
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'index.html';
+        }
+
+        // Inicializar
+        loadUserAndFamily();
     </script>
 </body>
 </html>
