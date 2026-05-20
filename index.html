@@ -2,83 +2,211 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kids Checkin - Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Kids Checkin | Login</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; padding: 20px; background: #f0f2f5; }
-        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        input, button { display: block; width: 100%; margin: 10px 0; padding: 10px; font-size: 16px; }
-        button { background: #007bff; color: white; border: none; cursor: pointer; border-radius: 5px; }
-        button:hover { background: #0056b3; }
-        .error { color: red; margin-top: 10px; }
-        hr { margin: 20px 0; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 2rem;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.2);
+            padding: 2rem 1.8rem;
+            width: 100%;
+            max-width: 420px;
+            transition: transform 0.2s ease;
+        }
+
+        .login-card:hover {
+            transform: translateY(-5px);
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(120deg, #667eea, #764ba2);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .sub {
+            text-align: center;
+            color: #5a6e8a;
+            margin-bottom: 2rem;
+            font-size: 0.85rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.2rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 1.5rem;
+            font-size: 1rem;
+            transition: all 0.2s;
+            background: #f8fafc;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            background: white;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.9rem;
+            border: none;
+            border-radius: 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 0.5rem;
+        }
+
+        .btn-login {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-login:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-cadastro {
+            background: transparent;
+            border: 1.5px solid #cbd5e1;
+            color: #334155;
+            margin-top: 0.8rem;
+        }
+
+        .btn-cadastro:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+        }
+
+        .msg {
+            margin-top: 1.2rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #e53e3e;
+            background: #fff5f5;
+            padding: 0.6rem;
+            border-radius: 2rem;
+            display: none;
+        }
+
+        @media (max-width: 480px) {
+            .login-card { padding: 1.5rem; }
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <h2>Kids Checkin</h2>
-    <h3>Login</h3>
-    <input type="email" id="email" placeholder="E-mail">
-    <input type="password" id="password" placeholder="Senha">
-    <button onclick="login()">Entrar</button>
-    <hr>
-    <h3>Cadastro de Pai/Mãe</h3>
-    <input type="email" id="signupEmail" placeholder="E-mail">
-    <input type="password" id="signupPassword" placeholder="Senha">
-    <input type="text" id="fullName" placeholder="Nome completo">
-    <button onclick="signUp()">Cadastrar</button>
-    <div id="message" class="error"></div>
-</div>
+    <div class="login-card">
+        <h1>⛪ Kids Checkin</h1>
+        <div class="sub">Controle seguro para o ministério infantil</div>
+        <div class="input-group">
+            <input type="email" id="email" placeholder="Seu e-mail" autocomplete="email">
+        </div>
+        <div class="input-group">
+            <input type="password" id="password" placeholder="Senha" autocomplete="current-password">
+        </div>
+        <button class="btn-login" onclick="fazerLogin()">Entrar</button>
+        <button class="btn-cadastro" onclick="cadastrarPai()">Criar nova conta (pai/responsável)</button>
+        <div id="msg" class="msg"></div>
+    </div>
 
-<script>
-    async function login() {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
-        if (error) {
-            document.getElementById('message').innerText = error.message;
-            return;
-        }
-        // Buscar role do perfil
-        const { data: profile, error: profileError } = await window.supabaseClient
-            .from('kids_profiles')
-            .select('role')
-            .eq('id', data.user.id)
-            .single();
-        if (profileError) {
-            document.getElementById('message').innerText = 'Erro ao buscar perfil';
-            return;
-        }
-        if (profile.role === 'staff') {
-            window.location.href = 'equipe.html';
-        } else {
-            window.location.href = 'pais.html';
-        }
-    }
+    <script>
+        async function fazerLogin() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const msgDiv = document.getElementById('msg');
+            msgDiv.style.display = 'none';
 
-    async function signUp() {
-        const email = document.getElementById('signupEmail').value;
-        const password = document.getElementById('signupPassword').value;
-        const fullName = document.getElementById('fullName').value;
-        if (!email || !password || !fullName) {
-            document.getElementById('message').innerText = 'Preencha todos os campos';
-            return;
-        }
-        const { data, error } = await window.supabaseClient.auth.signUp({
-            email,
-            password,
-            options: {
-                data: { full_name: fullName, role: 'parent' }
+            if (!email || !password) {
+                showMsg('Preencha e-mail e senha', '#e53e3e');
+                return;
             }
-        });
-        if (error) {
-            document.getElementById('message').innerText = error.message;
-        } else {
-            document.getElementById('message').innerText = 'Cadastro realizado! Verifique seu e-mail para confirmar.';
+
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) {
+                showMsg(error.message, '#e53e3e');
+                return;
+            }
+
+            // Buscar o role do perfil
+            const { data: profile, error: profileError } = await supabaseClient
+                .from('kids_profiles')
+                .select('role')
+                .eq('id', data.user.id)
+                .single();
+
+            if (profileError || !profile) {
+                showMsg('Perfil não encontrado. Contate a administração.', '#e53e3e');
+                return;
+            }
+
+            if (profile.role === 'staff') {
+                window.location.href = 'equipe.html';
+            } else {
+                window.location.href = 'pais.html';
+            }
         }
-    }
-</script>
+
+        async function cadastrarPai() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            if (!email || !password) {
+                showMsg('Preencha e-mail e senha para cadastro', '#e53e3e');
+                return;
+            }
+            const { error } = await supabaseClient.auth.signUp({
+                email,
+                password,
+                options: { data: { full_name: "Usuário", role: "parent" } }
+            });
+            if (error) {
+                showMsg(error.message, '#e53e3e');
+            } else {
+                showMsg('Conta criada! Verifique seu e-mail para confirmar.', '#2b6cb0');
+                setTimeout(() => window.location.reload(), 3000);
+            }
+        }
+
+        function showMsg(texto, cor) {
+            const msgDiv = document.getElementById('msg');
+            msgDiv.style.display = 'block';
+            msgDiv.style.backgroundColor = cor === '#e53e3e' ? '#fff5f5' : '#e6f7ff';
+            msgDiv.style.color = cor;
+            msgDiv.innerText = texto;
+        }
+    </script>
 </body>
 </html>
