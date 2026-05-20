@@ -60,6 +60,7 @@
             display: flex;
             justify-content: space-between;
             flex-wrap: wrap;
+            align-items: center;
         }
         .visitant-item { background: #fff3e0; border-left: 4px solid #f59e0b; }
         .btn-checkout { background: #ef4444; color: white; border: none; padding: 0.3rem 1rem; border-radius: 2rem; margin-left: 0.5rem; cursor: pointer; }
@@ -106,6 +107,7 @@
             #printArea, #printArea * { visibility: visible; }
             #printArea { position: absolute; top: 0; left: 0; width: 58mm; padding: 2mm; font-size: 10pt; }
         }
+        .badge { font-size: 0.7rem; background: #e2e8f0; padding: 0.2rem 0.5rem; border-radius: 2rem; }
     </style>
 </head>
 <body>
@@ -222,7 +224,6 @@
 
         async function onScanSuccess(decodedText) {
             stopScanner(); // pausa para processar
-            // Processa o token (seja para check-in ou checkout)
             await processToken(decodedText);
             // Reinicia a câmera após 3 segundos
             autoRestartScanner = setTimeout(() => {
@@ -234,20 +235,63 @@
 
         // ========== PROCESSAMENTO DO TOKEN (mesmo QR para entrada e saída) ==========
         async function processToken(token) {
-            // 1. Buscar token na tabela
+            // 1. Buscar token na tabela (inclui child e family)
             const { data: tokenData, error } = await supabaseClient
                 .from('kids_temporary_tokens')
                 .select('*, child:child_id(id, name, allergies, family_id)')
                 .eq('token', token)
-                .gt('expires_at', new Date().toISOString())
                 .single();
 
             if (error || !tokenData) {
-                document.getElementById('scanResult').innerHTML = '❌ QR inválido ou expirado.';
+                document.getElementById('scanResult').innerHTML = '❌ QR inválido.';
                 return;
             }
 
-            // Caso 1: Token ainda não usado para check-in → fazer CHECK-IN
+            // Verificar expiração
+            if (new Date(tokenData.expires_at) < new Date()) {
+                document.getElementById('scanResult').innerHTML = '❌ QR expirado. Gere um novo.';
+                return;
+            }
+
+            // Caso 1: Token já usado para checkout -> não faz nada
+            if (tokenData.used_for_checkout) {
+                document.getElementById('scanResult').innerHTML = '⚠️ Este QR já foi utilizado para saída.';
+                return;
+            }
+
+            // Caso 2: Token já usado para check-in (mas não checkout) -> fazer CHECKOUT
+            if (tokenData.used_for_checkin && !tokenData.used_for_checkout) {
+                // Buscar o check-in associado
+                const { data: checkin, error: chError } = await supabaseClient
+                    .from('kids_check_ins')
+                    .select('*, child:child_id(name)')
+                    .eq('id', tokenData.checkin_id)
+                    .is('checked_out_at', null)
+                    .single();
+
+                if (chError || !checkin) {
+                    document.getElementById('scanResult').innerHTML = '❌ Check-out inválido: registro não encontrado.';
+                    return;
+                }
+
+                // Realizar checkout
+                await supabaseClient
+                    .from('kids_check_ins')
+                    .update({ checked_out_at: new Date().toISOString() })
+                    .eq('id', tokenData.checkin_id);
+
+                // Marcar token como usado para checkout
+                await supabaseClient
+                    .from('kids_temporary_tokens')
+                    .update({ used_for_checkout: true })
+                    .eq('id', tokenData.id);
+
+                document.getElementById('scanResult').innerHTML = `✅ Check-out: ${checkin.child.name}`;
+                await loadPresentList();
+                return;
+            }
+
+            // Caso 3: Token novo (não usado para check-in) -> fazer CHECK-IN
             if (!tokenData.used_for_checkin) {
                 // Verificar se a criança já possui check-in ativo nesta sessão (trava anti duplicidade)
                 const { data: existingCheckin } = await supabaseClient
@@ -289,55 +333,42 @@
                 document.getElementById('scanResult').innerHTML = `✅ Check-in: ${tokenData.child.name}`;
                 await loadPresentList();
 
-                // Imprimir etiqueta com o mesmo QR (token original)
+                // Perguntar se quer imprimir etiqueta
                 if (confirm(`Imprimir etiqueta para ${tokenData.child.name}?`)) {
-                    printLabelWithSameQR(tokenData.token, tokenData.child.name, tokenData.child.allergies, null, null, checkin.id);
+                    await printLabelWithSameQR(token, tokenData.child.name, tokenData.child.allergies, null, null, checkin.id);
                 }
-            }
-            // Caso 2: Token já usado para check-in, mas ainda não para checkout → fazer CHECKOUT
-            else if (tokenData.used_for_checkin && !tokenData.used_for_checkout) {
-                // Verificar se o check-in correspondente ainda está aberto
-                const { data: checkin, error: chError } = await supabaseClient
-                    .from('kids_check_ins')
-                    .select('*, child:child_id(name)')
-                    .eq('id', tokenData.checkin_id)
-                    .is('checked_out_at', null)
-                    .single();
-
-                if (chError || !checkin) {
-                    document.getElementById('scanResult').innerHTML = '❌ Check-out inválido: criança já saiu ou não encontrada.';
-                    return;
-                }
-
-                // Realizar checkout
-                await supabaseClient
-                    .from('kids_check_ins')
-                    .update({ checked_out_at: new Date().toISOString() })
-                    .eq('id', tokenData.checkin_id);
-
-                // Marcar token como usado para checkout
-                await supabaseClient
-                    .from('kids_temporary_tokens')
-                    .update({ used_for_checkout: true })
-                    .eq('id', tokenData.id);
-
-                document.getElementById('scanResult').innerHTML = `✅ Check-out: ${checkin.child.name}`;
-                await loadPresentList();
-            }
-            else {
-                document.getElementById('scanResult').innerHTML = '⚠️ Este QR já foi utilizado para saída.';
+                return;
             }
         }
 
         // ========== IMPRESSÃO DE ETIQUETA COM O MESMO QR ==========
-        function printLabelWithSameQR(qrToken, childName, allergies, responsibleName, responsiblePhone, checkinId) {
+        async function printLabelWithSameQR(qrToken, childName, allergies, responsibleName, responsiblePhone, checkinId) {
             const sessionName = document.getElementById('sessionSelect').selectedOptions[0]?.text || 'Culto';
             const now = new Date().toLocaleString();
-            // Gerar QR code do token (mesmo token)
-            const qrDiv = document.createElement('div');
-            new QRCode(qrDiv, { text: qrToken, width: 120, height: 120 });
+            
+            // Criar um elemento temporário para gerar o QR code como imagem
+            const tempDiv = document.createElement('div');
+            const qrCode = new QRCode(tempDiv, {
+                text: qrToken,
+                width: 120,
+                height: 120
+            });
+            
+            // Aguardar a geração do QR (pode levar alguns ms)
             setTimeout(() => {
-                const qrImage = qrDiv.querySelector('img')?.src || '';
+                let qrImageSrc = '';
+                // Tentar obter a imagem gerada
+                const img = tempDiv.querySelector('img');
+                if (img && img.src) {
+                    qrImageSrc = img.src;
+                } else {
+                    // Fallback: tentar canvas
+                    const canvas = tempDiv.querySelector('canvas');
+                    if (canvas) {
+                        qrImageSrc = canvas.toDataURL();
+                    }
+                }
+                
                 const labelHTML = `
                     <div style="width: 58mm; padding: 2mm; font-family: monospace; font-size: 10pt;">
                         <div style="text-align: center; font-weight: bold;">⛪ Kids Checkin</div>
@@ -348,7 +379,7 @@
                         <div><strong>Sessão:</strong> ${sessionName}</div>
                         <div><strong>Check-in:</strong> ${now}</div>
                         <div style="text-align: center; margin-top: 4px;">
-                            <img src="${qrImage}" width="80" height="80" alt="QR para saída">
+                            <img src="${qrImageSrc}" width="80" height="80" alt="QR para saída">
                             <div style="font-size: 8pt;">Escanear para saída</div>
                         </div>
                     </div>
@@ -378,14 +409,24 @@
             let html = '';
             if (checkins?.length) {
                 html += `<h4>👶 Crianças cadastradas</h4>`;
-                html += checkins.map(c => `
-                    <div class="present-item">
-                        <div><strong>${escapeHtml(c.child.name)}</strong> ${c.child.allergies ? `<span class="badge">⚠️</span>` : ''}<br><small>${new Date(c.checked_in_at).toLocaleTimeString()}</small></div>
-                        <div>
-                            <button class="btn-checkout" onclick="checkoutManual('${c.id}')">Check-out</button>
+                for (const c of checkins) {
+                    // Buscar o token associado para reimprimir etiqueta
+                    const { data: tokenData } = await supabaseClient
+                        .from('kids_temporary_tokens')
+                        .select('token')
+                        .eq('checkin_id', c.id)
+                        .single();
+                    const token = tokenData?.token || '';
+                    html += `
+                        <div class="present-item">
+                            <div><strong>${escapeHtml(c.child.name)}</strong> ${c.child.allergies ? `<span class="badge">⚠️</span>` : ''}<br><small>${new Date(c.checked_in_at).toLocaleTimeString()}</small></div>
+                            <div>
+                                <button class="btn-print" onclick="reprintLabel('${token}', '${escapeHtml(c.child.name)}', '${escapeHtml(c.child.allergies || '')}', '${c.id}')">🖨️ Etiqueta</button>
+                                <button class="btn-checkout" onclick="checkoutManual('${c.id}')">Check-out</button>
+                            </div>
                         </div>
-                    </div>
-                `).join('');
+                    `;
+                }
             }
             if (visitants?.length) {
                 html += `<h4>📝 Visitantes</h4>`;
@@ -402,9 +443,17 @@
             document.getElementById('presentList').innerHTML = html;
         }
 
+        async function reprintLabel(token, childName, allergies, checkinId) {
+            if (!token) {
+                alert('Token não encontrado para reimpressão.');
+                return;
+            }
+            await printLabelWithSameQR(token, childName, allergies, null, null, checkinId);
+        }
+
         async function checkoutManual(checkinId) {
             await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', checkinId);
-            // Também marcar o token associado como usado para checkout
+            // Marcar token associado como checkout
             const { data: token } = await supabaseClient.from('kids_temporary_tokens').select('id').eq('checkin_id', checkinId).single();
             if (token) await supabaseClient.from('kids_temporary_tokens').update({ used_for_checkout: true }).eq('id', token.id);
             await loadPresentList();
