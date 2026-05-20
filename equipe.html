@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel da Equipe</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+    <script src="app.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 1000px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; }
+        button { padding: 8px 12px; margin: 5px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
+        button.danger { background: #dc3545; }
+        button.success { background: #28a745; }
+        #reader { width: 300px; margin: 20px 0; }
+        .present-card { background: #d4edda; border: 1px solid #c3e6cb; margin: 10px 0; padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .visitant-card { background: #fff3cd; border: 1px solid #ffeeba; }
+        hr { margin: 20px 0; }
+        .form-group { margin-bottom: 15px; }
+        label { display: inline-block; width: 150px; }
+        input, select { padding: 6px; width: 250px; }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h2>Painel da Equipe - Check-in</h2>
+    <button onclick="logout()">Sair</button>
+</div>
+<hr>
+
+<h3>Escanear QR Code do Responsável</h3>
+<div id="reader"></div>
+<div id="scanResult" style="margin-top: 10px; font-weight: bold;"></div>
+
+<hr>
+
+<h3>Cadastrar Visitante Rápido</h3>
+<div>
+    <div class="form-group"><label>Nome da criança:</label> <input type="text" id="visitantChildName" placeholder="Ex: João"></div>
+    <div class="form-group"><label>Nome do responsável:</label> <input type="text" id="visitantRespName" placeholder="Ex: Maria"></div>
+    <div class="form-group"><label>Telefone:</label> <input type="text" id="visitantPhone" placeholder="(11) 99999-9999"></div>
+    <div class="form-group"><label>Sessão:</label> <select id="sessionSelect"></select></div>
+    <button onclick="registerVisitant()">Registrar Visitante</button>
+</div>
+
+<hr>
+
+<h3>Crianças Presentes Agora</h3>
+<div id="presentList"></div>
+
+<script>
+    let currentStaffId = null;
+    let currentSessionId = null;
+    let html5QrCode = null;
+
+    async function checkAuth() {
+        const { data: { user } } = await window.supabaseClient.auth.getUser();
+        if (!user) {
+            window.location.href = 'index.html';
+            return;
+        }
+        currentStaffId = user.id;
+        // Verificar se o usuário é staff
+        const { data: profile } = await window.supabaseClient
+            .from('kids_profiles')
+            .select('role')
+            .eq('id', currentStaffId)
+            .single();
+        if (!profile || profile.role !== 'staff') {
+            alert('Acesso negado. Esta área é apenas para equipe.');
+            window.location.href = 'index.html';
+            return;
+        }
+        await loadSession();
+        startScanner();
+        loadPresentChildren();
+    }
+
+    async function loadSession() {
+        // Buscar a primeira sessão ativa (ou criar uma se necessário)
+        let { data: sessions, error } = await window.supabaseClient
+            .from('kids_sessions')
+            .select('id, name')
+            .eq('is_active', true)
+            .limit(1);
+        if (error || !sessions || sessions.length === 0) {
+            // Se não houver sessão ativa, criar uma padrão para hoje
+            const today = new Date().toISOString().slice(0,10);
+            const { data: newSession, error: createError } = await window.supabaseClient
+                .from('kids_sessions')
+                .insert({ name: `Culto ${today}`, session_date: today, is_active: true })
+                .select('id, name')
+                .single();
+            if (createError) {
+                console.error(createError);
+                alert('Erro ao criar sessão. Contate o administrador.');
+                return;
+            }
+            sessions = [newSession];
+        }
+        currentSessionId = sessions[0].id;
+        const select = document.getElementById('sessionSelect');
+        select.innerHTML = sessions.map(s => `<option value="${s.id}" ${s.id === currentSessionId ? 'selected' : ''}>${s.name}</option>`).join('');
+        // Se o usuário mudar a sessão manualmente, atualizar
+        select.addEventListener('change', (e) => {
+            currentSessionId = e.target.value;
+            loadPresentChildren();
+        });
+    }
+
+    function startScanner() {
+        html5QrCode = new Html5Qrcode("reader");
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanError);
+    }
+
+    async function onScanSuccess(decodedText, decodedResult) {
+        // Para não processar o mesmo token várias vezes, podemos pausar o scanner momentaneamente
+        html5QrCode.pause();
+        await processToken(decodedText);
+        // Retomar após 3 segundos
+        setTimeout(() => html5QrCode.resume(), 3000);
+    }
+
+    function onScanError(errorMessage) {
+        // console.warn(errorMessage);
+    }
+
+    async function processToken(token) {
+        try {
+            // Buscar token na tabela
+            const { data: tokenData, error } = await window.supabaseClient
+                .from('kids_temporary_tokens')
+                .select('*, family_id')
+                .eq('token', token)
+                .eq('is_used', false)
+                .gt('expires_at', new Date().toISOString())
+                .single();
+            if (error || !tokenData) {
+                document.getElementById('scanResult').innerText = '❌ Token inválido ou expirado.';
+                return;
+            }
+            // Marcar como usado
+            await window.supabaseClient
+                .from('kids_temporary_tokens')
+                .update({ is_used: true })
+                .eq('id', tokenData.id);
+            
+            // Buscar crianças da família
+            const { data: children, error: childError } = await window.supabaseClient
+                .from('kids_children')
+                .select('id, name')
+                .eq('family_id', tokenData.family_id);
+            if (childError || !children || children.length === 0) {
+                document.getElementById('scanResult').innerText = '⚠️ Nenhuma criança vinculada a esta família.';
+                return;
+            }
+            // Realizar check-in para cada criança
+            let checkins = [];
+            for (let child of children) {
+                const { error: ciError } = await window.supabaseClient
+                    .from('kids_check_ins')
+                    .insert({
+                        child_id: child.id,
+                        session_id: currentSessionId,
+                        checked_in_by: currentStaffId,
+                        token_id: tokenData.id
+                    });
+                if (!ciError) checkins.push(child.name);
+            }
+            if (checkins.length > 0) {
+                document.getElementById('scanResult').innerHTML = `✅ Check-in realizado para: ${checkins.join(', ')}`;
+                loadPresentChildren();
+            } else {
+                document.getElementById('scanResult').innerText = '❌ Falha ao registrar check-in.';
+            }
+        } catch (err) {
+            console.error(err);
+            document.getElementById('scanResult').innerText = 'Erro ao processar token.';
+        }
+    }
+
+    async function loadPresentChildren() {
+        // Buscar check-ins da sessão atual sem check-out
+        const { data: checkins, error } = await window.supabaseClient
+            .from('kids_check_ins')
+            .select(`
+                id,
+                checked_in_at,
+                child:child_id (id, name),
+                session_id
+            `)
+            .eq('session_id', currentSessionId)
+            .is('checked_out_at', null);
+        if (error) {
+            console.error(error);
+            return;
+        }
+        // Também buscar visitantes da sessão (consideramos que visitantes também estão presentes)
+        const { data: visitants } = await window.supabaseClient
+            .from('kids_visitants')
+            .select('id, child_name, responsible_name, checked_in_at')
+            .eq('session_id', currentSessionId)
+            .is('checked_out_at', null);
+        
+        const presentDiv = document.getElementById('presentList');
+        let html = '';
+        if (checkins && checkins.length) {
+            html += '<h4>Crianças cadastradas:</h4>';
+            checkins.forEach(ci => {
+                html += `
+                    <div class="present-card">
+                        <span><strong>${ci.child.name}</strong> - Check-in: ${new Date(ci.checked_in_at).toLocaleTimeString()}</span>
+                        <button class="danger" onclick="checkout('${ci.id}', 'child')">Check-out</button>
+                    </div>
+                `;
+            });
+        }
+        if (visitants && visitants.length) {
+            html += '<h4>Visitantes:</h4>';
+            visitants.forEach(v => {
+                html += `
+                    <div class="present-card visitant-card">
+                        <span><strong>${v.child_name}</strong> (Resp: ${v.responsible_name}) - ${new Date(v.checked_in_at).toLocaleTimeString()}</span>
+                        <button class="danger" onclick="checkout('${v.id}', 'visitant')">Check-out</button>
+                    </div>
+                `;
+            });
+        }
+        if (!html) html = '<p>Nenhuma criança presente no momento.</p>';
+        presentDiv.innerHTML = html;
+    }
+
+    window.checkout = async function(id, type) {
+        if (type === 'child') {
+            await window.supabaseClient
+                .from('kids_check_ins')
+                .update({ checked_out_at: new Date().toISOString() })
+                .eq('id', id);
+        } else if (type === 'visitant') {
+            await window.supabaseClient
+                .from('kids_visitants')
+                .update({ checked_out_at: new Date().toISOString() })
+                .eq('id', id);
+        }
+        loadPresentChildren();
+    };
+
+    async function registerVisitant() {
+        const childName = document.getElementById('visitantChildName').value.trim();
+        const respName = document.getElementById('visitantRespName').value.trim();
+        const phone = document.getElementById('visitantPhone').value.trim();
+        if (!childName || !respName) {
+            alert('Preencha nome da criança e do responsável.');
+            return;
+        }
+        const { error } = await window.supabaseClient
+            .from('kids_visitants')
+            .insert({
+                child_name: childName,
+                responsible_name: respName,
+                responsible_phone: phone || null,
+                session_id: currentSessionId,
+                checked_in_by: currentStaffId
+            });
+        if (error) {
+            alert('Erro ao registrar visitante: ' + error.message);
+        } else {
+            alert('Visitante registrado com sucesso!');
+            document.getElementById('visitantChildName').value = '';
+            document.getElementById('visitantRespName').value = '';
+            document.getElementById('visitantPhone').value = '';
+            loadPresentChildren();
+        }
+    }
+
+    async function logout() {
+        if (html5QrCode) await html5QrCode.stop();
+        await window.supabaseClient.auth.signOut();
+        window.location.href = 'index.html';
+    }
+
+    checkAuth();
+</script>
+</body>
+</html>
