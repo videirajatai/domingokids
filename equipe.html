@@ -11,109 +11,42 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { background: #edf2f7; padding-bottom: 5rem; }
-        .header {
-            background: #0f172a;
-            color: white;
-            padding: 1.5rem;
-            border-radius: 0 0 1.8rem 1.8rem;
-            position: relative;
-        }
-        .logout-btn {
-            position: absolute;
-            top: 1rem; right: 1.5rem;
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            padding: 0.3rem 1rem;
-            border-radius: 2rem;
-            cursor: pointer;
-        }
+        .header { background: #0f172a; color: white; padding: 1.5rem; border-radius: 0 0 1.8rem 1.8rem; position: relative; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .header-buttons { display: flex; gap: 0.5rem; }
+        .header-buttons button { background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.3rem 1rem; border-radius: 2rem; cursor: pointer; }
+        .logout-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.3rem 1rem; border-radius: 2rem; cursor: pointer; }
         .container { max-width: 800px; margin: 1.2rem auto; padding: 0 1rem; }
-        .card {
-            background: white;
-            border-radius: 1.5rem;
-            padding: 1.2rem;
-            margin-bottom: 1.2rem;
-            box-shadow: 0 6px 14px rgba(0,0,0,0.05);
-        }
-        .btn-primary {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 0.6rem 1rem;
-            border-radius: 2rem;
-            cursor: pointer;
-        }
-        .btn-outline {
-            background: transparent;
-            border: 1px solid #3b82f6;
-            color: #3b82f6;
-            padding: 0.6rem 1rem;
-            border-radius: 2rem;
-            cursor: pointer;
-        }
-        .present-item {
-            background: #e6f7e6;
-            padding: 0.8rem;
-            border-radius: 1rem;
-            margin-bottom: 0.6rem;
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            align-items: center;
-        }
+        .card { background: white; border-radius: 1.5rem; padding: 1.2rem; margin-bottom: 1.2rem; box-shadow: 0 6px 14px rgba(0,0,0,0.05); }
+        .btn-primary { background: #3b82f6; color: white; border: none; padding: 0.6rem 1rem; border-radius: 2rem; cursor: pointer; }
+        .btn-outline { background: transparent; border: 1px solid #3b82f6; color: #3b82f6; padding: 0.6rem 1rem; border-radius: 2rem; cursor: pointer; }
+        .present-item { background: #e6f7e6; padding: 0.8rem; border-radius: 1rem; margin-bottom: 0.6rem; display: flex; justify-content: space-between; flex-wrap: wrap; align-items: center; }
         .visitant-item { background: #fff3e0; border-left: 4px solid #f59e0b; }
         .btn-checkout { background: #ef4444; color: white; border: none; padding: 0.3rem 1rem; border-radius: 2rem; margin-left: 0.5rem; cursor: pointer; }
         .btn-print { background: #10b981; border: none; padding: 0.3rem 1rem; border-radius: 2rem; color: white; margin-left: 0.5rem; cursor: pointer; }
-        .fab-visitante {
-            position: fixed;
-            bottom: 1.5rem; right: 1.5rem;
-            background: #f59e0b;
-            width: 56px; height: 56px;
-            border-radius: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.8rem;
-            color: white;
-            cursor: pointer;
-            border: none;
-            z-index: 100;
-        }
-        .fab-sessao {
-            bottom: 5rem;
-            background: #3b82f6;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            align-items: center;
-            justify-content: center;
-            z-index: 200;
-        }
-        .modal-content {
-            background: white;
-            width: 90%;
-            max-width: 450px;
-            border-radius: 1.8rem;
-            padding: 1.5rem;
-        }
+        .btn-eye { background: #3b82f6; border: none; padding: 0.3rem 0.8rem; border-radius: 2rem; color: white; margin-left: 0.5rem; cursor: pointer; }
+        .fab-visitante { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #f59e0b; width: 56px; height: 56px; border-radius: 28px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: white; cursor: pointer; border: none; z-index: 100; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 200; }
+        .modal-content { background: white; width: 90%; max-width: 500px; border-radius: 1.8rem; padding: 1.5rem; max-height: 80vh; overflow-y: auto; }
         input, select { width: 100%; padding: 0.7rem; border-radius: 1rem; margin: 0.4rem 0; border: 1px solid #cbd5e1; }
-        @media print {
-            body * { visibility: hidden; }
-            #printArea, #printArea * { visibility: visible; }
-            #printArea { position: absolute; top: 0; left: 0; width: 58mm; padding: 2mm; font-size: 10pt; }
-        }
+        .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; }
+        .tab { padding: 0.5rem 1rem; cursor: pointer; border-radius: 1rem 1rem 0 0; background: #f1f5f9; }
+        .tab.active { background: #3b82f6; color: white; }
+        .room-list { margin-top: 1rem; }
+        .child-checkbox { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+        .birthday-emoji { font-size: 1.2rem; margin-left: 0.3rem; }
+        @media print { body * { visibility: hidden; } #printArea, #printArea * { visibility: visible; } #printArea { position: absolute; top: 0; left: 0; width: 100%; padding: 1rem; } }
         .badge { font-size: 0.7rem; background: #e2e8f0; padding: 0.2rem 0.5rem; border-radius: 2rem; }
+        .report-container { margin-top: 1rem; }
     </style>
 </head>
 <body>
     <div class="header">
         <h2>👥 Equipe</h2>
-        <button class="logout-btn" onclick="logout()">Sair</button>
+        <div class="header-buttons">
+            <button onclick="openReportsModal()">📊 Relatórios</button>
+            <button onclick="alert('Configurações em breve')">⚙️ Config</button>
+            <button class="logout-btn" onclick="logout()">Sair</button>
+        </div>
     </div>
     <div class="container">
         <div class="card">
@@ -123,7 +56,6 @@
             </div>
             <select id="sessionSelect" onchange="changeSession()"></select>
         </div>
-
         <div class="card">
             <h3>📷 Escanear QR (entrada e saída)</h3>
             <div class="scanner-box">
@@ -133,16 +65,23 @@
                 <div id="scanResult" style="margin-top: 0.8rem; font-weight: 500;"></div>
             </div>
         </div>
-
         <div class="card">
-            <h3>✔️ Crianças presentes agora</h3>
+            <div class="tabs">
+                <div class="tab active" data-room="all">Todas</div>
+                <div class="tab" data-room="Kids">Kids</div>
+                <div class="tab" data-room="Babys">Babys</div>
+                <div class="tab" data-room="Juvenis">Juvenis</div>
+            </div>
+            <div id="roomAction" style="margin-bottom: 1rem; text-align: right;">
+                <button class="btn-outline" id="moveToRoomBtn" style="display: none;" onclick="openMoveModal()">Mover para sala</button>
+            </div>
             <div id="presentList">Carregando...</div>
         </div>
     </div>
 
     <div class="fab-visitante" onclick="openVisitanteModal()">➕📝</div>
-    <div class="fab-visitante fab-sessao" style="bottom: 7rem;" onclick="openSessionModal()">📅+</div>
 
+    <!-- Modal visitante -->
     <div id="visitanteModal" class="modal">
         <div class="modal-content">
             <h3>Visitante rápido</h3>
@@ -154,6 +93,7 @@
         </div>
     </div>
 
+    <!-- Modal nova sessão -->
     <div id="sessionModal" class="modal">
         <div class="modal-content">
             <h3>Nova Sessão</h3>
@@ -166,17 +106,52 @@
         </div>
     </div>
 
+    <!-- Modal visualizar criança -->
+    <div id="viewChildModal" class="modal">
+        <div class="modal-content">
+            <h3>👶 Dados da criança</h3>
+            <div id="viewChildContent"></div>
+            <button class="btn-outline" onclick="closeViewChildModal()">Fechar</button>
+        </div>
+    </div>
+
+    <!-- Modal mover para sala -->
+    <div id="moveModal" class="modal">
+        <div class="modal-content">
+            <h3 id="moveModalTitle">Mover para sala</h3>
+            <div id="childrenListForMove"></div>
+            <button class="btn-primary" onclick="confirmMoveToRoom()">Mover selecionados</button>
+            <button class="btn-outline" onclick="closeMoveModal()">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- Modal relatórios -->
+    <div id="reportsModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <h3>📊 Relatórios</h3>
+            <div style="margin-bottom: 1rem;">
+                <button class="btn-outline" onclick="showMonthlyReport()">Relatório Mensal</button>
+                <button class="btn-outline" onclick="showSessionReport()">Relatório por Sessão</button>
+            </div>
+            <div id="reportContent"></div>
+            <button class="btn-outline" onclick="closeReportsModal()">Fechar</button>
+        </div>
+    </div>
+
     <div id="printArea" style="display: none;"></div>
 
     <script>
         let currentStaffId = null, currentSessionId = null, html5QrCode = null, scannerActive = false;
         let autoRestartScanner = null;
+        let currentRoomFilter = 'all';
+        let pendingMoveRoom = null;
 
         async function init() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = 'index.html'; return; }
             currentStaffId = user.id;
             await loadSessions();
+            setupTabs();
         }
 
         async function loadSessions() {
@@ -198,7 +173,28 @@
             await loadPresentList();
         }
 
-        // Scanner
+        function setupTabs() {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentRoomFilter = tab.dataset.room;
+                    loadPresentList();
+                    // Mostrar botão "Mover para sala" apenas se não for a aba "Todas"
+                    const moveBtn = document.getElementById('moveToRoomBtn');
+                    if (currentRoomFilter !== 'all') {
+                        moveBtn.style.display = 'inline-block';
+                        pendingMoveRoom = currentRoomFilter;
+                    } else {
+                        moveBtn.style.display = 'none';
+                        pendingMoveRoom = null;
+                    }
+                });
+            });
+        }
+
+        // ========== SCANNER ==========
         async function startScanner() {
             if (scannerActive) return;
             html5QrCode = new Html5Qrcode("reader");
@@ -228,9 +224,8 @@
 
         function onScanError(err) { console.log(err); }
 
-        // Lógica principal: check-in/checkout baseado em existência de check-in ativo
+        // Processamento do QR (check-in/checkout)
         async function processToken(token) {
-            // 1. Buscar token para obter child_id
             const { data: tokenData, error: tokenError } = await supabaseClient
                 .from('kids_temporary_tokens')
                 .select('*, child:child_id(id, name, allergies)')
@@ -249,40 +244,29 @@
 
             const childId = tokenData.child_id;
             const childName = tokenData.child?.name || 'Criança';
+            const allergies = tokenData.child?.allergies || '';
 
-            // 2. Verificar se existe check-in ativo para essa criança na sessão atual
-            const { data: activeCheckin, error: checkError } = await supabaseClient
+            // Verificar check-in ativo
+            const { data: activeCheckin } = await supabaseClient
                 .from('kids_check_ins')
-                .select('*')
+                .select('id')
                 .eq('child_id', childId)
                 .eq('session_id', currentSessionId)
                 .is('checked_out_at', null)
                 .maybeSingle();
 
-            if (checkError) {
-                document.getElementById('scanResult').innerHTML = '❌ Erro ao verificar check-in.';
-                return;
-            }
-
-            // Se existe check-in ativo -> FAZ CHECKOUT
             if (activeCheckin) {
-                const { error: updateError } = await supabaseClient
+                // Checkout
+                await supabaseClient
                     .from('kids_check_ins')
                     .update({ checked_out_at: new Date().toISOString() })
                     .eq('id', activeCheckin.id);
-
-                if (updateError) {
-                    document.getElementById('scanResult').innerHTML = '❌ Erro no check-out.';
-                    return;
-                }
-
                 document.getElementById('scanResult').innerHTML = `✅ Check-out: ${childName}`;
                 await loadPresentList();
                 return;
             }
 
-            // Caso contrário -> FAZ CHECK-IN
-            // Verificar se a criança está ativa (opcional)
+            // Check-in
             const { data: newCheckin, error: insertError } = await supabaseClient
                 .from('kids_check_ins')
                 .insert({
@@ -295,16 +279,15 @@
                 .single();
 
             if (insertError) {
-                document.getElementById('scanResult').innerHTML = '❌ Erro no check-in.';
+                document.getElementById('scanResult').innerHTML = '❌ Erro no check-in: ' + insertError.message;
                 return;
             }
 
             document.getElementById('scanResult').innerHTML = `✅ Check-in: ${childName}`;
             await loadPresentList();
 
-            // Perguntar se quer imprimir etiqueta
             if (confirm(`Imprimir etiqueta para ${childName}?`)) {
-                printLabel(token, childName, tokenData.child?.allergies || '', newCheckin.id);
+                printLabel(token, childName, allergies, newCheckin.id);
             }
         }
 
@@ -344,28 +327,26 @@
             }, 300);
         }
 
-        // Reimpressão manual
+        // Reimprimir
         async function reprintLabelFromList(checkinId) {
-            const { data: checkin, error: chError } = await supabaseClient
+            const { data: checkin, error } = await supabaseClient
                 .from('kids_check_ins')
                 .select('*, child:child_id(name, allergies), token:token_id(token)')
                 .eq('id', checkinId)
                 .single();
-
-            if (chError || !checkin || !checkin.token) {
+            if (error || !checkin || !checkin.token) {
                 alert('Token não encontrado para impressão.');
                 return;
             }
-
             printLabel(checkin.token.token, checkin.child.name, checkin.child.allergies || '', checkinId);
         }
 
-        // Lista de presentes
+        // ========== LISTA DE PRESENTES COM FILTRO DE SALA E ANIVERSÁRIO ==========
         async function loadPresentList() {
             if (!currentSessionId) return;
             const { data: checkins } = await supabaseClient
                 .from('kids_check_ins')
-                .select('*, child:child_id(id, name, allergies)')
+                .select('*, child:child_id(id, name, allergies, birth_date, photo_url, family_id)')
                 .eq('session_id', currentSessionId)
                 .is('checked_out_at', null);
 
@@ -374,22 +355,35 @@
                 .select('*')
                 .eq('session_id', currentSessionId);
 
+            // Filtrar por sala se não for 'all'
+            let filteredCheckins = checkins || [];
+            if (currentRoomFilter !== 'all') {
+                filteredCheckins = filteredCheckins.filter(c => c.room === currentRoomFilter);
+            }
+
             let html = '';
-            if (checkins?.length) {
+            if (filteredCheckins.length) {
                 html += `<h4>👶 Crianças cadastradas</h4>`;
-                for (const c of checkins) {
+                for (const c of filteredCheckins) {
+                    const isBirthday = isBirthdayThisWeek(c.child.birth_date);
                     html += `
                         <div class="present-item">
-                            <div><strong>${escapeHtml(c.child.name)}</strong> ${c.child.allergies ? '<span class="badge">⚠️</span>' : ''}<br><small>${new Date(c.checked_in_at).toLocaleTimeString()}</small></div>
                             <div>
-                                <button class="btn-print" onclick="reprintLabelFromList('${c.id}')">🖨️ Etiqueta</button>
+                                <strong>${escapeHtml(c.child.name)}</strong> ${isBirthday ? '<span class="birthday-emoji">🎂</span>' : ''}
+                                ${c.child.allergies ? '<span class="badge">⚠️</span>' : ''}
+                                ${c.room ? `<span class="badge">${c.room}</span>` : ''}
+                                <br><small>${new Date(c.checked_in_at).toLocaleTimeString()}</small>
+                            </div>
+                            <div>
+                                <button class="btn-eye" onclick="viewChildDetails('${c.child.id}', '${c.child.family_id}')">👁️</button>
+                                <button class="btn-print" onclick="reprintLabelFromList('${c.id}')">🖨️</button>
                                 <button class="btn-checkout" onclick="checkoutManual('${c.id}')">Check-out</button>
                             </div>
                         </div>
                     `;
                 }
             }
-            if (visitants?.length) {
+            if (visitants?.length && currentRoomFilter === 'all') {
                 html += `<h4>📝 Visitantes</h4>`;
                 html += visitants.map(v => `
                     <div class="present-item visitant-item">
@@ -398,14 +392,147 @@
                     </div>
                 `).join('');
             }
-            if (!checkins?.length && !visitants?.length) html = '<p>Nenhuma criança presente.</p>';
+            if (filteredCheckins.length === 0 && (!visitants?.length || currentRoomFilter !== 'all')) {
+                html = '<p>Nenhuma criança presente nesta sala.</p>';
+            }
             document.getElementById('presentList').innerHTML = html;
         }
 
+        // Verifica se aniversário é na semana atual (considerando a data da sessão)
+        function isBirthdayThisWeek(birthDateStr) {
+            if (!birthDateStr) return false;
+            const birthDate = new Date(birthDateStr);
+            const today = new Date();
+            // Obter a data da sessão atual
+            const sessionDate = new Date(document.getElementById('sessionSelect').selectedOptions[0]?.text.split('(')[1]?.replace(')','') || today);
+            const startOfWeek = new Date(sessionDate);
+            startOfWeek.setDate(sessionDate.getDate() - sessionDate.getDay()); // domingo
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            const birthThisYear = new Date(sessionDate.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+            return birthThisYear >= startOfWeek && birthThisYear <= endOfWeek;
+        }
+
+        // Visualizar detalhes da criança (com foto e dados dos pais)
+        async function viewChildDetails(childId, familyId) {
+            // Buscar dados da criança
+            const { data: child, error } = await supabaseClient
+                .from('kids_children')
+                .select('*')
+                .eq('id', childId)
+                .single();
+            if (error) {
+                alert('Erro ao carregar dados da criança');
+                return;
+            }
+            // Buscar familia e perfis dos pais
+            const { data: family } = await supabaseClient
+                .from('kids_families')
+                .select('*')
+                .eq('id', familyId)
+                .single();
+            // Buscar perfis da família (pais/responsáveis)
+            const { data: profiles } = await supabaseClient
+                .from('kids_profiles')
+                .select('full_name, email')
+                .eq('family_id', familyId)
+                .eq('role', 'parent');
+
+            const father = profiles ? profiles.find(p => p.full_name?.toLowerCase().includes('pai') || p.full_name?.split(' ')[0] === 'Pai') : null;
+            const mother = profiles ? profiles.find(p => p.full_name?.toLowerCase().includes('mãe') || p.full_name?.split(' ')[0] === 'Mãe') : null;
+            const otherParents = profiles ? profiles.filter(p => p !== father && p !== mother) : [];
+
+            let html = `
+                <div style="text-align:center;">
+                    ${child.photo_url ? `<img src="${child.photo_url}" style="width:100px; height:100px; border-radius:50%; object-fit:cover;">` : '<div style="width:100px; height:100px; background:#e2e8f0; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:3rem;">👶</div>'}
+                    <h3>${escapeHtml(child.name)}</h3>
+                    <p>${child.birth_date ? `📅 Nascimento: ${new Date(child.birth_date).toLocaleDateString()}` : ''}</p>
+                    ${child.allergies ? `<p><strong>Alergias:</strong> ${escapeHtml(child.allergies)}</p>` : ''}
+                    ${child.special_needs ? `<p><strong>Necessidades:</strong> ${escapeHtml(child.special_needs)}</p>` : ''}
+                </div>
+                <hr>
+                <h4>👨‍👩‍👧 Responsáveis</h4>
+            `;
+            if (father) html += `<p><strong>Pai:</strong> ${escapeHtml(father.full_name)} (${father.email || 'sem email'})</p>`;
+            if (mother) html += `<p><strong>Mãe:</strong> ${escapeHtml(mother.full_name)} (${mother.email || 'sem email'})</p>`;
+            otherParents.forEach(p => {
+                html += `<p><strong>Responsável:</strong> ${escapeHtml(p.full_name)} (${p.email || 'sem email'})</p>`;
+            });
+            if (!father && !mother && otherParents.length === 0) html += '<p>Nenhum responsável cadastrado.</p>';
+            document.getElementById('viewChildContent').innerHTML = html;
+            document.getElementById('viewChildModal').style.display = 'flex';
+        }
+
+        function closeViewChildModal() {
+            document.getElementById('viewChildModal').style.display = 'none';
+        }
+
+        // ========== MOVER PARA SALA ==========
+        function openMoveModal() {
+            if (!pendingMoveRoom) return;
+            document.getElementById('moveModalTitle').innerText = `Mover para ${pendingMoveRoom}`;
+            // Buscar todas as crianças presentes (sem filtro de sala)
+            loadChildrenForMove();
+            document.getElementById('moveModal').style.display = 'flex';
+        }
+
+        async function loadChildrenForMove() {
+            const { data: checkins } = await supabaseClient
+                .from('kids_check_ins')
+                .select('*, child:child_id(id, name, birth_date)')
+                .eq('session_id', currentSessionId)
+                .is('checked_out_at', null);
+            if (!checkins?.length) {
+                document.getElementById('childrenListForMove').innerHTML = '<p>Nenhuma criança presente.</p>';
+                return;
+            }
+            // Ordenar por idade (mais novos primeiro? ou por nome)
+            const sorted = checkins.sort((a,b) => {
+                const ageA = a.child.birth_date ? new Date().getFullYear() - new Date(a.child.birth_date).getFullYear() : 0;
+                const ageB = b.child.birth_date ? new Date().getFullYear() - new Date(b.child.birth_date).getFullYear() : 0;
+                return ageA - ageB;
+            });
+            let html = '';
+            for (const c of sorted) {
+                const age = c.child.birth_date ? new Date().getFullYear() - new Date(c.child.birth_date).getFullYear() : '?';
+                html += `
+                    <div class="child-checkbox">
+                        <input type="checkbox" value="${c.id}" id="move_${c.id}">
+                        <label for="move_${c.id}">${escapeHtml(c.child.name)} (${age} anos) - sala atual: ${c.room || 'nenhuma'}</label>
+                    </div>
+                `;
+            }
+            document.getElementById('childrenListForMove').innerHTML = html;
+        }
+
+        async function confirmMoveToRoom() {
+            const checkboxes = document.querySelectorAll('#childrenListForMove input[type="checkbox"]:checked');
+            if (checkboxes.length === 0) {
+                alert('Selecione pelo menos uma criança.');
+                return;
+            }
+            const checkinIds = Array.from(checkboxes).map(cb => cb.value);
+            // Atualizar o campo room na tabela kids_check_ins
+            for (const id of checkinIds) {
+                await supabaseClient
+                    .from('kids_check_ins')
+                    .update({ room: pendingMoveRoom })
+                    .eq('id', id);
+            }
+            alert(`${checkinIds.length} criança(s) movida(s) para ${pendingMoveRoom}`);
+            closeMoveModal();
+            await loadPresentList();
+        }
+
+        function closeMoveModal() {
+            document.getElementById('moveModal').style.display = 'none';
+        }
+
+        // ========== CHECKOUT MANUAL ==========
         async function checkoutManual(checkinId) {
             await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', checkinId);
             await loadPresentList();
-            document.getElementById('scanResult').innerHTML = '✅ Check-out manual realizado.';
+            document.getElementById('scanResult').innerHTML = '✅ Check-out manual.';
         }
 
         async function removeVisitant(id) {
@@ -413,6 +540,7 @@
             await loadPresentList();
         }
 
+        // ========== VISITANTE ==========
         async function registerVisitant() {
             const childName = document.getElementById('visitantName').value.trim();
             const respName = document.getElementById('respName').value.trim();
@@ -434,6 +562,7 @@
             document.getElementById('respPhone').value = '';
         }
 
+        // ========== SESSÃO ==========
         function openSessionModal() { document.getElementById('sessionModal').style.display = 'flex'; }
         function closeSessionModal() { document.getElementById('sessionModal').style.display = 'none'; }
         async function createSession() {
@@ -450,6 +579,108 @@
                 closeSessionModal();
                 await loadSessions();
             }
+        }
+
+        // ========== RELATÓRIOS ==========
+        function openReportsModal() {
+            document.getElementById('reportsModal').style.display = 'flex';
+            document.getElementById('reportContent').innerHTML = '<p>Selecione um tipo de relatório.</p>';
+        }
+        function closeReportsModal() { document.getElementById('reportsModal').style.display = 'none'; }
+
+        async function showMonthlyReport() {
+            // Pede mês/ano
+            const hoje = new Date();
+            const anoPadrao = hoje.getFullYear();
+            const mesPadrao = hoje.getMonth() + 1;
+            const mesStr = prompt('Mês (1-12):', mesPadrao);
+            const anoStr = prompt('Ano:', anoPadrao);
+            if (!mesStr || !anoStr) return;
+            const mes = parseInt(mesStr);
+            const ano = parseInt(anoStr);
+            const startDate = new Date(ano, mes-1, 1);
+            const endDate = new Date(ano, mes, 0);
+            // Buscar check-ins do período
+            const { data: checkins } = await supabaseClient
+                .from('kids_check_ins')
+                .select('*, child:child_id(name, birth_date), session:session_id(name, session_date)')
+                .gte('checked_in_at', startDate.toISOString())
+                .lte('checked_in_at', endDate.toISOString());
+            if (!checkins || checkins.length === 0) {
+                document.getElementById('reportContent').innerHTML = '<p>Nenhum check-in neste período.</p>';
+                return;
+            }
+            const totalCriancas = new Set(checkins.map(c => c.child_id)).size;
+            // Contar por sala
+            const salas = { Kids: 0, Babys: 0, Juvenis: 0, undefined: 0 };
+            checkins.forEach(c => { if (c.room) salas[c.room] = (salas[c.room] || 0) + 1; else salas.undefined++; });
+            // Aniversariantes do mês
+            const aniversariantes = [];
+            checkins.forEach(c => {
+                if (c.child.birth_date) {
+                    const birth = new Date(c.child.birth_date);
+                    if (birth.getMonth() + 1 === mes) aniversariantes.push(c.child.name);
+                }
+            });
+            const uniqueAniversariantes = [...new Set(aniversariantes)];
+            let html = `<h4>Relatório Mensal - ${mes}/${ano}</h4>`;
+            html += `<p><strong>Total de crianças atendidas:</strong> ${totalCriancas}</p>`;
+            html += `<p><strong>Total de check-ins:</strong> ${checkins.length}</p>`;
+            html += `<p><strong>Por sala:</strong> Kids: ${salas.Kids}, Babys: ${salas.Babys}, Juvenis: ${salas.Juvenis}, Sem sala: ${salas.undefined}</p>`;
+            html += `<p><strong>Aniversariantes do mês:</strong> ${uniqueAniversariantes.join(', ') || 'Nenhum'}</p>`;
+            document.getElementById('reportContent').innerHTML = html;
+        }
+
+        async function showSessionReport() {
+            // Selecionar sessão
+            const { data: sessions } = await supabaseClient.from('kids_sessions').select('id, name, session_date').order('session_date', { ascending: false });
+            if (!sessions || sessions.length === 0) {
+                alert('Nenhuma sessão encontrada.');
+                return;
+            }
+            let options = '';
+            sessions.forEach(s => {
+                options += `<option value="${s.id}">${s.name} (${new Date(s.session_date).toLocaleDateString()})</option>`;
+            });
+            const sessionId = prompt('Selecione a sessão:\n' + sessions.map((s,i) => `${i+1} - ${s.name} (${new Date(s.session_date).toLocaleDateString()})`).join('\n'), '1');
+            if (!sessionId) return;
+            const idx = parseInt(sessionId) - 1;
+            if (isNaN(idx) || idx < 0 || idx >= sessions.length) { alert('Inválido'); return; }
+            const selectedSession = sessions[idx];
+            // Buscar check-ins da sessão
+            const { data: checkins } = await supabaseClient
+                .from('kids_check_ins')
+                .select('*, child:child_id(name, birth_date)')
+                .eq('session_id', selectedSession.id);
+            if (!checkins || checkins.length === 0) {
+                document.getElementById('reportContent').innerHTML = '<p>Nenhum check-in nesta sessão.</p>';
+                return;
+            }
+            const totalCriancas = checkins.length;
+            const salas = { Kids: 0, Babys: 0, Juvenis: 0, undefined: 0 };
+            checkins.forEach(c => { if (c.room) salas[c.room] = (salas[c.room] || 0) + 1; else salas.undefined++; });
+            // Aniversariantes da semana da sessão (usando a data da sessão)
+            const sessionDate = new Date(selectedSession.session_date);
+            const startOfWeek = new Date(sessionDate);
+            startOfWeek.setDate(sessionDate.getDate() - sessionDate.getDay());
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            const aniversariantes = [];
+            checkins.forEach(c => {
+                if (c.child.birth_date) {
+                    const birth = new Date(c.child.birth_date);
+                    const birthThisYear = new Date(sessionDate.getFullYear(), birth.getMonth(), birth.getDate());
+                    if (birthThisYear >= startOfWeek && birthThisYear <= endOfWeek) aniversariantes.push(c.child.name);
+                }
+            });
+            const uniqueAniversariantes = [...new Set(aniversariantes)];
+            let html = `<h4>Relatório da Sessão: ${selectedSession.name}</h4>`;
+            html += `<p><strong>Data:</strong> ${new Date(selectedSession.session_date).toLocaleDateString()}</p>`;
+            html += `<p><strong>Total de crianças presentes:</strong> ${totalCriancas}</p>`;
+            html += `<p><strong>Por sala:</strong> Kids: ${salas.Kids}, Babys: ${salas.Babys}, Juvenis: ${salas.Juvenis}, Sem sala: ${salas.undefined}</p>`;
+            html += `<p><strong>Aniversariantes da semana:</strong> ${uniqueAniversariantes.join(', ') || 'Nenhum'}</p>`;
+            html += `<h5>Lista de crianças:</h5><ul>${checkins.map(c => `<li>${escapeHtml(c.child.name)} ${c.room ? `(${c.room})` : ''}</li>`).join('')}</ul>`;
+            document.getElementById('reportContent').innerHTML = html;
         }
 
         function openVisitanteModal() { document.getElementById('visitanteModal').style.display = 'flex'; }
