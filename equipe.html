@@ -669,10 +669,16 @@
             if (autoRestartScanner) clearTimeout(autoRestartScanner);
         }
 
-        async function onScanSuccess(decodedText) {
+        /*async function onScanSuccess(decodedText) {
             stopScanner();
             await processToken(decodedText);
             autoRestartScanner = setTimeout(() => startScanner(), 3000);
+        }*/
+
+        async function onScanSuccess(decodedText) {
+            stopScanner(); // para a câmera após a leitura
+            await processToken(decodedText);
+            // A câmera NÃO reinicia automaticamente – usuário precisa clicar no botão novamente
         }
 
         function onScanError(err) { console.log(err); }
@@ -681,12 +687,11 @@
 let pendingCheckinData = null;
 
 async function processToken(token) {
-    const { data: tokenData, error: tokenError } = await supabaseClient
+        const { data: tokenData, error: tokenError } = await supabaseClient
         .from('kids_temporary_tokens')
-        .select('*, child:child_id(id, name, allergies)')
+        .select('*, child:child_id(id, name, allergies, birth_date)')
         .eq('token', token)
         .single();
-
     if (tokenError || !tokenData) {
         document.getElementById('scanResult').innerHTML = '❌ QR inválido.';
         showToast('QR inválido', 'error');
@@ -722,21 +727,39 @@ async function processToken(token) {
     }
 
     // Prepara dados para o modal de seleção de sala
-    pendingCheckinData = {
-        tokenId: tokenData.id,
-        childId: childId,
-        childName: childName,
-        allergies: allergies,
-        tokenValue: token  // guarda o token original para impressão
-    };
-    openSelectRoomModal(childName, allergies);
+    // Prepara dados para o modal de seleção de sala
+        const birthDate = tokenData.child?.birth_date || null;
+        pendingCheckinData = {
+            tokenId: tokenData.id,
+            childId: childId,
+            childName: childName,
+            allergies: allergies,
+            birthDate: birthDate,
+            tokenValue: token
+        };
+        openSelectRoomModal(childName, allergies, birthDate);
 }
 
-function openSelectRoomModal(childName, allergies) {
+        function calcularIdade(birthDateStr) {
+            const birth = new Date(birthDateStr);
+            const today = new Date();
+            let age = today.getFullYear() - birth.getFullYear();
+            const m = today.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+            return age;
+        }
+
+function openSelectRoomModal(childName, allergies, birthDate) {
     const infoDiv = document.getElementById('roomChildInfo');
+    let idadeHtml = '';
+    if (birthDate) {
+        const idade = calcularIdade(birthDate);
+        idadeHtml = `<div style="color: #475569; font-size: 0.9rem;">📅 Idade: ${idade} anos</div>`;
+    }
     infoDiv.innerHTML = `
         <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.3rem;">${escapeHtml(childName)}</div>
-        ${allergies ? `<div class="badge" style="background:#fee2e2; color:#b91c1c;">⚠️ Alergia: ${escapeHtml(allergies)}</div>` : '<div style="color:#64748b;">Sem alergias</div>'}
+        ${idadeHtml}
+        ${allergies ? `<div class="badge" style="background:#fee2e2; color:#b91c1c; margin-top:0.3rem;">⚠️ Alergia: ${escapeHtml(allergies)}</div>` : '<div style="color:#64748b;">Sem alergias</div>'}
     `;
     document.getElementById('selectRoomModal').style.display = 'flex';
 }
