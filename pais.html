@@ -930,50 +930,60 @@
 
         
        // ==================== ÚLTIMOS REGISTROS (lista dos últimos check-ins de todos os filhos) ====================
+// ==================== ÚLTIMO REGISTRO DE CADA FILHO ====================
 async function loadLastRegister() {
     if (!currentFamilyId) return;
-    const { data: children } = await supabaseClient
+    const { data: children, error: childrenError } = await supabaseClient
         .from('kids_children')
         .select('id, name')
         .eq('family_id', currentFamilyId);
-    if (!children?.length) {
-        document.getElementById('lastRegisterInfo').innerHTML = '<p>Nenhum check-in registrado ainda.</p>';
+    
+    if (childrenError || !children?.length) {
+        document.getElementById('lastRegisterInfo').innerHTML = '<p>Nenhuma criança cadastrada.</p>';
         return;
     }
-    const childIds = children.map(c => c.id);
-    // Buscar os últimos 10 check-ins (ou ajuste o limite conforme desejar)
-    const { data: recentCheckins, error } = await supabaseClient
-        .from('kids_check_ins')
-        .select('*, child:child_id(name), session:session_id(name, session_date)')
-        .in('child_id', childIds)
-        .order('checked_in_at', { ascending: false })
-        .limit(10);
+
+    let html = '<div style="display: flex; flex-direction: column; gap: 0.8rem;">';
     
-    if (error) {
-        console.error(error);
-        document.getElementById('lastRegisterInfo').innerHTML = '<p>Erro ao carregar últimos registros.</p>';
-        return;
-    }
-    
-    if (recentCheckins && recentCheckins.length > 0) {
-        let html = '<ul style="list-style: none; padding: 0; margin: 0;">';
-        for (const ci of recentCheckins) {
+    for (const child of children) {
+        // Buscar o último check-in desta criança específica
+        const { data: lastCheckin, error: checkError } = await supabaseClient
+            .from('kids_check_ins')
+            .select('*, session:session_id(name, session_date)')
+            .eq('child_id', child.id)
+            .order('checked_in_at', { ascending: false })
+            .limit(1);
+        
+        if (checkError) {
+            console.error(checkError);
+            continue;
+        }
+        
+        if (lastCheckin && lastCheckin.length > 0) {
+            const ci = lastCheckin[0];
             const status = ci.checked_out_at 
-                ? `<span style="color: #059669;">✓ Saída: ${new Date(ci.checked_out_at).toLocaleTimeString()}</span>`
-                : `<span style="color: #2563eb; font-weight: 500;">● ATIVO (ainda presente)</span>`;
+                ? `<span style="color: #059669;">✓ Saída: ${new Date(ci.checked_out_at).toLocaleString()}</span>`
+                : `<span style="color: #2563eb; font-weight: 500;">● ATIVO</span>`;
             html += `
-                <li style="border-bottom: 1px solid #eef2ff; padding: 0.6rem 0;">
-                    <div><strong>${escapeHtml(ci.child.name)}</strong> - ${ci.session.name}</div>
-                    <div style="font-size: 0.8rem; color: #475569;">Check-in: ${new Date(ci.checked_in_at).toLocaleString()}</div>
+                <div style="border-bottom: 1px solid #eef2ff; padding-bottom: 0.6rem;">
+                    <div><strong>👶 ${escapeHtml(child.name)}</strong></div>
+                    <div style="font-size: 0.8rem; color: #475569;">${ci.session?.name || 'Sessão'} - ${new Date(ci.checked_in_at).toLocaleString()}</div>
                     <div style="font-size: 0.8rem;">${status}</div>
-                </li>
+                </div>
+            `;
+        } else {
+            // Criança sem nenhum check-in
+            html += `
+                <div style="border-bottom: 1px solid #eef2ff; padding-bottom: 0.6rem;">
+                    <div><strong>👶 ${escapeHtml(child.name)}</strong></div>
+                    <div style="font-size: 0.8rem; color: #94a3b8;">Nenhum check-in registrado ainda</div>
+                </div>
             `;
         }
-        html += '</ul>';
-        document.getElementById('lastRegisterInfo').innerHTML = html;
-    } else {
-        document.getElementById('lastRegisterInfo').innerHTML = '<p>Nenhum check-in registrado ainda.</p>';
     }
+    
+    html += '</div>';
+    document.getElementById('lastRegisterInfo').innerHTML = html;
 }
 
         // ==================== HISTÓRICO COMPLETO (MODAL) ====================
