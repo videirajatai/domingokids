@@ -609,20 +609,16 @@
         }
 
         function setupTabs() {
-            const tabs = document.querySelectorAll('.tab');
-            tabs.forEach(tab => {
-                tab.addEventListener('click', async () => {
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-                    currentRoomFilter = tab.dataset.room;
-                    if (currentRoomFilter === 'todos') {
-                        await loadPresentList();
-                    } else {
-                        openRoomModal(currentRoomFilter);
-                    }
-                });
+        const tabs = document.querySelectorAll('.tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', async () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentRoomFilter = tab.dataset.room;
+                await loadPresentList();
             });
-        }
+        });
+    }
 
         // ========== SCANNER ==========
         async function startScanner() {
@@ -812,68 +808,96 @@
         function closeChildDetailsModal() { document.getElementById('childDetailsModal').style.display = 'none'; }
 
         // ========== LISTA DE PRESENTES ==========
-        async function loadPresentList() {
-            if (!currentSessionId) return;
-            let query = supabaseClient
-                .from('kids_check_ins')
-                .select('*, child:child_id(id, name, allergies, birth_date, photo_url)')
-                .eq('session_id', currentSessionId)
-                .is('checked_out_at', null);
+       async function loadPresentList() {
+    if (!currentSessionId) return;
+    
+    // Buscar check-ins ativos da sessão atual
+    let query = supabaseClient
+        .from('kids_check_ins')
+        .select('*, child:child_id(id, name, allergies, birth_date, photo_url)')
+        .eq('session_id', currentSessionId)
+        .is('checked_out_at', null);
 
-            if (currentRoomFilter !== 'todos') {
-                query = query.eq('room', currentRoomFilter);
-            }
-            const { data: checkins } = await query;
-            const { data: visitants } = await supabaseClient
-                .from('kids_visitants')
-                .select('*')
-                .eq('session_id', currentSessionId);
+    const { data: allCheckins } = await query;
+    
+    // Filtrar por sala, se necessário
+    let checkins = allCheckins;
+    if (currentRoomFilter !== 'todos') {
+        checkins = allCheckins?.filter(c => c.room === currentRoomFilter) || [];
+    }
 
-            let html = '';
-            if (checkins?.length) {
-                for (const c of checkins) {
-                    let isBirthdayWeek = false;
-                    if (c.child.birth_date) {
-                        const birth = new Date(c.child.birth_date);
-                        const today = new Date();
-                        const weekLater = new Date();
-                        weekLater.setDate(today.getDate() + 7);
-                        const birthThisYear = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
-                        if (birthThisYear >= today && birthThisYear <= weekLater) isBirthdayWeek = true;
-                    }
-                    const birthdayIcon = isBirthdayWeek ? '🎂 ' : '';
-                    html += `
-                        <div class="present-item">
-                            <div class="present-info">
-                                <div class="present-name">${birthdayIcon}${escapeHtml(c.child.name)} ${c.child.allergies ? '<span class="badge">⚠️</span>' : ''}</div>
-                                <div class="present-time">Check-in: ${new Date(c.checked_in_at).toLocaleTimeString()}</div>
-                            </div>
-                            <div class="present-actions">
-                                <button class="btn-icon" onclick="showChildDetails('${c.child_id}')">👁️</button>
-                                <button class="btn-icon" onclick="reprintLabelFromList('${c.id}')">🖨️</button>
-                                <button class="btn-icon btn-danger" onclick="checkoutManual('${c.id}')">Check-out</button>
-                            </div>
-                        </div>
-                    `;
-                }
+    const { data: visitants } = await supabaseClient
+        .from('kids_visitants')
+        .select('*')
+        .eq('session_id', currentSessionId);
+
+    let html = '';
+    
+    // Botão de gerenciar (aparece apenas quando não está na aba "todos")
+    if (currentRoomFilter !== 'todos') {
+        html += `
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+                <button class="btn-secondary" onclick="openRoomModal('${currentRoomFilter}')" style="display: flex; align-items: center; gap: 0.4rem;">
+                    <span>🔄</span> Gerenciar crianças nesta sala
+                </button>
+            </div>
+        `;
+    }
+    
+    // Crianças cadastradas
+    if (checkins?.length) {
+        html += `<h4>👶 Crianças cadastradas ${currentRoomFilter !== 'todos' ? `(Sala: ${currentRoomFilter})` : ''}</h4>`;
+        for (const c of checkins) {
+            let isBirthdayWeek = false;
+            if (c.child.birth_date) {
+                const birth = new Date(c.child.birth_date);
+                const today = new Date();
+                const weekLater = new Date();
+                weekLater.setDate(today.getDate() + 7);
+                const birthThisYear = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
+                if (birthThisYear >= today && birthThisYear <= weekLater) isBirthdayWeek = true;
             }
-            if (visitants?.length) {
-                html += `<div style="margin-top:0.5rem;"><strong>📝 Visitantes</strong></div>`;
-                html += visitants.map(v => `
-                    <div class="present-item visitant-item">
-                        <div class="present-info">
-                            <div class="present-name">${escapeHtml(v.child_name)} (resp: ${escapeHtml(v.responsible_name)})</div>
-                            <div class="present-time">Check-in: ${new Date(v.checked_in_at).toLocaleTimeString()}</div>
-                        </div>
-                        <div class="present-actions">
-                            <button class="btn-icon btn-danger" onclick="removeVisitant('${v.id}')">Finalizar</button>
-                        </div>
+            const birthdayIcon = isBirthdayWeek ? '🎂 ' : '';
+            html += `
+                <div class="present-item" style="border-left-color: ${c.room === 'Kids' ? '#3b82f6' : (c.room === 'Babys' ? '#f59e0b' : (c.room === 'Juvenis' ? '#8b5cf6' : '#10b981'))}">
+                    <div class="present-info">
+                        <div class="present-name">${birthdayIcon}${escapeHtml(c.child.name)} ${c.child.allergies ? '<span class="badge">⚠️</span>' : ''}</div>
+                        <div class="present-time">Check-in: ${new Date(c.checked_in_at).toLocaleTimeString()}</div>
+                        ${c.room !== 'todos' && currentRoomFilter === 'todos' ? `<div class="present-time" style="color:${c.room === 'Kids' ? '#3b82f6' : (c.room === 'Babys' ? '#f59e0b' : '#8b5cf6')}">📌 Sala: ${c.room}</div>` : ''}
                     </div>
-                `).join('');
-            }
-            if (!checkins?.length && !visitants?.length) html = '<p style="text-align:center;color:#64748b;">Nenhuma criança presente.</p>';
-            document.getElementById('presentList').innerHTML = html;
+                    <div class="present-actions">
+                        <button class="btn-icon" onclick="showChildDetails('${c.child_id}')">👁️</button>
+                        <button class="btn-icon" onclick="reprintLabelFromList('${c.id}')">🖨️</button>
+                        <button class="btn-icon btn-danger" onclick="checkoutManual('${c.id}')">Check-out</button>
+                    </div>
+                </div>
+            `;
         }
+    } else if (currentRoomFilter !== 'todos') {
+        html += `<p style="text-align:center;color:#64748b;">Nenhuma criança nesta sala. Clique em "Gerenciar" para adicionar.</p>`;
+    }
+    
+    // Visitantes (só aparecem na aba "todos")
+    if (currentRoomFilter === 'todos' && visitants?.length) {
+        html += `<h4 style="margin-top:1rem;">📝 Visitantes</h4>`;
+        html += visitants.map(v => `
+            <div class="present-item visitant-item">
+                <div class="present-info">
+                    <div class="present-name">${escapeHtml(v.child_name)} (resp: ${escapeHtml(v.responsible_name)})</div>
+                    <div class="present-time">Check-in: ${new Date(v.checked_in_at).toLocaleTimeString()}</div>
+                </div>
+                <div class="present-actions">
+                    <button class="btn-icon btn-danger" onclick="removeVisitant('${v.id}')">Finalizar</button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    if (!checkins?.length && (!visitants?.length || currentRoomFilter !== 'todos')) {
+        html = '<p style="text-align:center;color:#64748b;">Nenhuma criança presente.</p>';
+    }
+    document.getElementById('presentList').innerHTML = html;
+}
 
         async function checkoutManual(checkinId) {
             await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', checkinId);
@@ -940,23 +964,30 @@
         }
 
         async function saveRoomAssignments() {
-            const checkboxes = document.querySelectorAll('.room-checkbox');
-            const updates = [];
-            for (const cb of checkboxes) {
-                const checkinId = cb.dataset.checkinId;
-                const shouldAssign = cb.checked;
-                if (shouldAssign) updates.push({ id: checkinId, room: pendingRoom });
-                else {
-                    const child = childrenForRoom.find(c => c.checkinId == checkinId);
-                    if (child && child.currentRoom === pendingRoom) updates.push({ id: checkinId, room: 'todos' });
-                }
+    const checkboxes = document.querySelectorAll('.room-checkbox');
+    const updates = [];
+    for (const cb of checkboxes) {
+        const checkinId = cb.dataset.checkinId;
+        const shouldAssign = cb.checked;
+        if (shouldAssign) {
+            updates.push({ id: checkinId, room: pendingRoom });
+        } else {
+            const child = childrenForRoom.find(c => c.checkinId == checkinId);
+            if (child && child.currentRoom === pendingRoom) {
+                updates.push({ id: checkinId, room: 'todos' });
             }
-            for (const upd of updates) await supabaseClient.from('kids_check_ins').update({ room: upd.room }).eq('id', upd.id);
-            closeRoomModal();
-            await loadPresentList();
-            document.querySelector('.tab[data-room="todos"]').click();
-            showToast('Salas atualizadas', 'success');
         }
+    }
+    for (const upd of updates) {
+        await supabaseClient.from('kids_check_ins').update({ room: upd.room }).eq('id', upd.id);
+    }
+    closeRoomModal();
+    // Recarregar a lista mantendo a aba atual
+    await loadPresentList();
+    showToast('Salas atualizadas', 'success');
+}
+
+        
         function closeRoomModal() { document.getElementById('roomModal').style.display = 'none'; pendingRoom = null; }
 
         // ========== VISITANTE ==========
