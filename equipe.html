@@ -546,6 +546,24 @@
         </div>
     </div>
 
+    <!-- Modal para selecionar sala antes do check-in -->
+    <div id="selectRoomModal" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <button class="modal-close" onclick="closeSelectRoomModal()">&times;</button>
+            <div class="modal-title" style="margin-bottom: 0.5rem;">🏷️ Check-in</div>
+            <div id="roomChildInfo" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 1rem;">
+                <!-- Informações da criança serão preenchidas dinamicamente -->
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+                <button class="room-option" data-room="todos" style="background: #64748b; color: white; border: none; padding: 0.7rem; border-radius: 2rem; font-weight: 500; cursor: pointer;">👶 Todos</button>
+                <button class="room-option" data-room="Kids" style="background: #3b82f6; color: white; border: none; padding: 0.7rem; border-radius: 2rem; font-weight: 500; cursor: pointer;">🍼 Kids</button>
+                <button class="room-option" data-room="Babys" style="background: #f59e0b; color: white; border: none; padding: 0.7rem; border-radius: 2rem; font-weight: 500; cursor: pointer;">🧸 Babys</button>
+                <button class="room-option" data-room="Juvenis" style="background: #8b5cf6; color: white; border: none; padding: 0.7rem; border-radius: 2rem; font-weight: 500; cursor: pointer;">⚡ Juvenis</button>
+            </div>
+            <button class="btn-secondary" onclick="closeSelectRoomModal()" style="margin-top: 1rem;">Cancelar</button>
+        </div>
+    </div>
+
     <!-- Área para impressão -->
     <div id="printArea" style="display: none;"></div>
     <div id="reportPrintArea" style="display: none;"></div>
@@ -581,6 +599,13 @@
             currentStaffId = user.id;
             await loadSessions();
             setupTabs();
+            // Event listeners para os botões do modal de sala
+            document.querySelectorAll('.room-option').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const room = btn.dataset.room;
+                    confirmCheckinWithRoom(room);
+                });
+            });
         }
 
         async function loadSessions() {
@@ -652,7 +677,10 @@
 
         function onScanError(err) { console.log(err); }
 
-       async function processToken(token) {
+       // Variável para armazenar dados pendentes do check-in
+let pendingCheckinData = null;
+
+async function processToken(token) {
     const { data: tokenData, error: tokenError } = await supabaseClient
         .from('kids_temporary_tokens')
         .select('*, child:child_id(id, name, allergies)')
@@ -683,7 +711,7 @@
         .is('checked_out_at', null)
         .maybeSingle();
 
-    // Se existe, faz checkout (sem perguntar sala)
+    // Se existe, faz checkout
     if (activeCheckin) {
         await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', activeCheckin.id);
         await supabaseClient.from('kids_temporary_tokens').update({ expires_at: new Date().toISOString() }).eq('id', tokenData.id);
@@ -693,30 +721,35 @@
         return;
     }
 
-    // CHECK-IN: perguntar a sala
-    let selectedRoom = 'todos';
-    const roomOptions = {
-        '1': 'todos',
-        '2': 'Kids',
-        '3': 'Babys',
-        '4': 'Juvenis'
+    // Prepara dados para o modal de seleção de sala
+    pendingCheckinData = {
+        tokenId: tokenData.id,
+        childId: childId,
+        childName: childName,
+        allergies: allergies,
+        tokenValue: token  // guarda o token original para impressão
     };
-    const roomNames = {
-        'todos': 'Todos',
-        'Kids': 'Kids',
-        'Babys': 'Babys',
-        'Juvenis': 'Juvenis'
-    };
-    const userChoice = prompt(
-        `🧒 Criança: ${childName}\n⚠️ Alergias: ${allergies || 'Nenhuma'}\n\n📌 Escolha a sala:\n1 - Todos\n2 - Kids\n3 - Babys\n4 - Juvenis\n\nDigite o número:`,
-        '1'
-    );
-    if (userChoice && roomOptions[userChoice]) {
-        selectedRoom = roomOptions[userChoice];
-    } else if (userChoice !== null) {
-        showToast('Opção inválida, usando "Todos"', 'info');
-    }
+    openSelectRoomModal(childName, allergies);
+}
 
+function openSelectRoomModal(childName, allergies) {
+    const infoDiv = document.getElementById('roomChildInfo');
+    infoDiv.innerHTML = `
+        <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.3rem;">${escapeHtml(childName)}</div>
+        ${allergies ? `<div class="badge" style="background:#fee2e2; color:#b91c1c;">⚠️ Alergia: ${escapeHtml(allergies)}</div>` : '<div style="color:#64748b;">Sem alergias</div>'}
+    `;
+    document.getElementById('selectRoomModal').style.display = 'flex';
+}
+
+function closeSelectRoomModal() {
+    document.getElementById('selectRoomModal').style.display = 'none';
+    pendingCheckinData = null;
+}
+
+async function confirmCheckinWithRoom(room) {
+    if (!pendingCheckinData) return;
+    const { tokenId, childId, childName, allergies, tokenValue } = pendingCheckinData;
+    
     // Criar check-in com a sala escolhida
     const { data: newCheckin, error: insertError } = await supabaseClient
         .from('kids_check_ins')
@@ -724,26 +757,27 @@
             child_id: childId,
             session_id: currentSessionId,
             checked_in_by: currentStaffId,
-            token_id: tokenData.id,
-            room: selectedRoom
+            token_id: tokenId,
+            room: room
         })
         .select()
         .single();
 
     if (insertError) {
-        document.getElementById('scanResult').innerHTML = '❌ Erro no check-in.';
         showToast('Erro no check-in', 'error');
-        return;
+        document.getElementById('scanResult').innerHTML = '❌ Erro no check-in.';
+    } else {
+        const roomDisplay = room === 'todos' ? 'Todos' : room;
+        document.getElementById('scanResult').innerHTML = `✅ Check-in: ${childName} (${roomDisplay})`;
+        showToast(`Check-in: ${childName} - Sala ${roomDisplay}`, 'success');
+        await loadPresentList();
+        if (confirm(`Imprimir etiqueta para ${childName}?`)) {
+            printLabel(tokenValue, childName, allergies, newCheckin.id);
+        }
     }
-
-    document.getElementById('scanResult').innerHTML = `✅ Check-in: ${childName} (${roomNames[selectedRoom]})`;
-    showToast(`Check-in: ${childName} - Sala ${roomNames[selectedRoom]}`, 'success');
-    await loadPresentList();
-    
-    if (confirm(`Imprimir etiqueta para ${childName}?`)) {
-        printLabel(token, childName, allergies, newCheckin.id);
-    }
+    closeSelectRoomModal();
 }
+        
 
         function printLabel(qrToken, childName, allergies, checkinId) {
             const sessionName = document.getElementById('sessionSelect').selectedOptions[0]?.text || 'Culto';
