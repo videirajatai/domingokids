@@ -652,72 +652,98 @@
 
         function onScanError(err) { console.log(err); }
 
-        async function processToken(token) {
-            const { data: tokenData, error: tokenError } = await supabaseClient
-                .from('kids_temporary_tokens')
-                .select('*, child:child_id(id, name, allergies)')
-                .eq('token', token)
-                .single();
+       async function processToken(token) {
+    const { data: tokenData, error: tokenError } = await supabaseClient
+        .from('kids_temporary_tokens')
+        .select('*, child:child_id(id, name, allergies)')
+        .eq('token', token)
+        .single();
 
-            if (tokenError || !tokenData) {
-                document.getElementById('scanResult').innerHTML = '❌ QR inválido.';
-                showToast('QR inválido', 'error');
-                return;
-            }
-            if (new Date(tokenData.expires_at) < new Date()) {
-                document.getElementById('scanResult').innerHTML = '❌ QR expirado.';
-                showToast('QR expirado', 'error');
-                return;
-            }
+    if (tokenError || !tokenData) {
+        document.getElementById('scanResult').innerHTML = '❌ QR inválido.';
+        showToast('QR inválido', 'error');
+        return;
+    }
+    if (new Date(tokenData.expires_at) < new Date()) {
+        document.getElementById('scanResult').innerHTML = '❌ QR expirado.';
+        showToast('QR expirado', 'error');
+        return;
+    }
 
-            const childId = tokenData.child_id;
-            const childName = tokenData.child?.name || 'Criança';
-            const allergies = tokenData.child?.allergies || '';
+    const childId = tokenData.child_id;
+    const childName = tokenData.child?.name || 'Criança';
+    const allergies = tokenData.child?.allergies || '';
 
-            const { data: activeCheckin } = await supabaseClient
-                .from('kids_check_ins')
-                .select('id')
-                .eq('child_id', childId)
-                .eq('session_id', currentSessionId)
-                .is('checked_out_at', null)
-                .maybeSingle();
+    // Verificar se já existe check-in ativo
+    const { data: activeCheckin } = await supabaseClient
+        .from('kids_check_ins')
+        .select('id')
+        .eq('child_id', childId)
+        .eq('session_id', currentSessionId)
+        .is('checked_out_at', null)
+        .maybeSingle();
 
-            // CHECKOUT
-            if (activeCheckin) {
-                await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', activeCheckin.id);
-                await supabaseClient.from('kids_temporary_tokens').update({ expires_at: new Date().toISOString() }).eq('id', tokenData.id);
-                document.getElementById('scanResult').innerHTML = `✅ Check-out: ${childName}`;
-                showToast(`Check-out: ${childName}`, 'success');
-                await loadPresentList();
-                return;
-            }
+    // Se existe, faz checkout (sem perguntar sala)
+    if (activeCheckin) {
+        await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', activeCheckin.id);
+        await supabaseClient.from('kids_temporary_tokens').update({ expires_at: new Date().toISOString() }).eq('id', tokenData.id);
+        document.getElementById('scanResult').innerHTML = `✅ Check-out: ${childName}`;
+        showToast(`Check-out: ${childName}`, 'success');
+        await loadPresentList();
+        return;
+    }
 
-            // CHECK-IN
-            const { data: newCheckin, error: insertError } = await supabaseClient
-                .from('kids_check_ins')
-                .insert({
-                    child_id: childId,
-                    session_id: currentSessionId,
-                    checked_in_by: currentStaffId,
-                    token_id: tokenData.id,
-                    room: 'todos'
-                })
-                .select()
-                .single();
+    // CHECK-IN: perguntar a sala
+    let selectedRoom = 'todos';
+    const roomOptions = {
+        '1': 'todos',
+        '2': 'Kids',
+        '3': 'Babys',
+        '4': 'Juvenis'
+    };
+    const roomNames = {
+        'todos': 'Todos',
+        'Kids': 'Kids',
+        'Babys': 'Babys',
+        'Juvenis': 'Juvenis'
+    };
+    const userChoice = prompt(
+        `🧒 Criança: ${childName}\n⚠️ Alergias: ${allergies || 'Nenhuma'}\n\n📌 Escolha a sala:\n1 - Todos\n2 - Kids\n3 - Babys\n4 - Juvenis\n\nDigite o número:`,
+        '1'
+    );
+    if (userChoice && roomOptions[userChoice]) {
+        selectedRoom = roomOptions[userChoice];
+    } else if (userChoice !== null) {
+        showToast('Opção inválida, usando "Todos"', 'info');
+    }
 
-            if (insertError) {
-                document.getElementById('scanResult').innerHTML = '❌ Erro no check-in.';
-                showToast('Erro no check-in', 'error');
-                return;
-            }
+    // Criar check-in com a sala escolhida
+    const { data: newCheckin, error: insertError } = await supabaseClient
+        .from('kids_check_ins')
+        .insert({
+            child_id: childId,
+            session_id: currentSessionId,
+            checked_in_by: currentStaffId,
+            token_id: tokenData.id,
+            room: selectedRoom
+        })
+        .select()
+        .single();
 
-            document.getElementById('scanResult').innerHTML = `✅ Check-in: ${childName}`;
-            showToast(`Check-in: ${childName}`, 'success');
-            await loadPresentList();
-            if (confirm(`Imprimir etiqueta para ${childName}?`)) {
-                printLabel(token, childName, allergies, newCheckin.id);
-            }
-        }
+    if (insertError) {
+        document.getElementById('scanResult').innerHTML = '❌ Erro no check-in.';
+        showToast('Erro no check-in', 'error');
+        return;
+    }
+
+    document.getElementById('scanResult').innerHTML = `✅ Check-in: ${childName} (${roomNames[selectedRoom]})`;
+    showToast(`Check-in: ${childName} - Sala ${roomNames[selectedRoom]}`, 'success');
+    await loadPresentList();
+    
+    if (confirm(`Imprimir etiqueta para ${childName}?`)) {
+        printLabel(token, childName, allergies, newCheckin.id);
+    }
+}
 
         function printLabel(qrToken, childName, allergies, checkinId) {
             const sessionName = document.getElementById('sessionSelect').selectedOptions[0]?.text || 'Culto';
