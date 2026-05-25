@@ -425,6 +425,41 @@
         .family-name-card h3 {
             margin: 0;
         }
+
+        /* Toast notification moderno */
+.toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100%);
+    background: #1e293b;
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border-radius: 3rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+.toast-success {
+    background: #10b981;
+}
+.toast-error {
+    background: #ef4444;
+}
+.toast-info {
+    background: #3b82f6;
+}
     </style>
 </head>
 <body>
@@ -1103,6 +1138,26 @@ async function loadLastRegister() {
             document.getElementById('childModal').style.display = 'flex';
         }
 
+        function showToast(message, type = 'info') {
+            // Remove toast existente se houver
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) existingToast.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `<span>${message}</span>`;
+            document.body.appendChild(toast);
+            
+            // Força reflow para animação
+            toast.offsetHeight;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
         async function saveChild() {
             const childId = document.getElementById('childId').value;
             const name = document.getElementById('childName').value.trim();
@@ -1143,18 +1198,39 @@ async function loadLastRegister() {
         // ==================== QR CODE ====================
         async function generateQR() {
             const childId = document.getElementById('childSelect').value;
-            if (!childId) { alert('Selecione uma criança.'); return; }
-            const token = crypto.randomUUID();
+            if (!childId) {
+                showToast('Selecione uma criança para gerar o QR Code.', 'error');
+                return;
+            }
+            const token = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
             const expiresAt = new Date();
             expiresAt.setHours(expiresAt.getHours() + 4);
-            const { error } = await supabaseClient.from('kids_temporary_tokens').insert({ family_id: currentFamilyId, child_id: childId, token: token, expires_at: expiresAt.toISOString() });
-            if (error) { alert('Erro ao gerar QR: ' + error.message); return; }
+        
+            const { error } = await supabaseClient
+                .from('kids_temporary_tokens')
+                .insert({
+                    family_id: currentFamilyId,
+                    child_id: childId,
+                    token: token,
+                    expires_at: expiresAt.toISOString()
+                });
+        
+            if (error) {
+                showToast('Erro ao gerar QR: ' + error.message, 'error');
+                return;
+            }
+        
             const qrDiv = document.getElementById('qrcode');
             qrDiv.innerHTML = '';
-            new QRCode(qrDiv, { text: token, width: 200, height: 200 });
-            alert('QR Code gerado! Válido por 4 horas.');
+            new QRCode(qrDiv, {
+                text: token,
+                width: 200,
+                height: 200
+            });
+            showToast('✅ QR Code gerado! Válido por 4 horas.', 'success');
         }
 
+        
         // ==================== MODAL CONFIGURAÇÃO ====================
         function openConfigModal() {
             if (!currentFamilyId) { alert('Crie uma família primeiro.'); return; }
