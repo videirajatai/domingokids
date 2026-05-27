@@ -204,39 +204,7 @@
             color: #334155;
         }
 
-        /* Abas principais (novas) */
-        .main-tabs {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 0.5rem;
-        }
-        .main-tab {
-            padding: 0.5rem 1.2rem;
-            border-radius: 2rem;
-            cursor: pointer;
-            background: #f1f5f9;
-            transition: all 0.2s;
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-        .main-tab.active {
-            background: #3b82f6;
-            color: white;
-            box-shadow: 0 2px 8px rgba(59,130,246,0.3);
-        }
-        .main-tab:hover:not(.active) {
-            background: #e2e8f0;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-
-        /* Abas de salas (já existentes) */
+        /* Abas */
         .tabs {
             display: flex;
             gap: 0.5rem;
@@ -498,63 +466,55 @@
     </div>
 
     <div class="container">
-        <!-- Novo card com abas principais -->
+        <!-- Sessão atual -->
         <div class="card">
-            <div class="main-tabs" id="mainTabs">
-                <div class="main-tab active" data-tab="operacoes">⚙️ Operações</div>
-                <div class="main-tab" data-tab="presentes">👶 Crianças Presentes</div>
+            <div class="session-header">
+                <div class="session-selector">
+                    <select id="sessionSelect" onchange="changeSession()"></select>
+                </div>
+                <button class="btn-secondary" onclick="openSessionModal()">➕ Nova Sessão</button>
             </div>
+        </div>
 
-            <!-- Conteúdo da aba Operações -->
-            <div id="tabOperacoes" class="tab-content active">
-                <!-- Sessão atual (card interno) -->
-                <div style="margin-bottom: 1.5rem;">
-                    <div class="session-header">
-                        <div class="session-selector">
-                            <select id="sessionSelect" onchange="changeSession()"></select>
-                        </div>
-                        <button class="btn-secondary" onclick="openSessionModal()">➕ Nova Sessão</button>
-                    </div>
-                </div>
 
-                <!-- Scanner QR -->
-                <div style="margin-bottom: 1.5rem;">
-                    <div class="card-title">
-                        <span>📷</span> Escanear QR
-                    </div>
-                    <div class="scanner-area">
-                        <div id="reader"></div>
-                        <div class="scanner-buttons">
-                            <button class="btn-primary" id="startScannerBtn" onclick="startScanner()">📸 Abrir Câmera</button>
-                            <button class="btn-secondary" id="stopScannerBtn" onclick="stopScanner()" style="display:none;">⏹️ Parar</button>
-                        </div>
-                        <div id="scanResult" class="scan-result"></div>
-                    </div>
-                </div>
+        
 
-                <!-- Checkout rápido por número -->
-                <div>
-                    <div class="card-title">
-                        <span>🔢</span> Check-out por número do crachá
-                    </div>
-                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                        <input type="text" id="checkoutBadgeInput" placeholder="Digite o número do crachá" style="flex: 1;">
-                        <button class="btn-primary" onclick="checkoutByBadgeNumber()">✅ Check-out</button>
-                    </div>
-                    <div id="checkoutResult" style="margin-top: 0.5rem; font-size: 0.85rem; color: #475569;"></div>
-                </div>
+        <!-- Scanner QR -->
+        <div class="card">
+            <div class="card-title">
+                <span>📷</span> Escanear QR
             </div>
-
-            <!-- Conteúdo da aba Crianças Presentes -->
-            <div id="tabPresentes" class="tab-content">
-                <div class="tabs" id="tabsContainer">
-                    <div class="tab active" data-room="todos">👶 Todos</div>
-                    <div class="tab" data-room="Kids">🍼 Kids</div>
-                    <div class="tab" data-room="Babys">🧸 Babys</div>
-                    <div class="tab" data-room="Juvenis">⚡ Juvenis</div>
+            <div class="scanner-area">
+                <div id="reader"></div>
+                <div class="scanner-buttons">
+                    <button class="btn-primary" id="startScannerBtn" onclick="startScanner()">📸 Abrir Câmera</button>
+                    <button class="btn-secondary" id="stopScannerBtn" onclick="stopScanner()" style="display:none;">⏹️ Parar</button>
                 </div>
-                <div id="presentList">Carregando...</div>
+                <div id="scanResult" class="scan-result"></div>
             </div>
+        </div>
+
+        <!-- Checkout rápido por número -->
+        <div class="card">
+            <div class="card-title">
+                <span>🔢</span> Check-out por número do crachá
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <input type="text" id="checkoutBadgeInput" placeholder="Digite o número do crachá" style="flex: 1;">
+                <button class="btn-primary" onclick="checkoutByBadgeNumber()">✅ Check-out</button>
+            </div>
+            <div id="checkoutResult" style="margin-top: 0.5rem; font-size: 0.85rem; color: #475569;"></div>
+        </div>
+
+        <!-- Salas e lista de presentes -->
+        <div class="card">
+            <div class="tabs" id="tabsContainer">
+                <div class="tab active" data-room="todos">👶 Todos</div>
+                <div class="tab" data-room="Kids">🍼 Kids</div>
+                <div class="tab" data-room="Babys">🧸 Babys</div>
+                <div class="tab" data-room="Juvenis">⚡ Juvenis</div>
+            </div>
+            <div id="presentList">Carregando...</div>
         </div>
     </div>
 
@@ -603,21 +563,26 @@
 
     <!-- Modal para selecionar sala antes do check-in -->
     <div id="selectRoomModal" class="modal">
+        <!-- dentro do modal-content, após o div roomChildInfo, antes dos botões de sala -->
+        
+        
         <div class="modal-content" style="max-width: 400px; text-align: center;">
             <button class="modal-close" onclick="closeSelectRoomModal()">&times;</button>
             <div class="modal-title" style="margin-bottom: 0.5rem;">🏷️ Check-in</div>            
             <div id="roomChildInfo" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 1rem;">                
-            </div>
+          </div>
+        
             <div style="display: flex; flex-direction: column; gap: 0.8rem;">
-                <div style="margin-bottom: 1rem;">
-                    <label style="font-weight: 500;">Número do crachá</label>
-                    <input type="text" id="badgeNumberInput" placeholder="Ex: 12" inputmode="numeric" pattern="\d*" style="width: 100%; padding: 0.6rem; border-radius: 1rem; border: 1px solid #cbd5e1; text-align: center;">
-                </div>
+                        <div style="margin-bottom: 1rem;">
+                            <label style="font-weight: 500;">Número do crachá</label>
+                            <input type="text" id="badgeNumberInput" placeholder="Ex: 12" inputmode="numeric" pattern="\d*" style="width: 100%; padding: 0.6rem; border-radius: 1rem; border: 1px solid #cbd5e1; text-align: center;">
+                        </div>
                 <button class="room-option" data-room="todos" style="background: #64748b; color: white; border: none; padding: 0.7rem; border-radius: 2rem; font-weight: 500; cursor: pointer;">👶 Todos</button>
                 <button class="room-option" data-room="Kids" style="background: #3b82f6; color: white; border: none; padding: 0.7rem; border-radius: 2rem; font-weight: 500; cursor: pointer;">🍼 Kids</button>
                 <button class="room-option" data-room="Babys" style="background: #f59e0b; color: white; border: none; padding: 0.7rem; border-radius: 2rem; font-weight: 500; cursor: pointer;">🧸 Babys</button>
                 <button class="room-option" data-room="Juvenis" style="background: #8b5cf6; color: white; border: none; padding: 0.7rem; border-radius: 2rem; font-weight: 500; cursor: pointer;">⚡ Juvenis</button>
             </div>                         
+            <!--<button class="btn-secondary" onclick="closeSelectRoomModal()" style="margin-top: 1rem;">Cancelar</button> -->                      
         </div>
     </div>
 
@@ -656,7 +621,6 @@
             currentStaffId = user.id;
             await loadSessions();
             setupTabs();
-            setupMainTabs();
             // Event listeners para os botões do modal de sala
             document.querySelectorAll('.room-option').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -692,34 +656,16 @@
         }
 
         function setupTabs() {
-            const tabs = document.querySelectorAll('.tabs .tab');
-            tabs.forEach(tab => {
-                tab.addEventListener('click', async () => {
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-                    currentRoomFilter = tab.dataset.room;
-                    await loadPresentList();
-                });
+        const tabs = document.querySelectorAll('.tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', async () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentRoomFilter = tab.dataset.room;
+                await loadPresentList();
             });
-        }
-
-        function setupMainTabs() {
-            const mainTabs = document.querySelectorAll('.main-tab');
-            mainTabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    mainTabs.forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-                    const tabId = tab.dataset.tab;
-                    document.getElementById('tabOperacoes').classList.remove('active');
-                    document.getElementById('tabPresentes').classList.remove('active');
-                    if (tabId === 'operacoes') {
-                        document.getElementById('tabOperacoes').classList.add('active');
-                    } else {
-                        document.getElementById('tabPresentes').classList.add('active');
-                    }
-                });
-            });
-        }
+        });
+    }
 
         // ========== SCANNER ==========
         async function startScanner() {
@@ -745,67 +691,76 @@
             if (autoRestartScanner) clearTimeout(autoRestartScanner);
         }
 
-        async function onScanSuccess(decodedText) {
+        /*async function onScanSuccess(decodedText) {
             stopScanner();
             await processToken(decodedText);
+            autoRestartScanner = setTimeout(() => startScanner(), 3000);
+        }*/
+
+        async function onScanSuccess(decodedText) {
+            stopScanner(); // para a câmera após a leitura
+            await processToken(decodedText);
+            // A câmera NÃO reinicia automaticamente – usuário precisa clicar no botão novamente
         }
 
         function onScanError(err) { console.log(err); }
 
-        // Variável para armazenar dados pendentes do check-in
-        let pendingCheckinData = null;
+       // Variável para armazenar dados pendentes do check-in
+let pendingCheckinData = null;
 
-        async function processToken(token) {
-            const { data: tokenData, error: tokenError } = await supabaseClient
-                .from('kids_temporary_tokens')
-                .select('*, child:child_id(id, name, allergies, birth_date)')
-                .eq('token', token)
-                .single();
-            if (tokenError || !tokenData) {
-                document.getElementById('scanResult').innerHTML = '❌ QR inválido.';
-                showToast('QR inválido', 'error');
-                return;
-            }
-            if (new Date(tokenData.expires_at) < new Date()) {
-                document.getElementById('scanResult').innerHTML = '❌ QR expirado.';
-                showToast('QR expirado', 'error');
-                return;
-            }
+async function processToken(token) {
+        const { data: tokenData, error: tokenError } = await supabaseClient
+        .from('kids_temporary_tokens')
+        .select('*, child:child_id(id, name, allergies, birth_date)')
+        .eq('token', token)
+        .single();
+    if (tokenError || !tokenData) {
+        document.getElementById('scanResult').innerHTML = '❌ QR inválido.';
+        showToast('QR inválido', 'error');
+        return;
+    }
+    if (new Date(tokenData.expires_at) < new Date()) {
+        document.getElementById('scanResult').innerHTML = '❌ QR expirado.';
+        showToast('QR expirado', 'error');
+        return;
+    }
 
-            const childId = tokenData.child_id;
-            const childName = tokenData.child?.name || 'Criança';
-            const allergies = tokenData.child?.allergies || '';
+    const childId = tokenData.child_id;
+    const childName = tokenData.child?.name || 'Criança';
+    const allergies = tokenData.child?.allergies || '';
 
-            // Verificar se já existe check-in ativo
-            const { data: activeCheckin } = await supabaseClient
-                .from('kids_check_ins')
-                .select('id')
-                .eq('child_id', childId)
-                .eq('session_id', currentSessionId)
-                .is('checked_out_at', null)
-                .maybeSingle();
+    // Verificar se já existe check-in ativo
+    const { data: activeCheckin } = await supabaseClient
+        .from('kids_check_ins')
+        .select('id')
+        .eq('child_id', childId)
+        .eq('session_id', currentSessionId)
+        .is('checked_out_at', null)
+        .maybeSingle();
 
-            // Se existe, faz checkout
-            if (activeCheckin) {
-                await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', activeCheckin.id);
-                await supabaseClient.from('kids_temporary_tokens').update({ expires_at: new Date().toISOString() }).eq('id', tokenData.id);
-                document.getElementById('scanResult').innerHTML = `✅ Check-out: ${childName}`;
-                showToast(`Check-out: ${childName}`, 'success');
-                await loadPresentList();
-                return;
-            }
+    // Se existe, faz checkout
+    if (activeCheckin) {
+        await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', activeCheckin.id);
+        await supabaseClient.from('kids_temporary_tokens').update({ expires_at: new Date().toISOString() }).eq('id', tokenData.id);
+        document.getElementById('scanResult').innerHTML = `✅ Check-out: ${childName}`;
+        showToast(`Check-out: ${childName}`, 'success');
+        await loadPresentList();
+        return;
+    }
 
-            const birthDate = tokenData.child?.birth_date || null;
-            pendingCheckinData = {
-                tokenId: tokenData.id,
-                childId: childId,
-                childName: childName,
-                allergies: allergies,
-                birthDate: birthDate,
-                tokenValue: token
-            };
-            openSelectRoomModal(childName, allergies, birthDate);
-        }
+    // Prepara dados para o modal de seleção de sala
+    // Prepara dados para o modal de seleção de sala
+        const birthDate = tokenData.child?.birth_date || null;
+        pendingCheckinData = {
+            tokenId: tokenData.id,
+            childId: childId,
+            childName: childName,
+            allergies: allergies,
+            birthDate: birthDate,
+            tokenValue: token
+        };
+        openSelectRoomModal(childName, allergies, birthDate);
+}
 
         function calcularIdade(birthDateStr) {
             const birth = new Date(birthDateStr);
@@ -816,60 +771,62 @@
             return age;
         }
 
-        function openSelectRoomModal(childName, allergies, birthDate) {
-            const infoDiv = document.getElementById('roomChildInfo');
-            let idadeHtml = '';
-            if (birthDate) {
-                const idade = calcularIdade(birthDate);
-                idadeHtml = `<div style="color: #475569; font-size: 0.9rem;">📅 Idade: ${idade} anos</div>`;
-            }
-            infoDiv.innerHTML = `
-                <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.3rem;">${escapeHtml(childName)}</div>
-                ${idadeHtml}
-                ${allergies ? `<div class="badge" style="background:#fee2e2; color:#b91c1c; margin-top:0.3rem;">⚠️ Alergia: ${escapeHtml(allergies)}</div>` : '<div style="color:#64748b;">Sem alergias</div>'}
-            `;
-            document.getElementById('selectRoomModal').style.display = 'flex';
-        }
+function openSelectRoomModal(childName, allergies, birthDate) {
+    const infoDiv = document.getElementById('roomChildInfo');
+    let idadeHtml = '';
+    if (birthDate) {
+        const idade = calcularIdade(birthDate);
+        idadeHtml = `<div style="color: #475569; font-size: 0.9rem;">📅 Idade: ${idade} anos</div>`;
+    }
+    infoDiv.innerHTML = `
+        <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.3rem;">${escapeHtml(childName)}</div>
+        ${idadeHtml}
+        ${allergies ? `<div class="badge" style="background:#fee2e2; color:#b91c1c; margin-top:0.3rem;">⚠️ Alergia: ${escapeHtml(allergies)}</div>` : '<div style="color:#64748b;">Sem alergias</div>'}
+    `;
+    document.getElementById('selectRoomModal').style.display = 'flex';
+}
 
-        function closeSelectRoomModal() {
-            document.getElementById('selectRoomModal').style.display = 'none';
-            document.getElementById('badgeNumberInput').value = '';
-            pendingCheckinData = null;
-        }
+function closeSelectRoomModal() {
+    document.getElementById('selectRoomModal').style.display = 'none';
+    document.getElementById('badgeNumberInput').value = '';
+    pendingCheckinData = null;
+}
         
-        async function confirmCheckinWithRoom(room) {
-            if (!pendingCheckinData) return;
-            const { tokenId, childId, childName, allergies, tokenValue } = pendingCheckinData;
-            const badgeNumber = document.getElementById('badgeNumberInput').value.trim() || null;
-            
-            const { data: newCheckin, error: insertError } = await supabaseClient
-                .from('kids_check_ins')
-                .insert({
-                    child_id: childId,
-                    session_id: currentSessionId,
-                    checked_in_by: currentStaffId,
-                    token_id: tokenId,
-                    room: room,
-                    badge_number: badgeNumber
-                })
-                .select()
-                .single();
+async function confirmCheckinWithRoom(room) {
+    if (!pendingCheckinData) return;
+    const { tokenId, childId, childName, allergies, tokenValue } = pendingCheckinData;
+    const badgeNumber = document.getElementById('badgeNumberInput').value.trim() || null;
+    
+    const { data: newCheckin, error: insertError } = await supabaseClient
+        .from('kids_check_ins')
+        .insert({
+            child_id: childId,
+            session_id: currentSessionId,
+            checked_in_by: currentStaffId,
+            token_id: tokenId,
+            room: room,
+            badge_number: badgeNumber
+        })
+        .select()
+        .single();
 
-            if (insertError) {
-                showToast('Erro no check-in', 'error');
-                document.getElementById('scanResult').innerHTML = '❌ Erro no check-in.';
-            } else {
-                const roomDisplay = room === 'todos' ? 'Todos' : room;
-                document.getElementById('scanResult').innerHTML = `✅ Check-in: ${childName} (${roomDisplay})${badgeNumber ? ` - Crachá: ${badgeNumber}` : ''}`;
-                showToast(`Check-in: ${childName} - Sala ${roomDisplay}`, 'success');
-                await loadPresentList();
-                if (confirm(`Imprimir etiqueta para ${childName}?`)) {
-                    printLabel(tokenValue, childName, allergies, newCheckin.id);
-                }
-            }
-            document.getElementById('badgeNumberInput').value = '';
-            closeSelectRoomModal();
-        }
+    if (insertError) {
+        showToast('Erro no check-in', 'error');
+        document.getElementById('scanResult').innerHTML = '❌ Erro no check-in.';
+    } else {
+        const roomDisplay = room === 'todos' ? 'Todos' : room;
+        document.getElementById('scanResult').innerHTML = `✅ Check-in: ${childName} (${roomDisplay})${badgeNumber ? ` - Crachá: ${badgeNumber}` : ''}`;
+        showToast(`Check-in: ${childName} - Sala ${roomDisplay}`, 'success');
+        await loadPresentList();
+        /*if (confirm(`Imprimir etiqueta para ${childName}?`)) {
+            printLabel(tokenValue, childName, allergies, newCheckin.id);
+        }*/
+    }
+    // Limpar campo do crachá
+    document.getElementById('badgeNumberInput').value = '';
+    closeSelectRoomModal();
+}
+        
 
         function printLabel(qrToken, childName, allergies, checkinId) {
             const sessionName = document.getElementById('sessionSelect').selectedOptions[0]?.text || 'Culto';
@@ -960,91 +917,96 @@
         function closeChildDetailsModal() { document.getElementById('childDetailsModal').style.display = 'none'; }
 
         // ========== LISTA DE PRESENTES ==========
-        async function loadPresentList() {
-            if (!currentSessionId) return;
-            
-            let query = supabaseClient
-                .from('kids_check_ins')
-                .select('*, child:child_id(id, name, allergies, birth_date, photo_url)')
-                .eq('session_id', currentSessionId)
-                .is('checked_out_at', null);
+       async function loadPresentList() {
+    if (!currentSessionId) return;
+    
+    // Buscar check-ins ativos da sessão atual
+    let query = supabaseClient
+        .from('kids_check_ins')
+        .select('*, child:child_id(id, name, allergies, birth_date, photo_url)')
+        .eq('session_id', currentSessionId)
+        .is('checked_out_at', null);
 
-            const { data: allCheckins } = await query;
-            
-            let checkins = allCheckins;
-            if (currentRoomFilter !== 'todos') {
-                checkins = allCheckins?.filter(c => c.room === currentRoomFilter) || [];
+    const { data: allCheckins } = await query;
+    
+    // Filtrar por sala, se necessário
+    let checkins = allCheckins;
+    if (currentRoomFilter !== 'todos') {
+        checkins = allCheckins?.filter(c => c.room === currentRoomFilter) || [];
+    }
+
+    const { data: visitants } = await supabaseClient
+        .from('kids_visitants')
+        .select('*')
+        .eq('session_id', currentSessionId);
+
+    let html = '';
+    
+    // Botão de gerenciar (aparece apenas quando não está na aba "todos")
+    if (currentRoomFilter !== 'todos') {
+        html += `
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+                <button class="btn-secondary" onclick="openRoomModal('${currentRoomFilter}')" style="display: flex; align-items: center; gap: 0.4rem;">
+                    <span>🔄</span> Gerenciar crianças nesta sala
+                </button>
+            </div>
+        `;
+    }
+    
+    // Crianças cadastradas
+    if (checkins?.length) {
+        html += `<h4>👶 Crianças cadastradas ${currentRoomFilter !== 'todos' ? `(Sala: ${currentRoomFilter})` : ''}</h4>`;
+        for (const c of checkins) {
+            let isBirthdayWeek = false;
+            if (c.child.birth_date) {
+                const birth = new Date(c.child.birth_date);
+                const today = new Date();
+                const weekLater = new Date();
+                weekLater.setDate(today.getDate() + 7);
+                const birthThisYear = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
+                if (birthThisYear >= today && birthThisYear <= weekLater) isBirthdayWeek = true;
             }
-
-            const { data: visitants } = await supabaseClient
-                .from('kids_visitants')
-                .select('*')
-                .eq('session_id', currentSessionId);
-
-            let html = '';
-            
-            if (currentRoomFilter !== 'todos') {
-                html += `
-                    <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
-                        <button class="btn-secondary" onclick="openRoomModal('${currentRoomFilter}')" style="display: flex; align-items: center; gap: 0.4rem;">
-                            <span>🔄</span> Gerenciar crianças nesta sala
-                        </button>
+            const birthdayIcon = isBirthdayWeek ? '🎂 ' : '';
+            html += `
+                <div class="present-item" style="border-left-color: ${c.room === 'Kids' ? '#3b82f6' : (c.room === 'Babys' ? '#f59e0b' : (c.room === 'Juvenis' ? '#8b5cf6' : '#10b981'))}">
+                    <div class="present-info">
+                        <div class="present-name">${birthdayIcon}${escapeHtml(c.child.name)} ${c.badge_number ? `<span class="badge" style="background:#e2e8f0;">🏷️ ${c.badge_number}</span>` : ''} ${c.child.allergies ? '<span class="badge">⚠️</span>' : ''}</div>
+                        <div class="present-time">Check-in: ${new Date(c.checked_in_at).toLocaleTimeString()}</div>
+                        ${c.room !== 'todos' && currentRoomFilter === 'todos' ? `<div class="present-time" style="color:${c.room === 'Kids' ? '#3b82f6' : (c.room === 'Babys' ? '#f59e0b' : '#8b5cf6')}">📌 Sala: ${c.room}</div>` : ''}
                     </div>
-                `;
-            }
-            
-            if (checkins?.length) {
-                html += `<h4>👶 Crianças cadastradas ${currentRoomFilter !== 'todos' ? `(Sala: ${currentRoomFilter})` : ''}</h4>`;
-                for (const c of checkins) {
-                    let isBirthdayWeek = false;
-                    if (c.child.birth_date) {
-                        const birth = new Date(c.child.birth_date);
-                        const today = new Date();
-                        const weekLater = new Date();
-                        weekLater.setDate(today.getDate() + 7);
-                        const birthThisYear = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
-                        if (birthThisYear >= today && birthThisYear <= weekLater) isBirthdayWeek = true;
-                    }
-                    const birthdayIcon = isBirthdayWeek ? '🎂 ' : '';
-                    html += `
-                        <div class="present-item" style="border-left-color: ${c.room === 'Kids' ? '#3b82f6' : (c.room === 'Babys' ? '#f59e0b' : (c.room === 'Juvenis' ? '#8b5cf6' : '#10b981'))}">
-                            <div class="present-info">
-                                <div class="present-name">${birthdayIcon}${escapeHtml(c.child.name)} ${c.badge_number ? `<span class="badge" style="background:#e2e8f0;">🏷️ ${c.badge_number}</span>` : ''} ${c.child.allergies ? '<span class="badge">⚠️</span>' : ''}</div>
-                                <div class="present-time">Check-in: ${new Date(c.checked_in_at).toLocaleTimeString()}</div>
-                                ${c.room !== 'todos' && currentRoomFilter === 'todos' ? `<div class="present-time" style="color:${c.room === 'Kids' ? '#3b82f6' : (c.room === 'Babys' ? '#f59e0b' : '#8b5cf6')}">📌 Sala: ${c.room}</div>` : ''}
-                            </div>
-                            <div class="present-actions">
-                                <button class="btn-icon" onclick="showChildDetails('${c.child_id}')">👁️</button>
-                                <button class="btn-icon" onclick="reprintLabelFromList('${c.id}')">🖨️</button>
-                                <button class="btn-icon btn-danger" onclick="checkoutManual('${c.id}')">Check-out</button>
-                            </div>
-                        </div>
-                    `;
-                }
-            } else if (currentRoomFilter !== 'todos') {
-                html += `<p style="text-align:center;color:#64748b;">Nenhuma criança nesta sala. Clique em "Gerenciar" para adicionar.</p>`;
-            }
-            
-            if (currentRoomFilter === 'todos' && visitants?.length) {
-                html += `<h4 style="margin-top:1rem;">📝 Visitantes</h4>`;
-                html += visitants.map(v => `
-                    <div class="present-item visitant-item">
-                        <div class="present-info">
-                            <div class="present-name">${escapeHtml(v.child_name)} (resp: ${escapeHtml(v.responsible_name)})</div>
-                            <div class="present-time">Check-in: ${new Date(v.checked_in_at).toLocaleTimeString()}</div>
-                        </div>
-                        <div class="present-actions">
-                            <button class="btn-icon btn-danger" onclick="removeVisitant('${v.id}')">Finalizar</button>
-                        </div>
+                    <div class="present-actions">
+                        <button class="btn-icon" onclick="showChildDetails('${c.child_id}')">👁️</button>
+                        <button class="btn-icon" onclick="reprintLabelFromList('${c.id}')">🖨️</button>
+                        <button class="btn-icon btn-danger" onclick="checkoutManual('${c.id}')">Check-out</button>
                     </div>
-                `).join('');
-            }
-            
-            if (!checkins?.length && (!visitants?.length || currentRoomFilter !== 'todos')) {
-                html = '<p style="text-align:center;color:#64748b;">Nenhuma criança presente.</p>';
-            }
-            document.getElementById('presentList').innerHTML = html;
+                </div>
+            `;
         }
+    } else if (currentRoomFilter !== 'todos') {
+        html += `<p style="text-align:center;color:#64748b;">Nenhuma criança nesta sala. Clique em "Gerenciar" para adicionar.</p>`;
+    }
+    
+    // Visitantes (só aparecem na aba "todos")
+    if (currentRoomFilter === 'todos' && visitants?.length) {
+        html += `<h4 style="margin-top:1rem;">📝 Visitantes</h4>`;
+        html += visitants.map(v => `
+            <div class="present-item visitant-item">
+                <div class="present-info">
+                    <div class="present-name">${escapeHtml(v.child_name)} (resp: ${escapeHtml(v.responsible_name)})</div>
+                    <div class="present-time">Check-in: ${new Date(v.checked_in_at).toLocaleTimeString()}</div>
+                </div>
+                <div class="present-actions">
+                    <button class="btn-icon btn-danger" onclick="removeVisitant('${v.id}')">Finalizar</button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    if (!checkins?.length && (!visitants?.length || currentRoomFilter !== 'todos')) {
+        html = '<p style="text-align:center;color:#64748b;">Nenhuma criança presente.</p>';
+    }
+    document.getElementById('presentList').innerHTML = html;
+}
 
         async function checkoutManual(checkinId) {
             await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', checkinId);
@@ -1111,28 +1073,30 @@
         }
 
         async function saveRoomAssignments() {
-            const checkboxes = document.querySelectorAll('.room-checkbox');
-            const updates = [];
-            for (const cb of checkboxes) {
-                const checkinId = cb.dataset.checkinId;
-                const shouldAssign = cb.checked;
-                if (shouldAssign) {
-                    updates.push({ id: checkinId, room: pendingRoom });
-                } else {
-                    const child = childrenForRoom.find(c => c.checkinId == checkinId);
-                    if (child && child.currentRoom === pendingRoom) {
-                        updates.push({ id: checkinId, room: 'todos' });
-                    }
-                }
+    const checkboxes = document.querySelectorAll('.room-checkbox');
+    const updates = [];
+    for (const cb of checkboxes) {
+        const checkinId = cb.dataset.checkinId;
+        const shouldAssign = cb.checked;
+        if (shouldAssign) {
+            updates.push({ id: checkinId, room: pendingRoom });
+        } else {
+            const child = childrenForRoom.find(c => c.checkinId == checkinId);
+            if (child && child.currentRoom === pendingRoom) {
+                updates.push({ id: checkinId, room: 'todos' });
             }
-            for (const upd of updates) {
-                await supabaseClient.from('kids_check_ins').update({ room: upd.room }).eq('id', upd.id);
-            }
-            closeRoomModal();
-            await loadPresentList();
-            showToast('Salas atualizadas', 'success');
         }
+    }
+    for (const upd of updates) {
+        await supabaseClient.from('kids_check_ins').update({ room: upd.room }).eq('id', upd.id);
+    }
+    closeRoomModal();
+    // Recarregar a lista mantendo a aba atual
+    await loadPresentList();
+    showToast('Salas atualizadas', 'success');
+}
 
+        
         function closeRoomModal() { document.getElementById('roomModal').style.display = 'none'; pendingRoom = null; }
 
         // ========== VISITANTE ==========
@@ -1226,7 +1190,7 @@
                                 idade = `${age} anos`;
                             }
                             const isBirthday = aniversariantes.includes(c.child.name);
-                            return `<tr class="${isBirthday ? 'birthday' : ''}"><td>${escapeHtml(c.child.name)} ${isBirthday ? '🎂' : ''}${c.badge_number ? `<span class="badge">🏷️ ${c.badge_number}</span>` : ''}${idade}${c.child.allergies ? `<span class="badge">⚠️</span>` : ''}${new Date(c.checked_in_at).toLocaleString()}${c.checked_out_at ? new Date(c.checked_out_at).toLocaleString() : 'Ainda presente'}${c.badge_number ? `<span class="badge">🏷️ ${c.badge_number}</span>` : ''}${c.child.allergies ? `<span class="badge">⚠️</span>` : ''}${idade}${c.child.allergies ? `<span class="badge">⚠️</span>` : ''}${c.badge_number ? `<span class="badge">🏷️ ${c.badge_number}</span>` : ''}${c.child.allergies ? `<span class="badge">⚠️</span>` : ''}${idade}${c.child.allergies ? `<span class="badge">⚠️</span>` : ''}${c.badge_number ? `<span class="badge">🏷️ ${c.badge_number}</span>` : ''}${c.child.allergies ? `<span class="badge">⚠️</span>` : ''}${idade}${c.child.allergies ? `<span class="badge">⚠️</span>` : ''}${c.badge_number ? `<span class="badge">🏷️ ${c.badge_number}</span>` : ''}`;
+                            return `<tr class="${isBirthday ? 'birthday' : ''}"><td>${escapeHtml(c.child.name)} ${isBirthday ? '🎂' : ''}</td><td>${idade}</td><td>${escapeHtml(c.child.allergies || '-')}</td><td>${new Date(c.checked_in_at).toLocaleString()}</td><td>${c.checked_out_at ? new Date(c.checked_out_at).toLocaleString() : 'Ainda presente'}</td></tr>`;
                         }).join('')}
                     </tbody></table>
                     <p><em>Relatório gerado em ${new Date().toLocaleString()}</em></p>
@@ -1240,38 +1204,43 @@
         }
 
         async function checkoutByBadgeNumber() {
-            const badgeNumber = document.getElementById('checkoutBadgeInput').value.trim();
-            if (!badgeNumber) {
-                showToast('Digite um número de crachá', 'error');
-                return;
-            }
-            
-            const { data: checkin, error } = await supabaseClient
-                .from('kids_check_ins')
-                .select('*, child:child_id(name)')
-                .eq('badge_number', badgeNumber)
-                .eq('session_id', currentSessionId)
-                .is('checked_out_at', null)
-                .maybeSingle();
-            
-            if (error || !checkin) {
-                document.getElementById('checkoutResult').innerHTML = '❌ Nenhum check-in ativo encontrado com este número.';
-                showToast('Crachá não encontrado', 'error');
-                return;
-            }
-            
-            if (confirm(`Check-out de ${checkin.child.name}?`)) {
-                await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', checkin.id);
-                const { data: token } = await supabaseClient.from('kids_temporary_tokens').select('id').eq('checkin_id', checkin.id).single();
-                if (token) await supabaseClient.from('kids_temporary_tokens').update({ expires_at: new Date().toISOString() }).eq('id', token.id);
-                
-                document.getElementById('checkoutResult').innerHTML = `✅ Check-out de ${checkin.child.name} realizado!`;
-                showToast(`Check-out de ${checkin.child.name}`, 'success');
-                await loadPresentList();
-                document.getElementById('checkoutBadgeInput').value = '';
-                setTimeout(() => { document.getElementById('checkoutResult').innerHTML = ''; }, 3000);
-            }
-        }
+    const badgeNumber = document.getElementById('checkoutBadgeInput').value.trim();
+    if (!badgeNumber) {
+        showToast('Digite um número de crachá', 'error');
+        return;
+    }
+    
+    // Buscar check-in ativo com esse número de crachá na sessão atual
+    const { data: checkin, error } = await supabaseClient
+        .from('kids_check_ins')
+        .select('*, child:child_id(name)')
+        .eq('badge_number', badgeNumber)
+        .eq('session_id', currentSessionId)
+        .is('checked_out_at', null)
+        .maybeSingle();
+    
+    if (error || !checkin) {
+        document.getElementById('checkoutResult').innerHTML = '❌ Nenhum check-in ativo encontrado com este número.';
+        showToast('Crachá não encontrado', 'error');
+        return;
+    }
+    
+    // Confirmar checkout
+    if (confirm(`Check-out de ${checkin.child.name}?`)) {
+        await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', checkin.id);
+        // Opcional: invalidar token associado
+        const { data: token } = await supabaseClient.from('kids_temporary_tokens').select('id').eq('checkin_id', checkin.id).single();
+        if (token) await supabaseClient.from('kids_temporary_tokens').update({ expires_at: new Date().toISOString() }).eq('id', token.id);
+        
+        document.getElementById('checkoutResult').innerHTML = `✅ Check-out de ${checkin.child.name} realizado!`;
+        showToast(`Check-out de ${checkin.child.name}`, 'success');
+        await loadPresentList();
+        document.getElementById('checkoutBadgeInput').value = '';
+        setTimeout(() => { document.getElementById('checkoutResult').innerHTML = ''; }, 3000);
+    }
+}
+
+        
 
         function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : (m === '<' ? '&lt;' : '&gt;')); }
         async function logout() { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; }
