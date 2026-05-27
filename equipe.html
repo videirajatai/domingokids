@@ -573,15 +573,15 @@
           </div>
         
             <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+                        <div style="margin-bottom: 1rem;">
+                            <label style="font-weight: 500;">Número do crachá</label>
+                            <input type="text" id="badgeNumberInput" placeholder="Ex: 12" inputmode="numeric" pattern="\d*" style="width: 100%; padding: 0.6rem; border-radius: 1rem; border: 1px solid #cbd5e1; text-align: center;">
+                        </div>
                 <button class="room-option" data-room="todos" style="background: #64748b; color: white; border: none; padding: 0.7rem; border-radius: 2rem; font-weight: 500; cursor: pointer;">👶 Todos</button>
                 <button class="room-option" data-room="Kids" style="background: #3b82f6; color: white; border: none; padding: 0.7rem; border-radius: 2rem; font-weight: 500; cursor: pointer;">🍼 Kids</button>
                 <button class="room-option" data-room="Babys" style="background: #f59e0b; color: white; border: none; padding: 0.7rem; border-radius: 2rem; font-weight: 500; cursor: pointer;">🧸 Babys</button>
                 <button class="room-option" data-room="Juvenis" style="background: #8b5cf6; color: white; border: none; padding: 0.7rem; border-radius: 2rem; font-weight: 500; cursor: pointer;">⚡ Juvenis</button>
-            </div>
-                         <div style="margin-bottom: 1rem;">
-                            <label style="font-weight: 500;">Número do crachá</label>
-                            <input type="text" id="badgeNumberInput" placeholder="Ex: 12" inputmode="numeric" pattern="\d*" style="width: 100%; padding: 0.6rem; border-radius: 1rem; border: 1px solid #cbd5e1; text-align: center;">
-                        </div>
+            </div>                         
             <button class="btn-secondary" onclick="closeSelectRoomModal()" style="margin-top: 1rem;">Cancelar</button>                       
         </div>
     </div>
