@@ -564,14 +564,17 @@
     <!-- Modal para selecionar sala antes do check-in -->
     <div id="selectRoomModal" class="modal">
         <!-- dentro do modal-content, após o div roomChildInfo, antes dos botões de sala -->
-        <div style="margin-bottom: 1rem;">
-            <label style="font-weight: 500;">🏷️ Número do crachá (opcional)</label>
-            <input type="text" id="badgeNumberInput" placeholder="Ex: 47" style="width: 100%; padding: 0.6rem; border-radius: 1rem; border: 1px solid #cbd5e1; text-align: center;">
-        </div>
+        
         
         <div class="modal-content" style="max-width: 400px; text-align: center;">
             <button class="modal-close" onclick="closeSelectRoomModal()">&times;</button>
             <div class="modal-title" style="margin-bottom: 0.5rem;">🏷️ Check-in</div>
+
+            <div style="margin-bottom: 1rem;">
+            <label style="font-weight: 500;">🏷️ Número do crachá (opcional)</label>
+            <input type="text" id="badgeNumberInput" placeholder="Ex: 47" style="width: 100%; padding: 0.6rem; border-radius: 1rem; border: 1px solid #cbd5e1; text-align: center;">
+            </div>
+            
             <div id="roomChildInfo" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 1rem;">
                 <!-- Informações da criança serão preenchidas dinamicamente -->
           </div>
