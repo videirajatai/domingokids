@@ -130,8 +130,8 @@
 </head>
 <body>
     <div class="login-card">
-        <h1>⛪ Kids Checkin</h1>
-        <div class="sub">Controle seguro para o ministério infantil</div>
+        <h1>⛪ Domingo Kids - Videira Jataí </h1>
+        <div class="sub">Controle de Frequência</div>
         <div class="input-group">
             <input type="email" id="email" placeholder="Seu e-mail" autocomplete="email">
         </div>
@@ -139,7 +139,7 @@
             <input type="password" id="password" placeholder="Senha" autocomplete="current-password">
         </div>
         <button class="btn-login" onclick="fazerLogin()">Entrar</button>
-        <button class="btn-cadastro" onclick="cadastrarPai()">Criar nova conta (pai/responsável)</button>
+        <button class="btn-cadastro" onclick="cadastrarPai()">Criar nova conta</button>
         <div id="msg" class="msg"></div>
     </div>
 
@@ -174,7 +174,7 @@
             }
 
             if (profile.role === 'staff') {
-                window.location.href = 'equipe.html';
+                window.location.href = 'tela.html';
             } else {
                 window.location.href = 'pais.html';
             }
