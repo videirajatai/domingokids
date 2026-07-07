@@ -2,211 +2,412 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Kids Checkin | Login</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kids Checkin • Pais</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="shortcut icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Kids Checkin Pais">
+    <meta name="apple-mobile-web-app-title" content="Kids Checkin Pais">
+    <meta name="theme-color" content="#f8f0ec"> 
+    <link rel="manifest" href="manifest.json">
+
+    <script src="config.js"></script>
+  
     <style>
-        * {
-            margin: 0;
-            padding: 0;
+        /* Cores suaves (mesmo padrão do sistema de células) */
+        :root {
+            --primary: #8b5a6a;
+            --primary-hover: #7a4d5a;
+            --bg-color: #fcf7f5;
+            --text-main: #4a3b3e;
+            --text-light: #7a6a6e;
+            --input-bg: #fdfaf9;
+            --border-color: #e6dcd8;
+            --danger-text: #b34a4a;
+            --success-text: #2d6a4f;
+        }
+
+        body, html { height: 100%; overflow: hidden; background: var(--bg-color); }
+        
+        #tela-login {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 10; transition: opacity 0.5s ease;
+        }
+
+        .card-login {
+            background: #ffffff; padding: 40px 35px; border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.05); width: 90%; max-width: 380px; text-align: center;
+            max-height: 95vh; overflow-y: auto;
+        }
+
+        .logo { width: 100px; height: auto; margin-bottom: 15px; border-radius: 50%; }
+        h2 { color: var(--primary); font-size: 22px; margin-bottom: 6px; font-weight: 700; }
+        p.subtitulo { color: var(--text-light); font-size: 14px; margin-bottom: 35px; }
+
+        .input-group { margin-bottom: 20px; text-align: left; }
+        .input-group label { display: block; font-size: 12px; color: var(--text-light); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; }
+        
+        input[type="text"], input[type="password"], input[type="email"], input[type="tel"] {
+            width: 100%; padding: 14px 16px; border: 2px solid var(--border-color); border-radius: 12px;
+            font-size: 15px; color: var(--text-main); outline: none; transition: 0.3s; background-color: var(--input-bg);
             box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
         }
-
-        body {
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-        }
-
-        .login-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 2rem;
-            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.2);
-            padding: 2rem 1.8rem;
-            width: 100%;
-            max-width: 420px;
-            transition: transform 0.2s ease;
-        }
-
-        .login-card:hover {
-            transform: translateY(-5px);
-        }
-
-        h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            background: linear-gradient(120deg, #667eea, #764ba2);
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-            margin-bottom: 0.5rem;
-            text-align: center;
-        }
-
-        .sub {
-            text-align: center;
-            color: #5a6e8a;
-            margin-bottom: 2rem;
-            font-size: 0.85rem;
-        }
-
-        .input-group {
-            margin-bottom: 1.2rem;
-        }
-
-        input {
-            width: 100%;
-            padding: 0.9rem 1rem;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 1.5rem;
-            font-size: 1rem;
-            transition: all 0.2s;
-            background: #f8fafc;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-            background: white;
+        input:focus { 
+            border-color: var(--primary); background-color: #ffffff; 
         }
 
         button {
-            width: 100%;
-            padding: 0.9rem;
-            border: none;
-            border-radius: 1.5rem;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            margin-top: 0.5rem;
+            width: 100%; padding: 16px; margin-top: 10px; background-color: var(--primary); color: #ffffff;
+            border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.3s;
+            box-sizing: border-box;
         }
+        button:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+        button:disabled { background-color: #c9a7b3; cursor: not-allowed; }
+        
+        .btn-secondary { background-color: #ffffff; color: var(--primary); border: 2px solid var(--primary); }
+        .btn-secondary:hover { background-color: #fdf8f6; transform: translateY(0); }
 
-        .btn-login {
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            color: white;
-            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4);
-        }
+        .btn-link { background: none; border: none; color: var(--primary); font-size: 13px; text-decoration: underline; cursor: pointer; padding: 5px; margin-top: 10px; width: 100%; }
+        .btn-link:hover { color: var(--primary-hover); }
 
-        .btn-login:hover {
-            transform: scale(1.02);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.5);
-        }
+        .mensagem-erro { color: var(--danger-text); font-size: 14px; margin-top: 20px; display: none; font-weight: 500; background: #fdf0ee; padding: 10px; border-radius: 8px; border: 1px solid #f5d6d2; }
+        .mensagem-sucesso { color: var(--success-text); font-size: 14px; margin-top: 20px; display: none; font-weight: 500; background: #d1e7dd; padding: 10px; border-radius: 8px; border: 1px solid #b8d9c0; }
 
-        .btn-cadastro {
-            background: transparent;
-            border: 1.5px solid #cbd5e1;
-            color: #334155;
-            margin-top: 0.8rem;
+        #splash-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            background: var(--bg-color);
+            z-index: 5; opacity: 0; transition: opacity 0.4s ease;
         }
+        .splash-logo { width: 120px; animation: pulse 1.5s infinite ease-in-out; }
+        #splash-screen p { margin-top: 25px; color: var(--text-main); font-size: 15px; font-weight: 600; }
 
-        .btn-cadastro:hover {
-            background: #f1f5f9;
-            border-color: #94a3b8;
-        }
-
-        .msg {
-            margin-top: 1.2rem;
-            text-align: center;
-            font-size: 0.85rem;
-            color: #e53e3e;
-            background: #fff5f5;
-            padding: 0.6rem;
-            border-radius: 2rem;
-            display: none;
-        }
-
-        @media (max-width: 480px) {
-            .login-card { padding: 1.5rem; }
-        }
+        @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.8; } 50% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(0.95); opacity: 0.8; } }
+        
+        .bloco { display: none; }
+        .bloco.ativo { display: block; animation: fadeIn 0.4s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
-    <div class="login-card">
-        <h1>⛪ Domingo Kids - Videira Jataí </h1>
-        <div class="sub">Controle de Frequência</div>
-        <div class="input-group">
-            <input type="email" id="email" placeholder="Seu e-mail" autocomplete="email">
-        </div>
-        <div class="input-group">
-            <input type="password" id="password" placeholder="Senha" autocomplete="current-password">
-        </div>
-        <button class="btn-login" onclick="fazerLogin()">Entrar</button>
-        <button class="btn-cadastro" onclick="cadastrarPai()">Criar nova conta</button>
-        <div id="msg" class="msg"></div>
-    </div>
 
     <script>
-        async function fazerLogin() {
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            const msgDiv = document.getElementById('msg');
-            msgDiv.style.display = 'none';
+        // Desregistra Service Workers antigos e limpa caches (se houver)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+        }
+        if ('caches' in window) {
+            caches.keys().then(function(names) {
+                for (let name of names) caches.delete(name);
+            });
+        }
+    </script>
 
-            if (!email || !password) {
-                showMsg('Preencha e-mail e senha', '#e53e3e');
+    <div id="tela-login">
+        <div class="card-login">
+            
+            <div id="bloco-login" class="bloco ativo">
+                <img src="logo.png" style="width: 100px; border-radius: 50%;" alt="Logo Kids">
+                <h2 id="titulo-login">Acesso dos Pais</h2>
+                <p class="subtitulo" id="subtitulo-login">Gerencie seus filhos no Kids Checkin</p>
+                
+                <div id="area-form">
+                    <div class="input-group">
+                        <label>Usuário ou e-mail</label>
+                        <input type="text" id="usuario-input" placeholder="Seu usuário ou e-mail" onkeypress="verificarEnter(event, 'login')" autocomplete="off">
+                    </div>
+                    <div class="input-group">
+                        <label>Senha</label>
+                        <input type="password" id="senha-input" inputmode="numeric" pattern="[0-9]*" placeholder="••••••" onkeypress="verificarEnter(event, 'login')">
+                    </div>
+                    
+                    <button id="btn-entrar" onclick="verificarLogin()">Entrar</button>
+                    <p id="mensagem-erro" class="mensagem-erro">⚠️ Usuário ou senha incorretos.</p>
+                    
+                    <button class="btn-link" onclick="mudarTela('bloco-recuperar')">Esqueci minha senha</button>
+                    <button class="btn-secondary" onclick="cadastrarPai()" style="margin-top: 15px; padding: 12px; font-size: 14px;">Criar nova conta como Pai</button>
+                </div>
+            </div>
+
+            <div id="bloco-recuperar" class="bloco">
+                <img src="logo.png" style="width: 70px; border-radius: 50%;" alt="Logo Kids">
+                <h2>Recuperar Senha</h2>
+                <p class="subtitulo" style="margin-bottom: 20px;">Informe seu e-mail para receber o link.</p>
+                
+                <div class="input-group">
+                    <label>Seu E-mail Cadastrado *</label>
+                    <input type="email" id="rec-email" placeholder="Digite seu e-mail" onkeypress="verificarEnter(event, 'recuperar')">
+                </div>
+                
+                <button id="btn-recuperar" onclick="enviarRecuperacao()">Enviar Link</button>
+                <p id="mensagem-erro-rec" class="mensagem-erro"></p>
+                
+                <button class="btn-secondary" onclick="mudarTela('bloco-login')" style="margin-top: 15px; padding: 10px; font-size: 14px;">Voltar para o Login</button>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="splash-screen">
+        <img src="logo.png" alt="Carregando" class="splash-logo">
+        <p id="splash-texto">Autenticando e carregando...</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // ==================== CONFIGURAÇÃO ====================
+        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+
+        // ==================== FUNÇÕES AUXILIARES ====================
+        function mudarTela(idBloco) {
+            document.querySelectorAll('.bloco').forEach(b => b.classList.remove('ativo'));
+            document.getElementById(idBloco).classList.add('ativo');
+            document.querySelectorAll('.mensagem-erro').forEach(msg => msg.style.display = 'none');
+        }
+
+        function verificarEnter(event, contexto) { 
+            if (event.key === "Enter") {
+                if(contexto === 'login') verificarLogin();
+                else if(contexto === 'recuperar') enviarRecuperacao();
+            } 
+        }
+
+        function exibirErro(id, mensagem) {
+            const el = document.getElementById(id);
+            el.innerText = mensagem;
+            el.style.display = 'block';
+        }
+
+        function exibirSucesso(mensagem) {
+            const el = document.getElementById('mensagem-erro'); // reutiliza a mesma área para sucesso
+            el.style.color = '#2d6a4f';
+            el.style.background = '#d1e7dd';
+            el.style.borderColor = '#b8d9c0';
+            el.innerText = mensagem;
+            el.style.display = 'block';
+        }
+
+        // ==================== CADASTRO DE PAI ====================
+        async function cadastrarPai() {
+            const email = document.getElementById('usuario-input').value.trim();
+            const senha = document.getElementById('senha-input').value.trim();
+            const erro = document.getElementById('mensagem-erro');
+
+            if (!email || !senha) {
+                exibirErro('mensagem-erro', 'Preencha e-mail e senha para criar sua conta.');
                 return;
             }
 
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) {
-                showMsg(error.message, '#e53e3e');
+            if (!email.includes('@')) {
+                exibirErro('mensagem-erro', 'Digite um e-mail válido.');
                 return;
             }
 
-            // Buscar o role do perfil
+            if (senha.length < 6 || !/^\d+$/.test(senha)) {
+                exibirErro('mensagem-erro', 'A senha deve ter 6 dígitos numéricos.');
+                return;
+            }
+
+            const btn = document.getElementById('btn-entrar');
+            btn.disabled = true;
+            btn.innerText = 'Criando...';
+            erro.style.display = 'none';
+
+            try {
+                // 1. Criar usuário no Auth
+                const { data: authData, error: signUpError } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: senha,
+                    options: {
+                        data: {
+                            full_name: 'Pai/Mãe',
+                            role: 'parent'
+                        }
+                    }
+                });
+
+                if (signUpError) throw signUpError;
+
+                // 2. Criar perfil na tabela kids_profiles (se não existir automaticamente via trigger)
+                // Vamos tentar inserir manualmente (se já existir, pode dar erro, mas tratamos)
+                const userId = authData.user.id;
+                const { error: profileError } = await supabaseClient
+                    .from('kids_profiles')
+                    .insert({
+                        id: userId,
+                        role: 'parent'
+                    });
+
+                if (profileError && profileError.code !== '23505') { // 23505 = unique violation (já existe)
+                    throw profileError;
+                }
+
+                // Sucesso
+                exibirSucesso('Conta criada com sucesso! Redirecionando...');
+                setTimeout(() => {
+                    window.location.href = 'pais.html?t=' + Date.now();
+                }, 2000);
+
+            } catch (err) {
+                console.error(err);
+                exibirErro('mensagem-erro', 'Erro ao criar conta: ' + err.message);
+                btn.disabled = false;
+                btn.innerText = 'Entrar';
+            }
+        }
+
+        // ==================== LOGIN ====================
+        async function verificarLogin() {
+            const entrada = document.getElementById('usuario-input').value.trim().toLowerCase();
+            const senhaDigitada = document.getElementById('senha-input').value.trim();
+            const erro = document.getElementById('mensagem-erro');
+            const btn = document.getElementById('btn-entrar');
+
+            if(!entrada || !senhaDigitada) { 
+                exibirErro('mensagem-erro', 'Preencha usuário/e-mail e senha.');
+                return; 
+            }
+
+            btn.innerText = "Autenticando..."; 
+            btn.disabled = true; 
+            erro.style.display = 'none';
+
+            let emailParaLogin = entrada;
+
+            // Se não digitou um e-mail, tenta resolver via RPC
+            if (!entrada.includes('@')) {
+                const { data: emailEncontrado, error: rpcError } = await supabaseClient
+                    .rpc('buscar_email_por_usuario_kids', { usuario_busca: entrada });
+
+                if (rpcError || !emailEncontrado) {
+                    exibirErro('mensagem-erro', 'Usuário não encontrado.');
+                    btn.innerText = "Entrar";
+                    btn.disabled = false;
+                    return;
+                }
+                emailParaLogin = emailEncontrado;
+            }
+
+            // Autenticar
+            const { data: loginData, error: loginError } = await supabaseClient.auth.signInWithPassword({
+                email: emailParaLogin,
+                password: senhaDigitada
+            });
+
+            if (loginError) {
+                exibirErro('mensagem-erro', 'E-mail ou senha incorretos.');
+                document.getElementById('senha-input').value = "";
+                btn.innerText = "Entrar";
+                btn.disabled = false;
+                return;
+            }
+
+            // Verificar se o perfil é de pai (role = 'parent') e redirecionar
             const { data: profile, error: profileError } = await supabaseClient
                 .from('kids_profiles')
                 .select('role')
-                .eq('id', data.user.id)
-                .single();
+                .eq('id', loginData.user.id)
+                .maybeSingle();
 
             if (profileError || !profile) {
-                showMsg('Perfil não encontrado. Contate a administração.', '#e53e3e');
+                exibirErro('mensagem-erro', 'Perfil não encontrado. Contate a administração.');
+                btn.innerText = "Entrar";
+                btn.disabled = false;
                 return;
             }
 
-            if (profile.role === 'staff') {
-                window.location.href = 'tela.html';
-            } else {
-                window.location.href = 'pais.html';
-            }
-        }
-
-        async function cadastrarPai() {
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            if (!email || !password) {
-                showMsg('Preencha e-mail e senha para cadastro', '#e53e3e');
+            if (profile.role !== 'parent') {
+                exibirErro('mensagem-erro', 'Acesso restrito a pais. Se você é líder, use o sistema principal.');
+                btn.innerText = "Entrar";
+                btn.disabled = false;
                 return;
             }
-            const { error } = await supabaseClient.auth.signUp({
-                email,
-                password,
-                options: { data: { full_name: "Usuário", role: "parent" } }
-            });
-            if (error) {
-                showMsg(error.message, '#e53e3e');
-            } else {
-                showMsg('Conta criada! Verifique seu e-mail para confirmar.', '#2b6cb0');
-                setTimeout(() => window.location.reload(), 3000);
+
+            // Redirecionar diretamente para pais.html
+            entrarNoPainel(loginData.user.user_metadata?.full_name || 'Pai', 'pais');
+        }
+
+        function entrarNoPainel(nome, urlDestino) {
+            const telaLogin = document.getElementById('tela-login');
+            const splashScreen = document.getElementById('splash-screen');
+            document.getElementById('splash-texto').innerText = `Carregando...`;
+
+            telaLogin.style.opacity = '0'; 
+            setTimeout(() => {
+                telaLogin.style.display = 'none';
+                splashScreen.style.display = 'flex';
+                setTimeout(() => splashScreen.style.opacity = '1', 10);
+                setTimeout(() => {
+                    window.location.href = urlDestino + ".html?t=" + Date.now();
+                }, 1000);
+            }, 400);
+        }
+
+        // ==================== RECUPERAÇÃO DE SENHA ====================
+        async function enviarRecuperacao() {
+            const email = document.getElementById('rec-email').value.trim();
+            const btn = document.getElementById('btn-recuperar');
+            const erro = document.getElementById('mensagem-erro-rec');
+
+            if (!email) {
+                exibirErro('mensagem-erro-rec', 'Informe seu e-mail cadastrado.');
+                return;
+            }
+
+            btn.innerText = "Processando...";
+            btn.disabled = true;
+            erro.style.display = 'none';
+
+            try {
+                const urlDestino = window.location.origin + "/sistema/nova-senha.html";
+                const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                    redirectTo: urlDestino,
+                });
+                if (error) throw error;
+
+                exibirSucesso('E-mail de recuperação enviado! Verifique sua caixa de entrada.');
+                document.getElementById('rec-email').value = "";
+                mudarTela('bloco-login');
+            } catch (e) {
+                exibirErro('mensagem-erro-rec', 'Erro: ' + e.message);
+            } finally {
+                btn.innerText = "Enviar Link";
+                btn.disabled = false;
             }
         }
 
-        function showMsg(texto, cor) {
-            const msgDiv = document.getElementById('msg');
-            msgDiv.style.display = 'block';
-            msgDiv.style.backgroundColor = cor === '#e53e3e' ? '#fff5f5' : '#e6f7ff';
-            msgDiv.style.color = cor;
-            msgDiv.innerText = texto;
-        }
+        // ==================== INICIALIZAÇÃO ====================
+        // Se já estiver logado, redirecionar para pais.html (a menos que seja staff)
+        (async () => {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (user) {
+                const { data: profile } = await supabaseClient
+                    .from('kids_profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single();
+                if (profile && profile.role === 'parent') {
+                    window.location.href = 'pais.html?t=' + Date.now();
+                }
+            }
+        })();
     </script>
 </body>
 </html>
