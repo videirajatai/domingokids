@@ -1,6 +1,6 @@
 // app.js - Inicialização do cliente Supabase
-const SUPABASE_URL = 'https://ctobdkstnrhepixyujms.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0b2Jka3N0bnJoZXBpeHl1am1zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MTAyOTAsImV4cCI6MjA5Mjk4NjI5MH0.mDuYyQI4rV4KsxN9SsfJj9zmiTx-KZlblcLq22KfIWg';
+const SUPABASE_URL = 'https://mxuvvsklqaelvxmpnzhe.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14dXZ2c2tscWFlbHZ4bXBuemhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMwNzA4NTMsImV4cCI6MjA5ODY0Njg1M30.ugrG6Q9Q3k7j9kKC1uRkWKtTX0TCTMkz_t8O_JF-fos';
 //const IMGBB_API_KEY = 'd3ec802e2dfc1896a26e44b80d489f17';
 
 // Cria o cliente e guarda no objeto window para uso global
