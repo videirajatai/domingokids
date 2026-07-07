@@ -647,6 +647,8 @@
 
     <script>
         // ==================== VARIÁVEIS GLOBAIS ====================
+        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+        
         let currentFamilyId = null;
         let currentUser = null;
         const IMGBB_API_KEY = 'd3ec802e2dfc1896a26e44b80d489f17';
