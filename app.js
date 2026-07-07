@@ -4,4 +4,4 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 //const IMGBB_API_KEY = 'd3ec802e2dfc1896a26e44b80d489f17';
 
 // Cria o cliente e guarda no objeto window para uso global
-window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+//window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
