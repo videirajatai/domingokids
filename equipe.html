@@ -591,6 +591,9 @@
     <div id="reportPrintArea" style="display: none;"></div>
 
     <script>
+
+        // ========== CONFIGURAÇÃO ==========
+        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
         // ========== VARIÁVEIS ==========
         let currentStaffId = null, currentSessionId = null, html5QrCode = null, scannerActive = false;
         let autoRestartScanner = null;
