@@ -442,109 +442,76 @@
             font-size: 0.7rem;
             font-weight: 500;
         }
-       
-        /* Estilos para impressão da etiqueta 58mm */
-        @media print {
-                /* Oculta tudo, exceto a área de impressão */
-                @page {
-                size: 58mm auto;
-                margin: 0;
-            }      
-            body * {
-                visibility: hidden;
-            }
-            #printArea, #printArea * {
-                visibility: visible;
-            }
-            #printArea {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 58mm;
-                height: auto;              /* altura automática */
-                padding: 2mm;
-                margin: 0;
-                background: white;
-                font-family: 'Courier New', monospace;
-                font-size: 9pt;
-                line-height: 1.3;
-                color: #000;
-                page-break-after: avoid;
-                page-break-inside: avoid;
-                box-sizing: border-box;
-            }
-            /* Remove margens extras do body */
-            body {
-                margin: 0 !important;
-                padding: 0 !important;
-                background: white;
-            }
-            /* Força uma única página */
-            html, body {
-                height: auto;
-                overflow: visible;
-            }
-            /* Esconde elementos desnecessários */
-            .no-print {
-                display: none !important;
-            }
-        }
+       /* Etiqueta com tamanho FIXO 50mm x 30mm (o campo físico real da etiqueta) */
+@media print {
+    @page {
+        size: 50mm 30mm;   /* <- essencial: diz ao navegador o tamanho exato da página */
+        margin: 0;
+    }
+    body * { visibility: hidden; }
+    #printArea, #printArea * { visibility: visible; }
+    #printArea {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 50mm;
+        height: 30mm;
+        margin: 0;
+        padding: 0;
+        background: white;
+    }
+    .no-print { display: none !important; }
+}
 
-    /* Estilos para a etiqueta (tela e impressão) */
-    #etiqueta-58mm {
-        width: 54mm;  /* margem interna de 2mm cada lado */
-        padding: 2mm;
-        font-family: 'Courier New', monospace;
-        font-size: 9pt;
-        line-height: 1.3;
-        color: #000;
-        background: #fff;
-        box-sizing: border-box;
-    }
-    #etiqueta-58mm .header {
-        text-align: center;
-        font-weight: bold;
-        font-size: 12pt;
-        letter-spacing: 1px;
-        margin-bottom: 2px;
-    }
-    #etiqueta-58mm .divider {
-        border-top: 1px dashed #888;
-        margin: 2px 0;
-    }
-    #etiqueta-58mm .info-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 1px 0;
-    }
-    #etiqueta-58mm .label {
-        font-weight: 600;
-        color: #333;
-    }
-    #etiqueta-58mm .value {
-        font-weight: 400;
-        color: #000;
-    }
-    #etiqueta-58mm .footer {
-        text-align: center;
-        font-size: 8pt;
-        color: #555;
-        margin: 2px 0;
-    }
-    #etiqueta-58mm .qr-container {
-        text-align: center;
-        margin-top: 4px;
-    }
-    #etiqueta-58mm .qr-container img {
-        display: inline-block;
-        max-width: 80px;
-        height: auto;
-    }
-    #etiqueta-58mm .qr-label {
-        font-size: 7pt;
-        color: #777;
-        margin-top: 2px;
-    }
+/* Etiqueta - layout compacto: QR pequeno + texto ao lado, tudo dentro de 50x30mm */
+#etiqueta-58mm {
+    width: 50mm;
+    height: 30mm;
+    padding: 1mm;
+    margin: 0;
+    box-sizing: border-box;
+    overflow: hidden;           /* nunca deixa nada vazar pra "próxima etiqueta" */
+    background: #fff;
+    color: #000;
+    font-family: Arial, Helvetica, sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 1.5mm;
+}
+#etiqueta-58mm .qr-box { flex: 0 0 16mm; width: 16mm; height: 16mm; }
+#etiqueta-58mm .qr-box img { width: 16mm; height: 16mm; display: block; }
+#etiqueta-58mm .info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.3mm;
+    overflow: hidden;
+}
+#etiqueta-58mm .nome {
+    font-size: 8pt;
+    font-weight: bold;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+#etiqueta-58mm .linha {
+    font-size: 6pt;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+#etiqueta-58mm .alergia {
+    font-size: 6pt;
+    font-weight: bold;
+    color: #b91c1c;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
         /* Responsivo */
         @media (max-width: 640px) {
@@ -968,7 +935,7 @@ function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPho
     const now = new Date().toLocaleString();
 
     const tempDiv = document.createElement('div');
-    new QRCode(tempDiv, { text: qrToken, width: 100, height: 100 });
+    new QRCode(tempDiv, { text: qrToken, width: 200, height: 200 });
 
     setTimeout(() => {
         let qrSrc = '';
@@ -981,18 +948,15 @@ function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPho
 
         const labelHTML = `
             <div id="etiqueta-58mm">
-                <div class="header">⛪ Kids Checkin</div>
-                <div class="divider"></div>
-                <div class="info-row"><span class="label">Criança:</span> <span class="value">${escapeHtml(childName)}</span></div>
-                ${idade ? `<div class="info-row"><span class="label">Idade:</span> <span class="value">${escapeHtml(idade)}</span></div>` : ''}
-                ${allergies ? `<div class="info-row"><span class="label">Alergia:</span> <span class="value">⚠️ ${escapeHtml(allergies)}</span></div>` : ''}
-                <div class="info-row"><span class="label">Pai:</span> <span class="value">${escapeHtml(fatherPhone)}</span></div>
-                <div class="info-row"><span class="label">Mãe:</span> <span class="value">${escapeHtml(motherPhone)}</span></div>
-                <div class="divider"></div>
-                <div class="footer">${escapeHtml(sessionName)} - ${now}</div>
-                <div class="qr-container">
-                    <img src="${qrSrc}" width="80" height="80" alt="QR Code">
-                    <div class="qr-label">Escanear para saída</div>
+                <div class="qr-box">
+                    ${qrSrc ? `<img src="${qrSrc}" alt="QR Code">` : ''}
+                </div>
+                <div class="info">
+                    <div class="nome">${escapeHtml(childName)}</div>
+                    ${idade ? `<div class="linha">Idade: ${escapeHtml(idade)}</div>` : ''}
+                    ${allergies ? `<div class="alergia">⚠️ ${escapeHtml(allergies)}</div>` : ''}
+                    <div class="linha">Pai: ${escapeHtml(fatherPhone)}</div>
+                    <div class="linha">Mãe: ${escapeHtml(motherPhone)}</div>
                 </div>
             </div>
         `;
