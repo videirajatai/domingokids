@@ -931,22 +931,26 @@ async function confirmCheckinWithRoom(room) {
         
 
 function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPhone, checkinId) {
-    const sessionName = document.getElementById('sessionSelect').selectedOptions[0]?.text || 'Culto';
-    const now = new Date().toLocaleString();
-
+    // Cria o QR Code num container temporário anexado ao body (mas invisível),
+    // pois em alguns navegadores o canvas não renderiza corretamente se a
+    // div nunca foi inserida no DOM.
     const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'fixed';
+    tempDiv.style.left = '-9999px';
+    tempDiv.style.top = '0';
+    document.body.appendChild(tempDiv);
+
     new QRCode(tempDiv, { text: qrToken, width: 200, height: 200 });
 
     setTimeout(() => {
         let qrSrc = '';
+        const canvas = tempDiv.querySelector('canvas');
         const img = tempDiv.querySelector('img');
-        if (img && img.src) qrSrc = img.src;
-        else {
-            const canvas = tempDiv.querySelector('canvas');
-            if (canvas) qrSrc = canvas.toDataURL();
-        }
+        if (canvas) qrSrc = canvas.toDataURL('image/png');
+        else if (img && img.src) qrSrc = img.src;
+        document.body.removeChild(tempDiv);
 
-        const labelHTML = `
+        const labelBodyHTML = `
             <div id="etiqueta-58mm">
                 <div class="qr-box">
                     ${qrSrc ? `<img src="${qrSrc}" alt="QR Code">` : ''}
@@ -961,31 +965,71 @@ function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPho
             </div>
         `;
 
-        // Insere a etiqueta na área de impressão
-        const printDiv = document.getElementById('printArea');
-        printDiv.innerHTML = labelHTML;
-        printDiv.style.display = 'block';
+        // ===== JANELA DE IMPRESSÃO ISOLADA =====
+        // Contém SOMENTE a etiqueta, nada mais da tela do app.
+        // Isso evita que o Chrome tente paginar a altura da tela inteira
+        // em várias "páginas" de 30mm (era isso que gerava as 7 páginas em branco).
+        const printWindow = window.open('', '_blank', 'width=300,height=200');
+        if (!printWindow) {
+            showToast('Permita pop-ups no navegador para imprimir a etiqueta', 'error');
+            return;
+        }
 
-        // Espera o navegador realmente PINTAR o conteúdo novo na tela antes
-        // de imprimir. Chamar print() logo após mudar o innerHTML pode
-        // capturar a tela antes do QR Code aparecer -> etiqueta em branco.
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                window.print();
-            });
-        });
+        printWindow.document.open();
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    @page { size: 48mm 30mm; margin: 0; }
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    html, body { width: 48mm; height: 30mm; }
+                    #etiqueta-58mm {
+                        width: 48mm;
+                        height: 30mm;
+                        padding: 1mm;
+                        overflow: hidden;
+                        background: #fff;
+                        color: #000;
+                        font-family: Arial, Helvetica, sans-serif;
+                        display: flex;
+                        align-items: center;
+                        gap: 1.5mm;
+                    }
+                    #etiqueta-58mm .qr-box { flex: 0 0 16mm; width: 16mm; height: 16mm; }
+                    #etiqueta-58mm .qr-box img { width: 16mm; height: 16mm; display: block; }
+                    #etiqueta-58mm .info {
+                        flex: 1; min-width: 0;
+                        display: flex; flex-direction: column; justify-content: center;
+                        gap: 0.3mm; overflow: hidden;
+                    }
+                    #etiqueta-58mm .nome {
+                        font-size: 8pt; font-weight: bold; line-height: 1.1;
+                        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+                    }
+                    #etiqueta-58mm .linha {
+                        font-size: 6pt; line-height: 1.15;
+                        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+                    }
+                    #etiqueta-58mm .alergia {
+                        font-size: 6pt; font-weight: bold; color: #b91c1c;
+                        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+                    }
+                </style>
+            </head>
+            <body>${labelBodyHTML}</body>
+            </html>
+        `);
+        printWindow.document.close();
 
-        // Só limpamos a área de impressão DEPOIS que a impressão terminar
-        // de verdade (evento 'afterprint'), e não logo em seguida ao print().
-        const limparAreaImpressao = () => {
-            printDiv.style.display = 'none';
-            printDiv.innerHTML = '';
-            window.removeEventListener('afterprint', limparAreaImpressao);
+        printWindow.onload = () => {
+            printWindow.focus();
+            printWindow.print();
         };
-        window.addEventListener('afterprint', limparAreaImpressao);
-        // Fallback: alguns apps de impressora bluetooth (RawBT, etc) não
-        // disparam 'afterprint', então garantimos a limpeza de qualquer jeito.
-        setTimeout(limparAreaImpressao, 5000);
+        printWindow.onafterprint = () => printWindow.close();
+        // Fallback: se o app de impressão não disparar 'afterprint', fecha sozinho
+        setTimeout(() => { try { printWindow.close(); } catch (e) {} }, 6000);
 
     }, 400);
 }
