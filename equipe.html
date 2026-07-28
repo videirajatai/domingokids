@@ -931,9 +931,6 @@ async function confirmCheckinWithRoom(room) {
         
 
 function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPhone, checkinId) {
-    // Cria o QR Code num container temporário anexado ao body (mas invisível),
-    // pois em alguns navegadores o canvas não renderiza corretamente se a
-    // div nunca foi inserida no DOM.
     const tempDiv = document.createElement('div');
     tempDiv.style.position = 'fixed';
     tempDiv.style.left = '-9999px';
@@ -965,18 +962,27 @@ function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPho
             </div>
         `;
 
-        // ===== JANELA DE IMPRESSÃO ISOLADA =====
-        // Contém SOMENTE a etiqueta, nada mais da tela do app.
-        // Isso evita que o Chrome tente paginar a altura da tela inteira
-        // em várias "páginas" de 30mm (era isso que gerava as 7 páginas em branco).
-        const printWindow = window.open('', '_blank', 'width=300,height=200');
-        if (!printWindow) {
-            showToast('Permita pop-ups no navegador para imprimir a etiqueta', 'error');
-            return;
-        }
+        // Remove um iframe de impressão anterior que possa ter sobrado
+        const oldFrame = document.getElementById('printFrame');
+        if (oldFrame) oldFrame.remove();
 
-        printWindow.document.open();
-        printWindow.document.write(`
+        // ===== IFRAME OCULTO PARA IMPRESSÃO =====
+        // Diferente de abrir uma janela/aba nova (window.open), o iframe fica
+        // DENTRO da própria página. Isso evita o problema do Android não
+        // conseguir gerar a pré-visualização de uma aba separada.
+        const iframe = document.createElement('iframe');
+        iframe.id = 'printFrame';
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentWindow.document;
+        doc.open();
+        doc.write(`
             <!DOCTYPE html>
             <html>
             <head>
@@ -1021,15 +1027,23 @@ function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPho
             <body>${labelBodyHTML}</body>
             </html>
         `);
-        printWindow.document.close();
+        doc.close();
 
-        printWindow.onload = () => {
-            printWindow.focus();
-            printWindow.print();
+        const doPrint = () => {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
         };
-        printWindow.onafterprint = () => printWindow.close();
-        // Fallback: se o app de impressão não disparar 'afterprint', fecha sozinho
-        setTimeout(() => { try { printWindow.close(); } catch (e) {} }, 6000);
+
+        // Espera o iframe carregar de fato antes de disparar a impressão
+        if (doc.readyState === 'complete') {
+            setTimeout(doPrint, 250);
+        } else {
+            iframe.onload = () => setTimeout(doPrint, 250);
+        }
+
+        const limpar = () => { if (iframe.parentNode) iframe.remove(); };
+        iframe.contentWindow.onafterprint = limpar;
+        setTimeout(limpar, 8000); // fallback, caso o evento não dispare
 
     }, 400);
 }
