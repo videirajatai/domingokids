@@ -954,7 +954,7 @@
             `;
             document.body.appendChild(labelContainer);
             const canvasEtiqueta = await html2canvas(labelContainer, {
-                width: 384, height: 240, scale: 1, backgroundColor: '#ffffff'
+                width: 384, height: 224, scale: 1, backgroundColor: '#ffffff'
             });
             document.body.removeChild(labelContainer);
             const etiquetaBase64 = canvasEtiqueta.toDataURL('image/png');
