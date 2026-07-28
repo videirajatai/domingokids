@@ -935,8 +935,8 @@
             labelContainer.style.position = 'fixed';
             labelContainer.style.left = '-9999px';
             labelContainer.style.top = '0';
-            labelContainer.style.width = '384px';
-            labelContainer.style.height = '224px';
+            labelContainer.style.width = '368px';
+            labelContainer.style.height = '240px';
             labelContainer.innerHTML = `
                 <div style="width:384px;height:240px;padding:1px;box-sizing:border-box;background:#fff;color:#000;
                             font-family:Arial, Helvetica, sans-serif;display:flex;align-items:center;gap:8px;overflow:hidden;">
@@ -954,7 +954,7 @@
             `;
             document.body.appendChild(labelContainer);
             const canvasEtiqueta = await html2canvas(labelContainer, {
-                width: 384, height: 224, scale: 1, backgroundColor: '#ffffff'
+                width: 368, height: 240, scale: 1, backgroundColor: '#ffffff'
             });
             document.body.removeChild(labelContainer);
             const etiquetaBase64 = canvasEtiqueta.toDataURL('image/png');
