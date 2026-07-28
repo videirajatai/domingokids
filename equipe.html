@@ -562,6 +562,7 @@
                     <button class="btn-primary" id="startScannerBtn" onclick="startScanner()">📸 Abrir Câmera</button>
                     <button class="btn-secondary" id="stopScannerBtn" onclick="stopScanner()" style="display:none;">⏹️ Parar</button>
                 </div>
+                <select id="cameraSelect" style="display:none; max-width: 320px; margin: 0.6rem auto 0;"></select>
                 <div id="scanResult" class="scan-result"></div>
             </div>
         </div>        
@@ -695,7 +696,13 @@
             currentStaffId = user.id;
             await loadSessions();
             setupTabs();
-            // Event listeners para os botões do modal de sala
+            await loadCameras();   // 🔹 ADICIONAR: já popula o seletor de câmeras ao abrir a página
+
+            // 🔹 ADICIONAR: salva a escolha da câmera pra lembrar da próxima vez
+            document.getElementById('cameraSelect').addEventListener('change', (e) => {
+                localStorage.setItem('kidsCheckinCameraId', e.target.value);
+            });
+
             document.querySelectorAll('.room-option').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const room = btn.dataset.room;
@@ -742,11 +749,55 @@
     }
 
         // ========== SCANNER ==========
-        async function startScanner() {
+        /*async function startScanner() {
             if (scannerActive) return;
             html5QrCode = new Html5Qrcode("reader");
             try {
                 await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess, onScanError);
+                scannerActive = true;
+                document.getElementById('startScannerBtn').style.display = 'none';
+                document.getElementById('stopScannerBtn').style.display = 'inline-block';
+                showToast('Câmera ativada', 'success');
+            } catch(e) { showToast('Erro ao acessar câmera: '+e, 'error'); }
+        }*/
+
+        let availableCameras = [];
+
+        // Busca a lista real de câmeras do aparelho (pede permissão se ainda não pediu)
+        async function loadCameras() {
+            try {
+                availableCameras = await Html5Qrcode.getCameras();
+                const select = document.getElementById('cameraSelect');
+                select.innerHTML = availableCameras
+                    .map(cam => `<option value="${cam.id}">${cam.label || cam.id}</option>`)
+                    .join('');
+                select.style.display = availableCameras.length > 1 ? 'block' : 'none';
+
+                // Se já tinha uma câmera salva de uma escolha anterior, seleciona ela
+                const savedCameraId = localStorage.getItem('kidsCheckinCameraId');
+                if (savedCameraId && availableCameras.some(c => c.id === savedCameraId)) {
+                    select.value = savedCameraId;
+                }
+            } catch (e) {
+                console.log('Não foi possível listar câmeras', e);
+            }
+        }
+
+        async function startScanner() {
+            if (scannerActive) return;
+            html5QrCode = new Html5Qrcode("reader");
+
+            if (!availableCameras.length) await loadCameras();
+
+            const select = document.getElementById('cameraSelect');
+            const chosenCameraId = select.value || (availableCameras[0] && availableCameras[0].id);
+
+            try {
+                const cameraConfig = chosenCameraId
+                    ? { deviceId: { exact: chosenCameraId } }  // câmera específica escolhida
+                    : { facingMode: "environment" };            // fallback caso não consiga listar
+
+                await html5QrCode.start(cameraConfig, { fps: 10, qrbox: 250 }, onScanSuccess, onScanError);
                 scannerActive = true;
                 document.getElementById('startScannerBtn').style.display = 'none';
                 document.getElementById('stopScannerBtn').style.display = 'inline-block';
