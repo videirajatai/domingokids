@@ -443,6 +443,89 @@
             font-weight: 500;
         }
 
+        /* Estilos para impressão da etiqueta 58mm */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #printArea, #printArea * {
+        visibility: visible;
+    }
+    #printArea {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 58mm;
+        padding: 2mm;
+        margin: 0;
+        background: white;
+        font-family: 'Courier New', monospace;
+        font-size: 9pt;
+        line-height: 1.3;
+        color: #000;
+    }
+    /* Esconde elementos desnecessários na impressão */
+    .no-print {
+        display: none !important;
+    }
+}
+
+    /* Estilos para a etiqueta (tela e impressão) */
+    #etiqueta-58mm {
+        width: 54mm;  /* margem interna de 2mm cada lado */
+        padding: 2mm;
+        font-family: 'Courier New', monospace;
+        font-size: 9pt;
+        line-height: 1.3;
+        color: #000;
+        background: #fff;
+        box-sizing: border-box;
+    }
+    #etiqueta-58mm .header {
+        text-align: center;
+        font-weight: bold;
+        font-size: 12pt;
+        letter-spacing: 1px;
+        margin-bottom: 2px;
+    }
+    #etiqueta-58mm .divider {
+        border-top: 1px dashed #888;
+        margin: 2px 0;
+    }
+    #etiqueta-58mm .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 1px 0;
+    }
+    #etiqueta-58mm .label {
+        font-weight: 600;
+        color: #333;
+    }
+    #etiqueta-58mm .value {
+        font-weight: 400;
+        color: #000;
+    }
+    #etiqueta-58mm .footer {
+        text-align: center;
+        font-size: 8pt;
+        color: #555;
+        margin: 2px 0;
+    }
+    #etiqueta-58mm .qr-container {
+        text-align: center;
+        margin-top: 4px;
+    }
+    #etiqueta-58mm .qr-container img {
+        display: inline-block;
+        max-width: 80px;
+        height: auto;
+    }
+    #etiqueta-58mm .qr-label {
+        font-size: 7pt;
+        color: #777;
+        margin-top: 2px;
+    }
+
         /* Responsivo */
         @media (max-width: 640px) {
             .container { padding: 0 1rem; }
@@ -561,11 +644,7 @@
             <div id="roomChildInfo" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 1rem;">                
           </div>
         
-            <div style="display: flex; flex-direction: column; gap: 0.8rem;">
-                        <div style="margin-bottom: 1rem;">
-                            <label style="font-weight: 500;">Número do crachá</label>
-                            <input type="text" id="badgeNumberInput" placeholder="Ex: 12" inputmode="numeric" pattern="\d*" style="width: 100%; padding: 0.6rem; border-radius: 1rem; border: 1px solid #cbd5e1; text-align: center;">
-                        </div>
+            <div style="display: flex; flex-direction: column; gap: 0.8rem;">                       
                 <button class="room-option" data-room="todos" style="background: #64748b; color: white; border: none; padding: 0.7rem; border-radius: 2rem; font-weight: 500; cursor: pointer;">👶 Todos</button>
                 <button class="room-option" data-room="Kids" style="background: #3b82f6; color: white; border: none; padding: 0.7rem; border-radius: 2rem; font-weight: 500; cursor: pointer;">🍼 Kids</button>
                 <button class="room-option" data-room="Babys" style="background: #f59e0b; color: white; border: none; padding: 0.7rem; border-radius: 2rem; font-weight: 500; cursor: pointer;">🧸 Babys</button>
@@ -870,8 +949,10 @@ async function confirmCheckinWithRoom(room) {
 function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPhone, checkinId) {
     const sessionName = document.getElementById('sessionSelect').selectedOptions[0]?.text || 'Culto';
     const now = new Date().toLocaleString();
+
+    // Cria um elemento temporário para gerar o QR Code
     const tempDiv = document.createElement('div');
-    new QRCode(tempDiv, { text: qrToken, width: 100, height: 100 }); // QR menor para etiqueta pequena
+    new QRCode(tempDiv, { text: qrToken, width: 100, height: 100 });
 
     setTimeout(() => {
         let qrSrc = '';
@@ -881,43 +962,39 @@ function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPho
             const canvas = tempDiv.querySelector('canvas');
             if (canvas) qrSrc = canvas.toDataURL();
         }
-        const html = `
-            <div style="width: 58mm; padding: 2mm; font-family: 'Courier New', monospace; font-size: 9pt; line-height: 1.2;">
-                <div style="text-align:center; font-weight:bold; font-size: 12pt;">⛪ Kids Checkin</div>
-                <div style="border-top: 1px dashed #000; margin: 2px 0;"></div>
-                <div><strong>👶 ${escapeHtml(childName)}</strong></div>
-                ${idade ? `<div>📅 ${escapeHtml(idade)}</div>` : ''}
-                ${allergies ? `<div>⚠️ Alergia: ${escapeHtml(allergies)}</div>` : ''}
-                <div>👨 Pai: ${escapeHtml(fatherPhone)}</div>
-                <div>👩 Mãe: ${escapeHtml(motherPhone)}</div>
-                <div style="border-top: 1px dashed #000; margin: 2px 0;"></div>
-                <div style="font-size: 8pt;">${escapeHtml(sessionName)} - ${now}</div>
-                <div style="text-align:center; margin-top: 4px;">
-                    <img src="${qrSrc}" width="80" height="80" style="display:block; margin: 0 auto;">
-                    <div style="font-size: 7pt; color: #555;">Escanear para saída</div>
+
+        // Monta a etiqueta com layout para 58mm
+        const labelHTML = `
+            <div id="etiqueta-58mm">
+                <div class="header">⛪ Kids Checkin</div>
+                <div class="divider"></div>
+                <div class="info-row"><span class="label">Criança:</span> <span class="value">${escapeHtml(childName)}</span></div>
+                ${idade ? `<div class="info-row"><span class="label">Idade:</span> <span class="value">${escapeHtml(idade)}</span></div>` : ''}
+                ${allergies ? `<div class="info-row"><span class="label">Alergia:</span> <span class="value">⚠️ ${escapeHtml(allergies)}</span></div>` : ''}
+                <div class="info-row"><span class="label">Pai:</span> <span class="value">${escapeHtml(fatherPhone)}</span></div>
+                <div class="info-row"><span class="label">Mãe:</span> <span class="value">${escapeHtml(motherPhone)}</span></div>
+                <div class="divider"></div>
+                <div class="footer">${escapeHtml(sessionName)} - ${now}</div>
+                <div class="qr-container">
+                    <img src="${qrSrc}" width="80" height="80" alt="QR Code">
+                    <div class="qr-label">Escanear para saída</div>
                 </div>
             </div>
         `;
-        const printDiv = document.getElementById('printArea');
-        printDiv.innerHTML = html;
-        printDiv.style.display = 'block';
-        window.print();
-        printDiv.style.display = 'none';
-    }, 300);
-}
 
-        async function reprintLabelFromList(checkinId) {
-            const { data: checkin, error } = await supabaseClient
-                .from('kids_check_ins')
-                .select('*, child:child_id(name, allergies), token:token_id(token)')
-                .eq('id', checkinId)
-                .single();
-            if (error || !checkin || !checkin.token) {
-                showToast('Token não encontrado', 'error');
-                return;
-            }
-            printLabel(checkin.token.token, checkin.child.name, checkin.child.allergies || '', checkinId);
-        }
+        // Insere a etiqueta na área de impressão
+        const printDiv = document.getElementById('printArea');
+        printDiv.innerHTML = labelHTML;
+        printDiv.style.display = 'block';
+
+        // Aciona a impressão
+        window.print();
+
+        // Limpa após impressão
+        printDiv.style.display = 'none';
+        printDiv.innerHTML = '';
+    }, 400);
+}
 
         // ========== DETALHES DA CRIANÇA ==========
         async function showChildDetails(childId) {
