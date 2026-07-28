@@ -9,6 +9,7 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="config.js"></script>
     <style>
         * {
@@ -930,122 +931,58 @@ async function confirmCheckinWithRoom(room) {
 }
         
 
-function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPhone, checkinId) {
+async function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPhone, checkinId) {
+    // 1) Gera o QR Code num container temporário anexado ao body
     const tempDiv = document.createElement('div');
     tempDiv.style.position = 'fixed';
     tempDiv.style.left = '-9999px';
     tempDiv.style.top = '0';
     document.body.appendChild(tempDiv);
-
     new QRCode(tempDiv, { text: qrToken, width: 200, height: 200 });
+    await new Promise(resolve => setTimeout(resolve, 300));
 
-    setTimeout(() => {
-        let qrSrc = '';
-        const canvas = tempDiv.querySelector('canvas');
-        const img = tempDiv.querySelector('img');
-        if (canvas) qrSrc = canvas.toDataURL('image/png');
-        else if (img && img.src) qrSrc = img.src;
-        document.body.removeChild(tempDiv);
+    let qrSrc = '';
+    const canvasQr = tempDiv.querySelector('canvas');
+    const imgQr = tempDiv.querySelector('img');
+    if (canvasQr) qrSrc = canvasQr.toDataURL('image/png');
+    else if (imgQr && imgQr.src) qrSrc = imgQr.src;
+    document.body.removeChild(tempDiv);
 
-        const labelBodyHTML = `
-            <div id="etiqueta-58mm">
-                <div class="qr-box">
-                    ${qrSrc ? `<img src="${qrSrc}" alt="QR Code">` : ''}
-                </div>
-                <div class="info">
-                    <div class="nome">${escapeHtml(childName)}</div>
-                    ${idade ? `<div class="linha">Idade: ${escapeHtml(idade)}</div>` : ''}
-                    ${allergies ? `<div class="alergia">⚠️ ${escapeHtml(allergies)}</div>` : ''}
-                    <div class="linha">Pai: ${escapeHtml(fatherPhone)}</div>
-                    <div class="linha">Mãe: ${escapeHtml(motherPhone)}</div>
-                </div>
+    // 2) Monta a etiqueta em tamanho REAL de impressora: 48mm x 30mm a 8 pontos/mm
+    //    (dado tirado do manual da sua impressora) = 384px x 240px
+    const labelContainer = document.createElement('div');
+    labelContainer.style.position = 'fixed';
+    labelContainer.style.left = '-9999px';
+    labelContainer.style.top = '0';
+    labelContainer.style.width = '384px';
+    labelContainer.style.height = '240px';
+    labelContainer.innerHTML = `
+        <div style="width:384px;height:240px;padding:8px;box-sizing:border-box;background:#fff;color:#000;
+                    font-family:Arial, Helvetica, sans-serif;display:flex;align-items:center;gap:12px;overflow:hidden;">
+            <div style="flex:0 0 128px;width:128px;height:128px;">
+                ${qrSrc ? `<img src="${qrSrc}" style="width:128px;height:128px;display:block;">` : ''}
             </div>
-        `;
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:2px;overflow:hidden;">
+                <div style="font-size:22px;font-weight:bold;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(childName)}</div>
+                ${idade ? `<div style="font-size:16px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Idade: ${escapeHtml(idade)}</div>` : ''}
+                ${allergies ? `<div style="font-size:16px;font-weight:bold;color:#b91c1c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">⚠️ ${escapeHtml(allergies)}</div>` : ''}
+                <div style="font-size:16px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Pai: ${escapeHtml(fatherPhone)}</div>
+                <div style="font-size:16px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Mãe: ${escapeHtml(motherPhone)}</div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(labelContainer);
 
-        // Remove um iframe de impressão anterior que possa ter sobrado
-        const oldFrame = document.getElementById('printFrame');
-        if (oldFrame) oldFrame.remove();
+    // 3) Transforma a etiqueta INTEIRA numa única imagem
+    const canvasEtiqueta = await html2canvas(labelContainer, {
+        width: 384, height: 240, scale: 1, backgroundColor: '#ffffff'
+    });
+    document.body.removeChild(labelContainer);
+    const etiquetaBase64 = canvasEtiqueta.toDataURL('image/png');
 
-        // ===== IFRAME OCULTO PARA IMPRESSÃO =====
-        // Diferente de abrir uma janela/aba nova (window.open), o iframe fica
-        // DENTRO da própria página. Isso evita o problema do Android não
-        // conseguir gerar a pré-visualização de uma aba separada.
-        const iframe = document.createElement('iframe');
-        iframe.id = 'printFrame';
-        iframe.style.position = 'fixed';
-        iframe.style.right = '0';
-        iframe.style.bottom = '0';
-        iframe.style.width = '0';
-        iframe.style.height = '0';
-        iframe.style.border = '0';
-        document.body.appendChild(iframe);
-
-        const doc = iframe.contentWindow.document;
-        doc.open();
-        doc.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    @page { size: 48mm 30mm; margin: 0; }
-                    * { margin: 0; padding: 0; box-sizing: border-box; }
-                    html, body { width: 48mm; height: 30mm; }
-                    #etiqueta-58mm {
-                        width: 48mm;
-                        height: 30mm;
-                        padding: 1mm;
-                        overflow: hidden;
-                        background: #fff;
-                        color: #000;
-                        font-family: Arial, Helvetica, sans-serif;
-                        display: flex;
-                        align-items: center;
-                        gap: 1.5mm;
-                    }
-                    #etiqueta-58mm .qr-box { flex: 0 0 16mm; width: 16mm; height: 16mm; }
-                    #etiqueta-58mm .qr-box img { width: 16mm; height: 16mm; display: block; }
-                    #etiqueta-58mm .info {
-                        flex: 1; min-width: 0;
-                        display: flex; flex-direction: column; justify-content: center;
-                        gap: 0.3mm; overflow: hidden;
-                    }
-                    #etiqueta-58mm .nome {
-                        font-size: 8pt; font-weight: bold; line-height: 1.1;
-                        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-                    }
-                    #etiqueta-58mm .linha {
-                        font-size: 6pt; line-height: 1.15;
-                        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-                    }
-                    #etiqueta-58mm .alergia {
-                        font-size: 6pt; font-weight: bold; color: #b91c1c;
-                        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-                    }
-                </style>
-            </head>
-            <body>${labelBodyHTML}</body>
-            </html>
-        `);
-        doc.close();
-
-        const doPrint = () => {
-            iframe.contentWindow.focus();
-            iframe.contentWindow.print();
-        };
-
-        // Espera o iframe carregar de fato antes de disparar a impressão
-        if (doc.readyState === 'complete') {
-            setTimeout(doPrint, 250);
-        } else {
-            iframe.onload = () => setTimeout(doPrint, 250);
-        }
-
-        const limpar = () => { if (iframe.parentNode) iframe.remove(); };
-        iframe.contentWindow.onafterprint = limpar;
-        setTimeout(limpar, 8000); // fallback, caso o evento não dispare
-
-    }, 400);
+    // 4) Envia DIRETO pro RawBT (esquema próprio do app) — não passa pelo
+    // sistema de impressão do Android, então não tem diálogo nem paginação.
+    window.location.href = 'rawbt:' + etiquetaBase64;
 }
 
         // ========== DETALHES DA CRIANÇA ==========
