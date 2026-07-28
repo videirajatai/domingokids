@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Painel da Família | Kids Checkin</title>
+    <title>Domingo Kids | Família </title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js"></script>
 
@@ -467,11 +467,11 @@
 <body>
     <div class="header">
         <div class="header-buttons">
-            <button class="btn-header" onclick="openHistoryModal()">📜 Histórico</button>
+            <!--<button class="btn-header" onclick="openHistoryModal()">📜 Histórico</button>-->
             <button class="btn-header" onclick="openConfigModal()">⚙️</button>
             <button class="btn-header" onclick="logout()">Sair</button>
         </div>
-        <h1>👨‍👩‍👧 Família</h1>
+        <h1>👨‍👩‍👧 RK - Painel da Família</h1>
         <p>Gerencie seus filhos e faça check-in rápido</p>
     </div>
 
@@ -489,9 +489,9 @@
         <div id="qrSection" style="display:none;">
             <div class="card">
                 <h3>🔐 Check-in com QR Code</h3>
-                <label>Selecione a criança:</label>
+                <label>Selecione:</label>
                 <select id="childSelect"></select>
-                <button class="btn-generate" onclick="generateQR()">📱 Gerar QR Code (válido 4h)</button>
+                <button class="btn-generate" onclick="generateQR()">📱 Gerar QR Code </button>
                 <div id="qrcode" class="qr-preview"></div>
                 <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">Mostre o QR para a equipe no momento do check-in.</p>
             </div>
