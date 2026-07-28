@@ -444,31 +444,48 @@
         }
 
         /* Estilos para impressão da etiqueta 58mm */
-@media print {
-    body * {
-        visibility: hidden;
+    /* Estilos para impressão da etiqueta 58mm */
+    @media print {
+        /* Oculta tudo, exceto a área de impressão */
+        body * {
+            visibility: hidden;
+        }
+        #printArea, #printArea * {
+            visibility: visible;
+        }
+        #printArea {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 58mm;
+            height: auto;              /* altura automática */
+            padding: 2mm;
+            margin: 0;
+            background: white;
+            font-family: 'Courier New', monospace;
+            font-size: 9pt;
+            line-height: 1.3;
+            color: #000;
+            page-break-after: avoid;
+            page-break-inside: avoid;
+            box-sizing: border-box;
+        }
+        /* Remove margens extras do body */
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white;
+        }
+        /* Força uma única página */
+        html, body {
+            height: auto;
+            overflow: visible;
+        }
+        /* Esconde elementos desnecessários */
+        .no-print {
+            display: none !important;
+        }
     }
-    #printArea, #printArea * {
-        visibility: visible;
-    }
-    #printArea {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 58mm;
-        padding: 2mm;
-        margin: 0;
-        background: white;
-        font-family: 'Courier New', monospace;
-        font-size: 9pt;
-        line-height: 1.3;
-        color: #000;
-    }
-    /* Esconde elementos desnecessários na impressão */
-    .no-print {
-        display: none !important;
-    }
-}
 
     /* Estilos para a etiqueta (tela e impressão) */
     #etiqueta-58mm {
@@ -950,7 +967,6 @@ function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPho
     const sessionName = document.getElementById('sessionSelect').selectedOptions[0]?.text || 'Culto';
     const now = new Date().toLocaleString();
 
-    // Cria um elemento temporário para gerar o QR Code
     const tempDiv = document.createElement('div');
     new QRCode(tempDiv, { text: qrToken, width: 100, height: 100 });
 
@@ -963,7 +979,6 @@ function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPho
             if (canvas) qrSrc = canvas.toDataURL();
         }
 
-        // Monta a etiqueta com layout para 58mm
         const labelHTML = `
             <div id="etiqueta-58mm">
                 <div class="header">⛪ Kids Checkin</div>
@@ -982,17 +997,19 @@ function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPho
             </div>
         `;
 
-        // Insere a etiqueta na área de impressão
         const printDiv = document.getElementById('printArea');
         printDiv.innerHTML = labelHTML;
         printDiv.style.display = 'block';
 
-        // Aciona a impressão
-        window.print();
-
-        // Limpa após impressão
-        printDiv.style.display = 'none';
-        printDiv.innerHTML = '';
+        // Pequeno atraso para garantir renderização
+        setTimeout(() => {
+            window.print();
+            // Limpa após a impressão (ou após cancelar)
+            setTimeout(() => {
+                printDiv.style.display = 'none';
+                printDiv.innerHTML = '';
+            }, 500);
+        }, 300);
     }, 400);
 }
 
