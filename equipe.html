@@ -442,50 +442,53 @@
             font-size: 0.7rem;
             font-weight: 500;
         }
-
+       
         /* Estilos para impressão da etiqueta 58mm */
-    /* Estilos para impressão da etiqueta 58mm */
-    @media print {
-        /* Oculta tudo, exceto a área de impressão */
-        body * {
-            visibility: hidden;
+        @media print {
+                /* Oculta tudo, exceto a área de impressão */
+                @page {
+                size: 58mm auto;
+                margin: 0;
+            }      
+            body * {
+                visibility: hidden;
+            }
+            #printArea, #printArea * {
+                visibility: visible;
+            }
+            #printArea {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 58mm;
+                height: auto;              /* altura automática */
+                padding: 2mm;
+                margin: 0;
+                background: white;
+                font-family: 'Courier New', monospace;
+                font-size: 9pt;
+                line-height: 1.3;
+                color: #000;
+                page-break-after: avoid;
+                page-break-inside: avoid;
+                box-sizing: border-box;
+            }
+            /* Remove margens extras do body */
+            body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white;
+            }
+            /* Força uma única página */
+            html, body {
+                height: auto;
+                overflow: visible;
+            }
+            /* Esconde elementos desnecessários */
+            .no-print {
+                display: none !important;
+            }
         }
-        #printArea, #printArea * {
-            visibility: visible;
-        }
-        #printArea {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 58mm;
-            height: auto;              /* altura automática */
-            padding: 2mm;
-            margin: 0;
-            background: white;
-            font-family: 'Courier New', monospace;
-            font-size: 9pt;
-            line-height: 1.3;
-            color: #000;
-            page-break-after: avoid;
-            page-break-inside: avoid;
-            box-sizing: border-box;
-        }
-        /* Remove margens extras do body */
-        body {
-            margin: 0 !important;
-            padding: 0 !important;
-            background: white;
-        }
-        /* Força uma única página */
-        html, body {
-            height: auto;
-            overflow: visible;
-        }
-        /* Esconde elementos desnecessários */
-        .no-print {
-            display: none !important;
-        }
-    }
 
     /* Estilos para a etiqueta (tela e impressão) */
     #etiqueta-58mm {
@@ -890,7 +893,6 @@ function openSelectRoomModal(childName, allergies, birthDate) {
 
 function closeSelectRoomModal() {
     document.getElementById('selectRoomModal').style.display = 'none';
-    document.getElementById('badgeNumberInput').value = '';
     pendingCheckinData = null;
 }
         
@@ -957,8 +959,6 @@ async function confirmCheckinWithRoom(room) {
             newCheckin.id         // checkin_id (não usado na etiqueta, mas mantido)
         );
     }
-    // Limpar campo do crachá (não usado)
-    document.getElementById('badgeNumberInput').value = '';
     closeSelectRoomModal();
 }
         
@@ -997,19 +997,32 @@ function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPho
             </div>
         `;
 
+        // Insere a etiqueta na área de impressão
         const printDiv = document.getElementById('printArea');
         printDiv.innerHTML = labelHTML;
         printDiv.style.display = 'block';
 
-        // Pequeno atraso para garantir renderização
-        setTimeout(() => {
-            window.print();
-            // Limpa após a impressão (ou após cancelar)
-            setTimeout(() => {
-                printDiv.style.display = 'none';
-                printDiv.innerHTML = '';
-            }, 500);
-        }, 300);
+        // Espera o navegador realmente PINTAR o conteúdo novo na tela antes
+        // de imprimir. Chamar print() logo após mudar o innerHTML pode
+        // capturar a tela antes do QR Code aparecer -> etiqueta em branco.
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                window.print();
+            });
+        });
+
+        // Só limpamos a área de impressão DEPOIS que a impressão terminar
+        // de verdade (evento 'afterprint'), e não logo em seguida ao print().
+        const limparAreaImpressao = () => {
+            printDiv.style.display = 'none';
+            printDiv.innerHTML = '';
+            window.removeEventListener('afterprint', limparAreaImpressao);
+        };
+        window.addEventListener('afterprint', limparAreaImpressao);
+        // Fallback: alguns apps de impressora bluetooth (RawBT, etc) não
+        // disparam 'afterprint', então garantimos a limpeza de qualquer jeito.
+        setTimeout(limparAreaImpressao, 5000);
+
     }, 400);
 }
 
