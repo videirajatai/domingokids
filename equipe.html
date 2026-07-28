@@ -917,7 +917,7 @@
         }
 
         // ========== IMPRIMIR ETIQUETA (RawBT) ==========
-        async function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPhone, checkinId) {
+        /*async function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPhone, checkinId) {
             const tempDiv = document.createElement('div');
             tempDiv.style.position = 'fixed';
             tempDiv.style.left = '-9999px';
@@ -938,7 +938,7 @@
             labelContainer.style.width = '384px';
             labelContainer.style.height = '240px';
             labelContainer.innerHTML = `
-                <div style="width:384px;height:240px;padding:1px;box-sizing:border-box;background:#fff;color:#000;
+                <div style="width:384px;height:240px;padding:8px;box-sizing:border-box;background:#fff;color:#000;
                             font-family:Arial, Helvetica, sans-serif;display:flex;align-items:center;gap:8px;overflow:hidden;">
                     <div style="flex:0 0 154px;width:154px;height:154px;">
                         ${qrSrc ? `<img src="${qrSrc}" style="width:154px;height:154px;display:block;">` : ''}
@@ -959,7 +959,60 @@
             document.body.removeChild(labelContainer);
             const etiquetaBase64 = canvasEtiqueta.toDataURL('image/png');
             window.location.href = 'rawbt:' + etiquetaBase64;
-        }
+        }*/
+
+        async function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPhone, checkinId) {
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'fixed';
+    tempDiv.style.left = '-9999px';
+    tempDiv.style.top = '0';
+    document.body.appendChild(tempDiv);
+    new QRCode(tempDiv, { text: qrToken, width: 240, height: 240 });
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    let qrSrc = '';
+    const canvasQr = tempDiv.querySelector('canvas');
+    const imgQr = tempDiv.querySelector('img');
+    if (canvasQr) qrSrc = canvasQr.toDataURL('image/png');
+    else if (imgQr && imgQr.src) qrSrc = imgQr.src;
+    document.body.removeChild(tempDiv);
+
+    // Agora SEM padding – conteúdo colado no topo
+    const labelContainer = document.createElement('div');
+    labelContainer.style.position = 'fixed';
+    labelContainer.style.left = '-9999px';
+    labelContainer.style.top = '0';
+    labelContainer.style.width = '384px';
+    labelContainer.style.height = '224px'; // Reduzimos para compensar o padding removido
+    labelContainer.style.padding = '0';    // sem espaçamento
+    labelContainer.innerHTML = `
+        <div style="width:100%;height:100%;background:#fff;color:#000;
+                    font-family:Arial, Helvetica, sans-serif;display:flex;align-items:center;gap:8px;overflow:hidden;
+                    padding:0;box-sizing:border-box;">
+            <div style="flex:0 0 154px;width:154px;height:154px;">
+                ${qrSrc ? `<img src="${qrSrc}" style="width:154px;height:154px;display:block;">` : ''}
+            </div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:2px;overflow:hidden;">
+                <div style="font-size:24px;font-weight:bold;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(childName)}</div>
+                ${idade ? `<div style="font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Idade: ${escapeHtml(idade)}</div>` : ''}
+                ${allergies ? `<div style="font-size:17px;font-weight:bold;color:#b91c1c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">⚠️ ${escapeHtml(allergies)}</div>` : ''}
+                <div style="font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Pai: ${escapeHtml(fatherPhone)}</div>
+                <div style="font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Mãe: ${escapeHtml(motherPhone)}</div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(labelContainer);
+
+    const canvasEtiqueta = await html2canvas(labelContainer, {
+        width: 384, height: 224, scale: 1, backgroundColor: '#ffffff'
+    });
+    document.body.removeChild(labelContainer);
+    const etiquetaBase64 = canvasEtiqueta.toDataURL('image/png');
+
+    // 🔹 Envia com parâmetro de margem (se o RawBT suportar)
+    // Tente adicionar &margin=0 na URL (alguns apps aceitam)
+    window.location.href = 'rawbt:' + etiquetaBase64 + '?margin=0';
+}
 
         // ========== REIMPRESSÃO ==========
         async function reprintLabelFromList(checkinId) {
