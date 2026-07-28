@@ -1,3 +1,4 @@
+<!-- versão com crachá em numeros -- sem QR code -->
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -492,19 +493,7 @@
                 </div>
                 <div id="scanResult" class="scan-result"></div>
             </div>
-        </div>
-
-        <!-- Checkout rápido por número -->
-        <div class="card">
-            <div class="card-title">
-                <span>🔢</span> Check-out por número do crachá
-            </div>
-            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                <input type="text" id="checkoutBadgeInput" placeholder="Digite o número do crachá" style="flex: 1;">
-                <button class="btn-primary" onclick="checkoutByBadgeNumber()">✅ Check-out</button>
-            </div>
-            <div id="checkoutResult" style="margin-top: 0.5rem; font-size: 0.85rem; color: #475569;"></div>
-        </div>
+        </div>        
 
         <!-- Salas e lista de presentes -->
         <div class="card">
@@ -583,6 +572,21 @@
                 <button class="room-option" data-room="Juvenis" style="background: #8b5cf6; color: white; border: none; padding: 0.7rem; border-radius: 2rem; font-weight: 500; cursor: pointer;">⚡ Juvenis</button>
             </div>                         
             <!--<button class="btn-secondary" onclick="closeSelectRoomModal()" style="margin-top: 1rem;">Cancelar</button> -->                      
+        </div>
+    </div>
+
+    <!-- Modal de confirmação de checkout -->
+    <div id="checkoutConfirmModal" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <button class="modal-close" onclick="closeCheckoutConfirmModal()">&times;</button>
+            <div class="modal-title" style="margin-bottom: 0.5rem;">🔔 Confirmar Check-out</div>
+            <div id="checkoutChildInfo" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 1rem;">
+                <!-- Dados da criança serão preenchidos -->
+            </div>
+            <div style="display: flex; gap: 1rem; flex-direction: column;">
+                <button id="confirmCheckoutBtn" class="btn-primary" onclick="confirmCheckout()" style="background: #ef4444;">✅ Confirmar Check-out</button>
+                <button class="btn-secondary" onclick="closeCheckoutConfirmModal()">Cancelar</button>
+            </div>
         </div>
     </div>
 
@@ -742,14 +746,13 @@ async function processToken(token) {
         .maybeSingle();
 
     // Se existe, faz checkout
-    if (activeCheckin) {
-        await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', activeCheckin.id);
-        await supabaseClient.from('kids_temporary_tokens').update({ expires_at: new Date().toISOString() }).eq('id', tokenData.id);
-        document.getElementById('scanResult').innerHTML = `✅ Check-out: ${childName}`;
-        showToast(`Check-out: ${childName}`, 'success');
-        await loadPresentList();
-        return;
-    }
+            // Se existe, faz checkout (agora com confirmação)
+        if (activeCheckin) {
+            // Abrir modal de confirmação com os dados da criança
+            openCheckoutConfirmModal(childId, activeCheckin.id);
+            document.getElementById('scanResult').innerHTML = `🔔 Escaneado: ${childName}`;
+            return;
+        }
 
     // Prepara dados para o modal de seleção de sala
     // Prepara dados para o modal de seleção de sala
@@ -797,9 +800,23 @@ function closeSelectRoomModal() {
         
 async function confirmCheckinWithRoom(room) {
     if (!pendingCheckinData) return;
-    const { tokenId, childId, childName, allergies, tokenValue } = pendingCheckinData;
-    const badgeNumber = document.getElementById('badgeNumberInput').value.trim() || null;
-    
+    const { tokenId, childId, childName, allergies, tokenValue, birthDate } = pendingCheckinData;
+    const badgeNumber = null; // não usamos mais crachá
+
+    // Buscar dados da criança e da família para imprimir na etiqueta
+    const { data: childData, error: childError } = await supabaseClient
+        .from('kids_children')
+        .select('*, family:family_id(*)')
+        .eq('id', childId)
+        .single();
+
+    if (childError || !childData) {
+        showToast('Erro ao buscar dados da criança', 'error');
+        return;
+    }
+
+    const family = childData.family || {};
+
     const { data: newCheckin, error: insertError } = await supabaseClient
         .from('kids_check_ins')
         .insert({
@@ -818,52 +835,76 @@ async function confirmCheckinWithRoom(room) {
         document.getElementById('scanResult').innerHTML = '❌ Erro no check-in.';
     } else {
         const roomDisplay = room === 'todos' ? 'Todos' : room;
-        document.getElementById('scanResult').innerHTML = `✅ Check-in: ${childName} (${roomDisplay})${badgeNumber ? ` - Crachá: ${badgeNumber}` : ''}`;
+        document.getElementById('scanResult').innerHTML = `✅ Check-in: ${childName} (${roomDisplay})`;
         showToast(`Check-in: ${childName} - Sala ${roomDisplay}`, 'success');
         await loadPresentList();
-        /*if (confirm(`Imprimir etiqueta para ${childName}?`)) {
-            printLabel(tokenValue, childName, allergies, newCheckin.id);
-        }*/
+
+        // 🔹 IMPRIMIR ETIQUETA AUTOMATICAMENTE
+        // Calcular idade
+        let idade = '';
+        if (birthDate) {
+            const idadeNum = calcularIdade(birthDate);
+            idade = `${idadeNum} anos`;
+        }
+        // Buscar telefones da família
+        const fatherPhone = family.father_phone || 'Não informado';
+        const motherPhone = family.mother_phone || 'Não informado';
+
+        // Chamar impressão com os dados completos
+        printLabel(
+            tokenValue,           // QR token
+            childName,            // Nome
+            allergies,            // Alergias
+            idade,                // Idade
+            fatherPhone,          // Telefone pai
+            motherPhone,          // Telefone mãe
+            newCheckin.id         // checkin_id (não usado na etiqueta, mas mantido)
+        );
     }
-    // Limpar campo do crachá
+    // Limpar campo do crachá (não usado)
     document.getElementById('badgeNumberInput').value = '';
     closeSelectRoomModal();
 }
         
 
-        function printLabel(qrToken, childName, allergies, checkinId) {
-            const sessionName = document.getElementById('sessionSelect').selectedOptions[0]?.text || 'Culto';
-            const now = new Date().toLocaleString();
-            const tempDiv = document.createElement('div');
-            new QRCode(tempDiv, { text: qrToken, width: 120, height: 120 });
-            setTimeout(() => {
-                let qrSrc = '';
-                const img = tempDiv.querySelector('img');
-                if (img && img.src) qrSrc = img.src;
-                else {
-                    const canvas = tempDiv.querySelector('canvas');
-                    if (canvas) qrSrc = canvas.toDataURL();
-                }
-                const html = `
-                    <div style="width: 58mm; padding: 2mm;">
-                        <div style="text-align:center; font-weight:bold;">⛪ Kids Checkin</div>
-                        <div><strong>Criança:</strong> ${escapeHtml(childName)}</div>
-                        ${allergies ? `<div><strong>Alergias:</strong> ${escapeHtml(allergies)}</div>` : ''}
-                        <div><strong>Sessão:</strong> ${escapeHtml(sessionName)}</div>
-                        <div><strong>Check-in:</strong> ${now}</div>
-                        <div style="text-align:center; margin-top:4px;">
-                            <img src="${qrSrc}" width="80" height="80"><br>
-                            <small>Escanear para saída</small>
-                        </div>
-                    </div>
-                `;
-                const printDiv = document.getElementById('printArea');
-                printDiv.innerHTML = html;
-                printDiv.style.display = 'block';
-                window.print();
-                printDiv.style.display = 'none';
-            }, 300);
+function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPhone, checkinId) {
+    const sessionName = document.getElementById('sessionSelect').selectedOptions[0]?.text || 'Culto';
+    const now = new Date().toLocaleString();
+    const tempDiv = document.createElement('div');
+    new QRCode(tempDiv, { text: qrToken, width: 100, height: 100 }); // QR menor para etiqueta pequena
+
+    setTimeout(() => {
+        let qrSrc = '';
+        const img = tempDiv.querySelector('img');
+        if (img && img.src) qrSrc = img.src;
+        else {
+            const canvas = tempDiv.querySelector('canvas');
+            if (canvas) qrSrc = canvas.toDataURL();
         }
+        const html = `
+            <div style="width: 58mm; padding: 2mm; font-family: 'Courier New', monospace; font-size: 9pt; line-height: 1.2;">
+                <div style="text-align:center; font-weight:bold; font-size: 12pt;">⛪ Kids Checkin</div>
+                <div style="border-top: 1px dashed #000; margin: 2px 0;"></div>
+                <div><strong>👶 ${escapeHtml(childName)}</strong></div>
+                ${idade ? `<div>📅 ${escapeHtml(idade)}</div>` : ''}
+                ${allergies ? `<div>⚠️ Alergia: ${escapeHtml(allergies)}</div>` : ''}
+                <div>👨 Pai: ${escapeHtml(fatherPhone)}</div>
+                <div>👩 Mãe: ${escapeHtml(motherPhone)}</div>
+                <div style="border-top: 1px dashed #000; margin: 2px 0;"></div>
+                <div style="font-size: 8pt;">${escapeHtml(sessionName)} - ${now}</div>
+                <div style="text-align:center; margin-top: 4px;">
+                    <img src="${qrSrc}" width="80" height="80" style="display:block; margin: 0 auto;">
+                    <div style="font-size: 7pt; color: #555;">Escanear para saída</div>
+                </div>
+            </div>
+        `;
+        const printDiv = document.getElementById('printArea');
+        printDiv.innerHTML = html;
+        printDiv.style.display = 'block';
+        window.print();
+        printDiv.style.display = 'none';
+    }, 300);
+}
 
         async function reprintLabelFromList(checkinId) {
             const { data: checkin, error } = await supabaseClient
@@ -1206,42 +1247,7 @@ async function confirmCheckinWithRoom(room) {
             html2pdf().from(element).set({ margin: [0.5,0.5,0.5,0.5], filename: `relatorio_${sessionData?.name || 'sessao'}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } }).save().then(() => { printDiv.style.display = 'none'; }).catch(() => { showToast('Erro ao gerar PDF', 'error'); printDiv.style.display = 'none'; });
         }
 
-        async function checkoutByBadgeNumber() {
-    const badgeNumber = document.getElementById('checkoutBadgeInput').value.trim();
-    if (!badgeNumber) {
-        showToast('Digite um número de crachá', 'error');
-        return;
-    }
-    
-    // Buscar check-in ativo com esse número de crachá na sessão atual
-    const { data: checkin, error } = await supabaseClient
-        .from('kids_check_ins')
-        .select('*, child:child_id(name)')
-        .eq('badge_number', badgeNumber)
-        .eq('session_id', currentSessionId)
-        .is('checked_out_at', null)
-        .maybeSingle();
-    
-    if (error || !checkin) {
-        document.getElementById('checkoutResult').innerHTML = '❌ Nenhum check-in ativo encontrado com este número.';
-        showToast('Crachá não encontrado', 'error');
-        return;
-    }
-    
-    // Confirmar checkout
-    if (confirm(`Check-out de ${checkin.child.name}?`)) {
-        await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', checkin.id);
-        // Opcional: invalidar token associado
-        const { data: token } = await supabaseClient.from('kids_temporary_tokens').select('id').eq('checkin_id', checkin.id).single();
-        if (token) await supabaseClient.from('kids_temporary_tokens').update({ expires_at: new Date().toISOString() }).eq('id', token.id);
         
-        document.getElementById('checkoutResult').innerHTML = `✅ Check-out de ${checkin.child.name} realizado!`;
-        showToast(`Check-out de ${checkin.child.name}`, 'success');
-        await loadPresentList();
-        document.getElementById('checkoutBadgeInput').value = '';
-        setTimeout(() => { document.getElementById('checkoutResult').innerHTML = ''; }, 3000);
-    }
-}
 
         
 
@@ -1249,6 +1255,65 @@ async function confirmCheckinWithRoom(room) {
         async function logout() { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; }
 
         init();
+
+
+        // ========== CHECKOUT COM CONFIRMAÇÃO ==========
+let pendingCheckoutData = null;
+
+function openCheckoutConfirmModal(childId, checkinId) {
+    // Buscar dados da criança e família para exibir no modal
+    supabaseClient
+        .from('kids_children')
+        .select('*, family:family_id(*)')
+        .eq('id', childId)
+        .single()
+        .then(({ data: child, error }) => {
+            if (error) {
+                showToast('Erro ao carregar dados', 'error');
+                return;
+            }
+            const family = child.family || {};
+            const idade = child.birth_date ? `${calcularIdade(child.birth_date)} anos` : 'Não informado';
+            const html = `
+                <div style="text-align:center;">
+                    ${child.photo_url ? `<img src="${child.photo_url}" style="width:80px; height:80px; border-radius:50%; object-fit:cover; margin-bottom: 0.5rem;">` : '<div style="width:80px;height:80px;background:#e2e8f0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;margin:0 auto 0.5rem;">👶</div>'}
+                    <h3 style="margin: 0.2rem 0;">${escapeHtml(child.name)}</h3>
+                    <p><strong>📅 Idade:</strong> ${idade}</p>
+                    ${child.allergies ? `<p><strong>⚠️ Alergias:</strong> ${escapeHtml(child.allergies)}</p>` : ''}
+                    ${child.special_needs ? `<p><strong>🔹 Necessidades:</strong> ${escapeHtml(child.special_needs)}</p>` : ''}
+                    <hr style="margin:0.5rem 0;">
+                    <div style="display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap; font-size:0.85rem;">
+                        <div><strong>Pai:</strong> ${escapeHtml(family.father_name || 'N/I')} - ${escapeHtml(family.father_phone || '')}</div>
+                        <div><strong>Mãe:</strong> ${escapeHtml(family.mother_name || 'N/I')} - ${escapeHtml(family.mother_phone || '')}</div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('checkoutChildInfo').innerHTML = html;
+            pendingCheckoutData = { checkinId };
+            document.getElementById('checkoutConfirmModal').style.display = 'flex';
+        });
+}
+
+    function closeCheckoutConfirmModal() {
+        document.getElementById('checkoutConfirmModal').style.display = 'none';
+        pendingCheckoutData = null;
+    }
+    
+    async function confirmCheckout() {
+        if (!pendingCheckoutData) return;
+        const { checkinId } = pendingCheckoutData;
+    
+        // Atualizar check-out
+        await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', checkinId);
+        // Invalidar token associado
+        const { data: token } = await supabaseClient.from('kids_temporary_tokens').select('id').eq('checkin_id', checkinId).single();
+        if (token) await supabaseClient.from('kids_temporary_tokens').update({ expires_at: new Date().toISOString() }).eq('id', token.id);
+    
+        showToast('Check-out realizado com sucesso!', 'success');
+        document.getElementById('scanResult').innerHTML = `✅ Check-out confirmado!`;
+        closeCheckoutConfirmModal();
+        await loadPresentList();
+    }
     </script>
 </body>
 </html>
