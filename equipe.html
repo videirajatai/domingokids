@@ -985,6 +985,49 @@ async function printLabel(qrToken, childName, allergies, idade, fatherPhone, mot
     window.location.href = 'rawbt:' + etiquetaBase64;
 }
 
+
+        // ========== REIMPRESSÃO (2ª via) A PARTIR DA LISTA ==========
+async function reprintLabelFromList(checkinId) {
+    showToast('Gerando 2ª via da etiqueta...', 'info');
+
+    // Busca o check-in junto com a criança, a família e o TOKEN original
+    // (é o mesmo token que já está colado na etiqueta física da criança,
+    // por isso reimprimimos com o mesmo QR, e não um novo)
+    const { data: checkin, error } = await supabaseClient
+        .from('kids_check_ins')
+        .select('*, child:child_id(*, family:family_id(*)), token:token_id(token, expires_at)')
+        .eq('id', checkinId)
+        .single();
+
+    if (error || !checkin) {
+        showToast('Erro ao buscar dados para reimpressão', 'error');
+        return;
+    }
+
+    const child = checkin.child || {};
+    const family = child.family || {};
+
+    if (!checkin.token || !checkin.token.token) {
+        showToast('Não foi possível encontrar o QR original desta criança', 'error');
+        return;
+    }
+
+    let idade = '';
+    if (child.birth_date) idade = `${calcularIdade(child.birth_date)} anos`;
+
+    await printLabel(
+        checkin.token.token,          // mesmo QR já colado na criança
+        child.name || 'Criança',
+        child.allergies || '',
+        idade,
+        family.father_phone || 'Não informado',
+        family.mother_phone || 'Não informado',
+        checkin.id
+    );
+
+    showToast('2ª via enviada para impressão', 'success');
+}
+
         // ========== DETALHES DA CRIANÇA ==========
         async function showChildDetails(childId) {
             const { data: child, error } = await supabaseClient
