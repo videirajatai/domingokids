@@ -581,11 +581,14 @@
 
         <!-- ===== SALAS + LISTA DE PRESENTES ===== -->
         <div class="present-card">
-            <div class="tabs" id="tabsContainer">
-                <div class="tab active" data-room="todos">👶 Todos</div>
-                <div class="tab" data-room="Kids">🍼 Kids</div>
-                <div class="tab" data-room="Babys">🧸 Babys</div>
-                <div class="tab" data-room="Juvenis">⚡ Juvenis</div>
+           <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-light);">Filtrar por sala:</label>
+                <select id="roomFilterSelect" style="flex: 1; min-width: 150px; padding: 0.6rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--input-bg); font-weight: 500;">
+                    <option value="todos">👶 Todas as Salas</option>
+                    <option value="Babys">🧸 Babys</option>
+                    <option value="Kids">🍼 Kids</option>
+                    <option value="Juvenis">⚡ Juvenis</option>
+                </select>
             </div>
             <div id="presentList">Carregando...</div>
         </div>
@@ -786,7 +789,24 @@
             showToast('Lista atualizada', 'success');
         }
 
-        function setupTabs() {
+        function setupRoomFilter() {
+            const select = document.getElementById('roomFilterSelect');
+            if (!select) return;
+            select.addEventListener('change', async function() {
+                currentRoomFilter = this.value;
+                await loadPresentList();
+                // Opcional: manter seleção no localStorage
+                localStorage.setItem('kidsCheckinRoomFilter', currentRoomFilter);
+            });
+            // Restaurar filtro salvo, se houver
+            const savedFilter = localStorage.getItem('kidsCheckinRoomFilter');
+            if (savedFilter && ['todos','Babys','Kids','Juvenis'].includes(savedFilter)) {
+                select.value = savedFilter;
+                currentRoomFilter = savedFilter;
+            }
+        }
+
+        /*function setupTabs() {
             const tabs = document.querySelectorAll('.tab');
             tabs.forEach(tab => {
                 tab.addEventListener('click', async () => {
@@ -796,7 +816,7 @@
                     await loadPresentList();
                 });
             });
-        }
+        }*/
 
         // ========== CÂMERAS ==========
         /*async function loadCameras() {
@@ -1136,7 +1156,7 @@
         }
 
         // ========== DETALHES DA CRIANÇA ==========
-        async function showChildDetails(childId) {
+        async function showChildDetails(childId, checkinId) {
             const { data: child, error } = await supabaseClient
                 .from('kids_children')
                 .select('*, family:family_id(*)')
@@ -1167,6 +1187,11 @@
                             <div><strong>Mãe:</strong> ${escapeHtml(family.mother_name) || 'Não informado'}</div>
                             <div>📞 ${escapeHtml(family.mother_phone) || '-'}</div>
                         </div>
+                    </div>
+                    <div style="margin-top: 1.5rem;">
+                        <button class="btn-primary" onclick="checkoutManual('${checkinId}')" style="background: var(--danger); justify-content:center; width:100%;">
+                            ✅ Confirmar Check-out
+                        </button>
                     </div>
                 </div>
             `;
@@ -1226,9 +1251,10 @@
                                 ${c.room !== 'todos' && currentRoomFilter === 'todos' ? `<div class="present-time" style="color:${c.room === 'Kids' ? '#3b82f6' : (c.room === 'Babys' ? '#f59e0b' : '#8b5cf6')}">📌 Sala: ${c.room}</div>` : ''}
                             </div>
                             <div class="present-actions">
-                                <button class="btn-icon" onclick="showChildDetails('${c.child_id}')">👁️</button>
+                                // Na loadPresentList, onde chama showChildDetails:
+                                <button class="btn-icon" onclick="showChildDetails('${c.child_id}', '${c.id}')">👁️</button>
                                 <button class="btn-icon" onclick="reprintLabelFromList('${c.id}')">🖨️</button>
-                                <button class="btn-icon btn-danger" onclick="checkoutManual('${c.id}')">Check‑out</button>
+                                <!--<button class="btn-icon btn-danger" onclick="checkoutManual('${c.id}')">Check‑out</button>-->
                             </div>
                         </div>
                     `;
