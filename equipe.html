@@ -1215,20 +1215,18 @@
             }
             const family = child.family || {};
         
-            // Montar mensagem base para WhatsApp
-            const mensagemBase = `Olá! 👋\n\nA criança **${child.name}** está participando do culto Kids hoje.\n\n📅 Solicitamos que o responsável compareça à sala do Domingo Kids assim que possível.\n\nObrigado! 🙏`;
-            const mensagemEncoded = encodeURIComponent(mensagemBase);
-        
-            // Função auxiliar para gerar link do WhatsApp
-            function gerarLinkWhatsApp(telefone) {
+            // Função auxiliar para gerar link do WhatsApp com nome personalizado
+            function gerarLinkWhatsApp(telefone, nomeResponsavel) {
                 if (!telefone) return '#';
                 const numeroLimpo = telefone.replace(/\D/g, '');
                 if (numeroLimpo.length < 10) return '#';
-                return `https://wa.me/55${numeroLimpo}?text=${mensagemEncoded}`;
+                const nomeParaMensagem = nomeResponsavel || 'responsável';
+                const mensagem = `Olá ${nomeParaMensagem}! 👋\n\nA criança **${child.name}** está participando do culto Kids hoje.\n\n Solicitamos que o responsável compareça à sala do Domigo Kids assim que possível.\n\nObrigado! 🙏`;
+                return `https://wa.me/55${numeroLimpo}?text=${encodeURIComponent(mensagem)}`;
             }
         
-            const linkPai = gerarLinkWhatsApp(family.father_phone);
-            const linkMae = gerarLinkWhatsApp(family.mother_phone);
+            const linkPai = gerarLinkWhatsApp(family.father_phone, family.father_name);
+            const linkMae = gerarLinkWhatsApp(family.mother_phone, family.mother_name);
             const temPai = family.father_phone && family.father_phone.replace(/\D/g, '').length >= 10;
             const temMae = family.mother_phone && family.mother_phone.replace(/\D/g, '').length >= 10;
         
