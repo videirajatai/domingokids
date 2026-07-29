@@ -602,9 +602,9 @@
                 <div class="scanner-hero-icon">📷</div>
                 <div style="flex:1;">
                     <h2>Escanear QR Code</h2>
-                    <p>QR Code será gerado no painel dos pais</p>
+                    <p>Gerado no painel dos pais</p>
                 </div>
-                <button class="btn-visitante-discreto" onclick="openVisitanteModal()" title="Visitante rápido" style="background:none; border:none; font-size:1.2rem; color:var(--primary); cursor:pointer; padding:4px 8px; border-radius:var(--radius-sm); transition:0.2s;">
+                <button class="btn-visitante-discreto" onclick="openVisitanteModal()" title="Visitante" style="background:none; border:none; font-size:1.2rem; color:var(--primary); cursor:pointer; padding:4px 8px; border-radius:var(--radius-sm); transition:0.2s;">
                     ➕
                 </button>
             </div>
@@ -622,7 +622,7 @@
         <!-- ===== SALAS + LISTA DE PRESENTES ===== -->
         <div class="present-card">
            <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem; flex-wrap: wrap;">
-                <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-light);">Filtrar por sala:</label>
+                <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-light);">Sel. sala:</label>
                 <select id="roomFilterSelect" style="flex: 1; min-width: 150px; padding: 0.6rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--input-bg); font-weight: 500;">
                     <option value="todos">Todas as Salas</option>
                     <option value="Babys">🍼 Babys</option>
@@ -639,7 +639,7 @@
     <div id="visitanteModal" class="modal">
         <div class="modal-content">
             <button class="modal-close" onclick="closeModal()">&times;</button>
-            <div class="modal-title">📝 Visitante rápido</div>
+            <div class="modal-title">📝 Visitante</div>
             <input type="text" id="visitantName" placeholder="Nome da criança">
             <input type="text" id="respName" placeholder="Responsável">
             <input type="tel" id="respPhone" placeholder="Telefone (opcional)">
@@ -1451,8 +1451,7 @@
                             </div>
                             <div class="present-actions">                                
                                 <button class="btn-icon" onclick="showChildDetails('${c.child_id}', '${c.id}')">👁️</button>
-                                <button class="btn-icon" onclick="reprintLabelFromList('${c.id}')">🖨️</button>
-                                <!--<button class="btn-icon btn-danger" onclick="checkoutManual('${c.id}')">Check‑out</button>-->
+                                <button class="btn-icon" onclick="reprintLabelFromList('${c.id}')">🖨️</button>                                
                             </div>
                         </div>
                     `;
@@ -1461,7 +1460,7 @@
                 html += `<p style="text-align:center;color:var(--text-light);">Nenhuma criança nesta sala. Clique em "Gerenciar" para adicionar.</p>`;
             }
             if (currentRoomFilter === 'todos' && visitants?.length) {
-                html += `<h4 style="margin-top:1rem; color:var(--primary);">📝 Visitantes</h4>`;
+                html += `<h4 style="margin-top:1rem; color:var(--primary);">Visitantes</h4>`;
                 html += visitants.map(v => `
                     <div class="present-item visitant-item">
                         <div class="present-info">
