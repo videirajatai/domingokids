@@ -722,19 +722,58 @@
             });
         }
 
-        async function loadSessions() {
-            const { data } = await supabaseClient.from('kids_sessions').select('id, name, session_date, is_active').order('session_date', { ascending: false });
-            const select = document.getElementById('sessionSelect');
-            if (data?.length) {
-                select.innerHTML = data.map(s => `<option value="${s.id}" ${s.is_active ? 'selected' : ''}>${s.name} (${new Date(s.session_date).toLocaleDateString()})</option>`).join('');
-                const active = data.find(s => s.is_active);
-                currentSessionId = active ? active.id : data[0].id;
-                select.value = currentSessionId;
+       async function loadSessions() {
+                // Buscar todas as sessões (para popular o dropdown)
+                const { data: todas, error } = await supabaseClient
+                    .from('kids_sessions')
+                    .select('id, name, session_date, is_active')
+                    .order('session_date', { ascending: false });
+            
+                if (error) {
+                    console.error('Erro ao carregar sessões:', error);
+                    document.getElementById('sessionSelect').innerHTML = '<option>Erro ao carregar</option>';
+                    return;
+                }
+            
+                // Popular o dropdown
+                const select = document.getElementById('sessionSelect');
+                select.innerHTML = '';
+                if (todas && todas.length > 0) {
+                    todas.forEach(s => {
+                        const dataFormatada = new Date(s.session_date).toLocaleDateString('pt-BR');
+                        const label = `${s.name} (${dataFormatada}) ${s.is_active ? '⭐' : ''}`;
+                        const option = document.createElement('option');
+                        option.value = s.id;
+                        option.textContent = label;
+                        if (s.is_active) option.selected = true;
+                        select.appendChild(option);
+                    });
+                } else {
+                    select.innerHTML = '<option value="">Nenhuma sessão</option>';
+                }
+            
+                // === AUTOMÁTICO: garantir sessão do domingo ===
+                const sessionId = await getOrCreateSundaySession();
+                if (sessionId) {
+                    // Se a sessão do domingo não estiver selecionada, seleciona
+                    if (select.value !== sessionId) {
+                        select.value = sessionId;
+                    }
+                    currentSessionId = sessionId;
+                } else {
+                    // Fallback: usar a primeira sessão da lista
+                    if (todas && todas.length > 0) {
+                        currentSessionId = todas[0].id;
+                        select.value = currentSessionId;
+                    } else {
+                        currentSessionId = null;
+                        showToast('Nenhuma sessão disponível. Crie uma manualmente.', 'error');
+                    }
+                }
+            
+                // Carregar lista de presentes após definir a sessão
                 await loadPresentList();
-            } else {
-                select.innerHTML = '<option>Nenhuma sessão. Crie uma.</option>';
             }
-        }
 
         async function changeSession() {
             currentSessionId = document.getElementById('sessionSelect').value;
@@ -1432,6 +1471,72 @@
         // ========== UTILITÁRIOS ==========
         function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : (m === '<' ? '&lt;' : '&gt;')); }
         async function logout() { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; }
+
+        // ========== AUTOMATIZAR SESSÃO DO DOMINGO ==========
+        function getProximoDomingo() {
+            const hoje = new Date();
+            const dia = hoje.getDay(); // 0 = domingo
+            const diff = dia === 0 ? 0 : 7 - dia;
+            const proximoDomingo = new Date(hoje);
+            proximoDomingo.setDate(hoje.getDate() + diff);
+            // Ajustar para meia-noite (para comparar apenas a data)
+            proximoDomingo.setHours(0, 0, 0, 0);
+            return proximoDomingo;
+        }
+        
+        async function getOrCreateSundaySession() {
+            const dataDomingo = getProximoDomingo();
+            const dataString = dataDomingo.toISOString().split('T')[0]; // YYYY-MM-DD
+        
+            // 1) Verificar se já existe uma sessão ativa para este domingo
+            const { data: existente, error: buscaError } = await supabaseClient
+                .from('kids_sessions')
+                .select('id, name, is_active')
+                .eq('session_date', dataString)
+                .eq('is_active', true)
+                .maybeSingle();
+        
+            if (buscaError) {
+                console.error('Erro ao buscar sessão do domingo:', buscaError);
+                return null;
+            }
+        
+            if (existente) {
+                // Já existe – usar essa
+                return existente.id;
+            }
+        
+            // 2) Não existe → criar nova sessão
+            // Desativar todas as outras sessões ativas (para não ter duas ativas)
+            const { error: desativarError } = await supabaseClient
+                .from('kids_sessions')
+                .update({ is_active: false })
+                .eq('is_active', true);
+        
+            if (desativarError) {
+                console.error('Erro ao desativar sessões antigas:', desativarError);
+            }
+        
+            // Criar a nova sessão
+            const nomeSessao = `Culto Kids - ${dataString.split('-').reverse().join('/')}`;
+            const { data: nova, error: criarError } = await supabaseClient
+                .from('kids_sessions')
+                .insert({
+                    name: nomeSessao,
+                    session_date: dataString,
+                    is_active: true,
+                    // start_time e end_time podem ficar nulos
+                })
+                .select()
+                .single();
+        
+            if (criarError) {
+                console.error('Erro ao criar sessão do domingo:', criarError);
+                return null;
+            }
+        
+            return nova.id;
+        }
 
         init();
     </script>
