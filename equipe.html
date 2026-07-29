@@ -1425,7 +1425,7 @@
                 `;
             }
             if (checkins?.length) {
-                html += `<h4 style="margin-bottom:0.8rem; color:var(--primary);">👶 Crianças cadastradas ${currentRoomFilter !== 'todos' ? `(Sala: ${currentRoomFilter})` : ''}</h4>`;
+                html += `<h4 style="margin-bottom:0.8rem; color:var(--primary);">Crianças nas Salas ${currentRoomFilter !== 'todos' ? `(Sala: ${currentRoomFilter})` : ''}</h4>`;
                 for (const c of checkins) {
                     let isBirthdayWeek = false;
                     if (c.child.birth_date) {
