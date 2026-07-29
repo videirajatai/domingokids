@@ -363,13 +363,18 @@
             let emailParaLogin = entrada;
         
             // Se não contém '@', tenta buscar email pelo username
+            // Se não contém '@', tenta buscar email pelo username
             if (!entrada.includes('@')) {
+                console.log('Buscando username:', entrada);
                 const { data: profile, error: profileError } = await supabaseClient
                     .from('kids_profiles')
                     .select('email')
                     .eq('username', entrada)
                     .maybeSingle();
-        
+            
+                console.log('Perfil encontrado:', profile);
+                console.log('Erro da busca:', profileError);
+            
                 if (profileError) {
                     console.error('Erro ao buscar username:', profileError);
                     exibirErro('mensagem-erro', 'Erro ao buscar usuário.');
@@ -378,14 +383,15 @@
                     return;
                 }
                 if (!profile) {
+                    console.log('Nenhum perfil encontrado para o username:', entrada);
                     exibirErro('mensagem-erro', 'Usuário não encontrado.');
                     btn.innerText = "Entrar";
                     btn.disabled = false;
                     return;
                 }
                 emailParaLogin = profile.email;
-            }
-        
+                console.log('Email encontrado:', emailParaLogin);
+            }        
             btn.innerText = "Autenticando...";
             btn.disabled = true;
             erro.style.display = 'none';
@@ -409,9 +415,13 @@
                 // Verificar ou criar perfil
                 const { data: profile, error: profileError } = await supabaseClient
                     .from('kids_profiles')
-                    .select('role')
-                    .eq('id', userId)
+                    .select('email')
+                    .eq('username', entrada)
                     .maybeSingle();
+                
+                console.log('Busca por username:', entrada);
+                console.log('Resultado:', profile);
+                console.log('Erro:', profileError);
         
                 if (profileError || !profile) {
                     const { error: insertError } = await supabaseClient
