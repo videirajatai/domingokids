@@ -52,43 +52,75 @@
             padding-bottom: 6rem;
         }
 
-        /* ===== TOPBAR ===== */
+       /* ===== TOPBAR ===== */
         .topbar {
             position: sticky;
             top: 0;
             z-index: 50;
             background: linear-gradient(120deg, #6d4351 0%, #8b5a6a 55%, #96637a 100%);
             color: white;
-            padding: 1rem 1.4rem;
+            padding: 0.6rem 0.8rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
             box-shadow: var(--shadow-lg);
+            gap: 0.5rem;
+            flex-wrap: nowrap;
         }
-        .topbar-brand { display: flex; align-items: center; gap: 0.7rem; }
-        .topbar-logo {
-            width: 42px; height: 42px;
-            background: rgba(255,255,255,0.16);
-            border-radius: 0.9rem;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.3rem;
+        .topbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 0; /* permite encolher */
+            flex-shrink: 1;
+        }
+        .topbar-logo-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: rgba(255,255,255,0.2);
+            padding: 2px;
             flex-shrink: 0;
         }
-        .topbar-brand h1 { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.2px; line-height: 1.2; }
-        .topbar-brand span { font-size: 0.72rem; opacity: 0.75; font-weight: 500; }
-        .topbar-actions { display: flex; gap: 0.45rem; }
+        .topbar-brand h1 {
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: -0.2px;
+            line-height: 1.1;
+            white-space: nowrap;
+        }
+        .topbar-brand span {
+            font-size: 0.65rem;
+            opacity: 0.85;
+            font-weight: 500;
+            display: block;
+            white-space: nowrap;
+        }
+        .topbar-actions {
+            display: flex;
+            gap: 0.3rem;
+            flex-shrink: 0;
+        }
         .icon-btn {
-            width: 38px; height: 38px;
-            border-radius: 0.9rem;
+            width: 34px;
+            height: 34px;
+            border-radius: 0.7rem;
             background: rgba(255,255,255,0.14);
             border: none;
             color: white;
-            font-size: 1.05rem;
+            font-size: 0.95rem;
             cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             transition: 0.2s;
+            backdrop-filter: blur(2px);
         }
-        .icon-btn:hover { background: rgba(255,255,255,0.3); transform: translateY(-1px); }
+        .icon-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.05);
+        }
 
         /* ===== LAYOUT ===== */
         .page {
@@ -535,10 +567,10 @@
     <!-- ===== TOPBAR ===== -->
     <div class="topbar">
         <div class="topbar-brand">
-            <div class="topbar-logo">👥</div>
+            <img src="logo.png" alt="Radicais Kids" class="topbar-logo-img">
             <div>
-                <h1>Radicais Kids Jataí</h1>
-                <span>Equipe Domingo Kids <br> Gestão de crianças e salas</span>
+                <h1>Radicais Kids</h1>
+                <span>Jataí · Equipe</span>
             </div>
         </div>
         <div class="topbar-actions">
