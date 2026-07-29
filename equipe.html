@@ -1520,7 +1520,7 @@
                     else if (c.room === 'Babys') borderColor = '#f59e0b';
                     else if (c.room === 'Juvenis') borderColor = '#8b5cf6';
         
-                    html += `
+                    /*html += `
                         <div class="present-item" style="border-left-color: ${borderColor}; padding: 0.5rem 0.7rem; display:flex; align-items:center; gap:0.5rem;">
                             <div class="present-info" style="display:flex; flex-direction:column; flex:1;">
                                 <div class="present-name" style="font-size:0.85rem; display:flex; align-items:center; gap:0.2rem; flex-wrap:wrap;">
@@ -1534,8 +1534,27 @@
                                 </div>
                             </div>
                             <div class="present-actions" style="display:flex; gap:0.2rem; flex-shrink:0;">
-                                <button class="btn-icon" onclick="showChildDetails('${c.child_id}', '${c.id}')" style="padding:0.2rem 0.4rem; font-size:0.65rem; border-radius:0.4rem;">👁️</button>
-                                <button class="btn-icon" onclick="reprintLabelFromList('${c.id}')" style="padding:0.2rem 0.4rem; font-size:0.65rem; border-radius:0.4rem;">🖨️</button>
+                                <button class="btn-icon" onclick="showChildDetails('${c.child_id}', '${c.id}')" style="padding:0.2rem 0.5rem; font-size:0.7rem; border-radius:0.5rem;">👁️</button>
+                                <button class="btn-icon" onclick="reprintLabelFromList('${c.id}')" style="padding:0.2rem 0.5rem; font-size:0.7rem; border-radius:0.5rem;">🖨️</button>
+                            </div>
+                        </div>
+                    `;*/
+                    html += `
+                        <div class="present-item" style="border-left-color: ${borderColor}; padding: 0.5rem 0.7rem; display:flex; align-items:center; justify-content:space-between; gap:0.3rem;">
+                            <div class="present-info" style="display:flex; flex-direction:column; flex: 0 1 auto;">
+                                <div class="present-name" style="font-size:0.85rem; display:flex; align-items:center; gap:0.2rem; flex-wrap:wrap;">
+                                    ${birthdayIcon}${escapeHtml(c.child.name)}
+                                    ${c.badge_number ? `<span class="badge" style="font-size:0.55rem; padding:0.1rem 0.3rem;">🏷️ ${c.badge_number}</span>` : ''}
+                                    ${c.child.allergies ? '<span class="badge" style="font-size:0.55rem; padding:0.1rem 0.3rem; background:#fee2e2; color:#b91c1c;">⚠️</span>' : ''}
+                                </div>
+                                <div class="present-time" style="font-size:0.6rem; color:var(--text-light);">
+                                    Check‑in: ${new Date(c.checked_in_at).toLocaleTimeString()}
+                                    ${c.room !== 'todos' && currentRoomFilter === 'todos' ? ` · 📌 Sala: ${c.room}` : ''}
+                                </div>
+                            </div>
+                            <div class="present-actions" style="display:flex; gap:0.2rem; flex-shrink:0;">
+                                <button class="btn-icon" onclick="showChildDetails('${c.child_id}', '${c.id}')" style="padding:0.2rem 0.5rem; font-size:0.7rem; border-radius:0.5rem;">👁️</button>
+                                <button class="btn-icon" onclick="reprintLabelFromList('${c.id}')" style="padding:0.2rem 0.5rem; font-size:0.7rem; border-radius:0.5rem;">🖨️</button>
                             </div>
                         </div>
                     `;
