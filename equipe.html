@@ -620,11 +620,48 @@
         </div>
 
         <!-- ===== SALAS + LISTA DE PRESENTES ===== -->
-        <div class="present-card">
+        <!--<div class="present-card">
            <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem; flex-wrap: wrap;">
-                <!--<label style="font-weight: 600; font-size: 0.85rem; color: var(--text-light);"></label>-->
+                <!--<label style="font-weight: 600; font-size: 0.85rem; color: var(--text-light);"></label>//
                 <button class="icon-btn" onclick="refreshPresentList()" title="Recarregar">🔄</button>
                 <select id="roomFilterSelect" style="flex: 1; min-width: 150px; padding: 0.6rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--input-bg); font-weight: 500;">
+                    <option value="todos">Todas as Salas</option>
+                    <option value="Babys">🍼 Babys</option>
+                    <option value="Kids">🧸 Kids</option>
+                    <option value="Juvenis">⚡ Juvenis</option>
+                </select>
+            </div>
+            <div id="presentList">Carregando...</div>
+        </div>-->
+        <!-- ===== SALAS + LISTA DE PRESENTES ===== -->
+        <div class="present-card">
+            <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                <button class="btn-refresh-salas" onclick="refreshPresentList()" title="Recarregar" style="
+                    background: var(--input-bg);
+                    border: 1px solid var(--border-color);
+                    border-radius: var(--radius-sm);
+                    padding: 0.6rem 0.8rem;
+                    font-size: 1rem;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: var(--text-light);
+                    transition: 0.2s;
+                    height: 44px;
+                    flex-shrink: 0;
+                ">🔄</button>
+                <select id="roomFilterSelect" style="
+                    flex: 1;
+                    min-width: 150px;
+                    padding: 0.6rem 1rem;
+                    height: 44px;
+                    border-radius: var(--radius-sm);
+                    border: 1px solid var(--border-color);
+                    background: var(--input-bg);
+                    font-weight: 500;
+                    font-size: 0.9rem;
+                ">
                     <option value="todos">Todas as Salas</option>
                     <option value="Babys">🍼 Babys</option>
                     <option value="Kids">🧸 Kids</option>
