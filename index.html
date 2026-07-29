@@ -275,39 +275,54 @@
             }
         }
 
-        // ==================== LOGIN ====================
-       async function verificarLogin() {
+    
+      // ==================== LOGIN ====================
+        async function verificarLogin() {
             const entrada = document.getElementById('usuario-input').value.trim();
             const senhaDigitada = document.getElementById('senha-input').value.trim();
             const erro = document.getElementById('mensagem-erro');
             const btn = document.getElementById('btn-entrar');
         
             if (!entrada || !senhaDigitada) {
-                exibirErro('mensagem-erro', 'Preencha e-mail e senha.');
+                exibirErro('mensagem-erro', 'Preencha o usuário/e-mail e a senha.');
                 return;
             }
-        
-            // Verifica se é um e-mail válido, se não, assume que é o nome de usuário (mas vamos simplificar)
-            // Para evitar complicação, vamos exigir que o usuário digite o e-mail completo.
-            if (!entrada.includes('@')) {
-                exibirErro('mensagem-erro', 'Digite seu e-mail completo.');
-                return;
-            }
-        
-            const email = entrada;
         
             btn.innerText = "Autenticando...";
             btn.disabled = true;
             erro.style.display = 'none';
         
             try {
+                let emailParaLogin = entrada;
+        
+                // Se NÃO contiver '@', assume que é um nome de usuário (username)
+                if (!entrada.includes('@')) {
+                    // Busca o e-mail na tabela kids_profiles associado ao username digitado
+                    const { data: profileData, error: profileErr } = await supabaseClient
+                        .from('kids_profiles')
+                        .select('id, email') // Certifique-se que existe a coluna email ou busque o vinculo
+                        .ilike('username', entrada) // ilike torna a busca case-insensitive
+                        .maybeSingle();
+        
+                    if (profileErr || !profileData || !profileData.email) {
+                        exibirErro('mensagem-erro', 'Usuário não encontrado.');
+                        document.getElementById('senha-input').value = "";
+                        btn.innerText = "Entrar";
+                        btn.disabled = false;
+                        return;
+                    }
+        
+                    emailParaLogin = profileData.email;
+                }
+        
+                // Tenta realizar o login com o e-mail obtido
                 const { data: loginData, error: loginError } = await supabaseClient.auth.signInWithPassword({
-                    email: email,
+                    email: emailParaLogin,
                     password: senhaDigitada
                 });
         
                 if (loginError) {
-                    exibirErro('mensagem-erro', 'E-mail ou senha incorretos.');
+                    exibirErro('mensagem-erro', 'Usuário/e-mail ou senha incorretos.');
                     document.getElementById('senha-input').value = "";
                     btn.innerText = "Entrar";
                     btn.disabled = false;
@@ -316,7 +331,7 @@
         
                 const userId = loginData.user.id;
         
-                // Verificar ou criar perfil
+                // Verificar se tem registro em kids_profiles
                 const { data: profile, error: profileError } = await supabaseClient
                     .from('kids_profiles')
                     .select('role')
@@ -338,7 +353,7 @@
                     }
                 }
         
-                // Redirecionar para pais.html
+                // Redirecionar para o painel dos pais
                 entrarNoPainel(loginData.user.user_metadata?.full_name || 'Pai', 'pais');
         
             } catch (err) {
