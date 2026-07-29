@@ -1,379 +1,353 @@
-<!-- equipe.html – VERSÃO COM ESTILO VIDEIRA (mantendo 100% das funcionalidades) -->
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Kids Checkin | Equipe</title>
-
-    <!-- Bibliotecas -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">    
     <script src="config.js"></script>
-
-    <link rel="icon" type="image/png" href="logo.png">
-    <link rel="apple-touch-icon" href="logo.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Kids Videira">
-    <meta name="theme-color" content="#f8f0ec">
-    <link rel="manifest" href="manifest.json">
-
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* ==============================================================
-           PALETA VIDEIRA (mesma do lider.html)
-           ============================================================== */
         :root {
             --primary: #8b5a6a;
+            --primary-dark: #6d4351;
             --primary-light: #c9a7b3;
             --accent: #d4a373;
-            --bg-body: #fcf7f5;
-            --card-bg: #ffffff;
-            --text-main: #4a3b3e;
-            --text-light: #7a6a6e;
-            --border-color: #e6dcd8;
-            --input-bg: #fdfaf9;
-            --shadow: 0 4px 15px rgba(139, 90, 106, 0.08);
-            --radius: 16px;
+            --accent-dark: #b9824f;
+            --bg-body: #faf5f2;
+            --surface: #ffffff;
+            --text-main: #3d2f32;
+            --text-light: #8a7a7e;
+            --text-faint: #b3a29f;
+            --border-color: #ece2de;
+            --input-bg: #fbf7f5;
+            --success: #2d6a4f;
             --success-bg: #eaf6ed;
-            --success-text: #2d6a4f;
-            --danger-text: #b34a4a;
+            --danger: #b34a4a;
+            --danger-bg: #fbebeb;
+            --room-kids: #3d7a8c;
+            --room-babys: #c98a3e;
+            --room-juvenis: #7a5ca3;
+            --room-todos: #2d6a4f;
+            --radius-sm: 0.7rem;
+            --radius-md: 1.1rem;
+            --radius-lg: 1.6rem;
+            --radius-xl: 2rem;
+            --shadow-sm: 0 2px 8px rgba(61, 47, 50, 0.05);
+            --shadow-md: 0 8px 24px rgba(61, 47, 50, 0.08);
+            --shadow-lg: 0 16px 40px rgba(61, 47, 50, 0.14);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            background: var(--bg-body) !important;
+            background: var(--bg-body);
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-            padding-bottom: 5rem;
-            min-height: 100vh;
             color: var(--text-main);
+            min-height: 100vh;
+            padding-bottom: 6rem;
         }
 
-        /* ===== HEADER ===== */
-        .header {
-            background: var(--card-bg);
-            padding: 1rem 1.5rem;
-            border-radius: 0 0 var(--radius) var(--radius);
-            box-shadow: var(--shadow);
+        /* ===== TOPBAR ===== */
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: linear-gradient(120deg, #6d4351 0%, #8b5a6a 55%, #96637a 100%);
+            color: white;
+            padding: 1rem 1.4rem;
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 0.8rem;
-            border-left: 5px solid var(--primary);
-            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-lg);
         }
-        .header-left {
+        .topbar-brand { display: flex; align-items: center; gap: 0.7rem; }
+        .topbar-logo {
+            width: 42px; height: 42px;
+            background: rgba(255,255,255,0.16);
+            border-radius: 0.9rem;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+        .topbar-brand h1 { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.2px; line-height: 1.2; }
+        .topbar-brand span { font-size: 0.72rem; opacity: 0.75; font-weight: 500; }
+        .topbar-actions { display: flex; gap: 0.45rem; }
+        .icon-btn {
+            width: 38px; height: 38px;
+            border-radius: 0.9rem;
+            background: rgba(255,255,255,0.14);
+            border: none;
+            color: white;
+            font-size: 1.05rem;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: 0.2s;
+        }
+        .icon-btn:hover { background: rgba(255,255,255,0.3); transform: translateY(-1px); }
+
+        /* ===== LAYOUT ===== */
+        .page {
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 1.2rem 1.1rem 0;
+        }
+
+        /* ===== SESSION STRIP ===== */
+        .session-strip {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            padding: 0.9rem 1.1rem;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 0.9rem;
+            margin-bottom: 1.1rem;
         }
-        .header-left img {
-            width: 48px;
+        .session-strip-icon {
+            width: 38px; height: 38px;
+            border-radius: 0.8rem;
+            background: var(--success-bg);
+            color: var(--success);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .session-strip-field { flex: 1; min-width: 0; }
+        .session-strip-field label {
+            display: block;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--text-light);
+            margin-bottom: 0.15rem;
+        }
+        .session-strip select {
+            border: none;
+            background: transparent;
+            padding: 0;
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--text-main);
+            width: 100%;
+            cursor: pointer;
+        }
+        .session-strip select:focus { outline: none; }
+        .btn-ghost {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--primary);
+            padding: 0.55rem 0.9rem;
+            border-radius: 0.9rem;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            white-space: nowrap;
+            display: flex; align-items: center; gap: 0.35rem;
+            transition: 0.2s;
+        }
+        .btn-ghost:hover { background: #f3e7e2; }
+
+        /* ===== SCANNER HERO ===== */
+        .scanner-hero {
+            background: linear-gradient(160deg, #ffffff 0%, #fdf7f4 100%);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            margin-bottom: 1.1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .scanner-hero::before {
+            content: '';
+            position: absolute;
+            top: -60px; right: -60px;
+            width: 160px; height: 160px;
+            background: radial-gradient(circle, rgba(212,163,115,0.18), transparent 70%);
             border-radius: 50%;
         }
-        .header-left h2 {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--primary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin: 0;
-        }
-        .header-left p {
-            font-size: 0.75rem;
-            color: var(--text-light);
-            margin: 0;
-            font-weight: 500;
-        }
-
-        .header-buttons {
-            display: flex;
-            gap: 0.6rem;
-            flex-wrap: wrap;
-        }
-        .btn-header {
-            background: rgba(139, 90, 106, 0.08);
-            border: none;
-            color: var(--text-main);
-            padding: 0.4rem 0.9rem;
-            border-radius: 2rem;
-            font-weight: 600;
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: 0.2s;
+        .scanner-hero-head {
             display: flex;
             align-items: center;
-            gap: 0.3rem;
-            border: 1px solid transparent;
+            gap: 0.7rem;
+            margin-bottom: 1.1rem;
+            position: relative;
         }
-        .btn-header:hover {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        /* ===== CONTAINER E CARDS ===== */
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 0 1rem;
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            padding: 1.2rem;
-            margin-bottom: 1.2rem;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border-color);
-            transition: 0.2s;
-        }
-        .card:hover {
-            box-shadow: 0 6px 20px rgba(139, 90, 106, 0.10);
-        }
-        .card-title {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            border-left: 4px solid var(--accent);
-            padding-left: 0.8rem;
-        }
-
-        /* ===== SESSÃO ===== */
-        .session-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-        .session-selector {
-            flex: 1;
-            min-width: 200px;
-        }
-        select {
-            width: 100%;
-            padding: 0.7rem 1rem;
+        .scanner-hero-icon {
+            width: 44px; height: 44px;
             border-radius: 1rem;
-            border: 1px solid var(--border-color);
-            background: var(--input-bg);
-            font-size: 0.9rem;
-            color: var(--text-main);
-            cursor: pointer;
-            transition: 0.2s;
-            font-weight: 500;
-        }
-        select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(139, 90, 106, 0.15);
-        }
-
-        .btn-secondary {
-            background: var(--input-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 0.6rem 1.2rem;
-            border-radius: 2rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            font-size: 0.85rem;
-        }
-        .btn-secondary:hover {
             background: var(--primary);
             color: white;
-            border-color: var(--primary);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
         }
+        .scanner-hero-head h2 { font-size: 1.05rem; font-weight: 700; }
+        .scanner-hero-head p { font-size: 0.78rem; color: var(--text-light); margin-top: 0.1rem; }
 
+        .scanner-area { text-align: center; position: relative; }
+        #reader {
+            width: 100%;
+            max-width: 420px;
+            margin: 0 auto;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+        .scanner-buttons {
+            display: flex;
+            gap: 0.7rem;
+            justify-content: center;
+            margin-top: 1.1rem;
+            flex-wrap: wrap;
+        }
         .btn-primary {
             background: var(--primary);
             color: white;
             border: none;
-            padding: 0.6rem 1.5rem;
-            border-radius: 2rem;
+            padding: 0.7rem 1.5rem;
+            border-radius: var(--radius-md);
             font-weight: 600;
+            font-size: 0.88rem;
             cursor: pointer;
             transition: 0.2s;
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            font-size: 0.9rem;
+            box-shadow: 0 6px 16px rgba(139,90,106,0.28);
         }
-        .btn-primary:hover {
-            background: #7a4d5a;
-            transform: scale(1.02);
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+        .btn-secondary {
+            background: var(--input-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 0.7rem 1.5rem;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: 0.2s;
         }
+        .btn-secondary:hover { background: #f3e7e2; }
+        .btn-danger { background: var(--danger); color: white; border: none; }
+        .btn-danger:hover { background: #963d3d; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #235640; }
 
-        .btn-danger {
-            background: var(--danger-text);
-            color: white;
-            border: none;
-        }
-        .btn-danger:hover {
-            background: #9c3d3d;
-        }
-
-        .btn-success {
-            background: var(--success-text);
-            color: white;
-            border: none;
-        }
-        .btn-success:hover {
-            background: #1f5a3f;
-        }
-
-        /* ===== SCANNER ===== */
-        .scanner-area {
-            text-align: center;
-        }
-        #reader {
-            width: 100%;
-            max-width: 500px;
-            margin: 0 auto;
-            border-radius: 1.2rem;
-            overflow: hidden;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-        }
-        .scanner-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            margin-top: 1rem;
-            flex-wrap: wrap;
+        #cameraSelect {
+            margin: 0.9rem auto 0;
+            display: block;
+            max-width: 320px;
+            padding: 0.55rem 0.9rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            background: var(--input-bg);
+            font-size: 0.82rem;
         }
         .scan-result {
             margin-top: 1rem;
-            padding: 0.75rem;
-            border-radius: 1rem;
-            font-weight: 500;
+            padding: 0.8rem 1rem;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.88rem;
             text-align: center;
             background: var(--input-bg);
             color: var(--text-main);
             border: 1px solid var(--border-color);
         }
 
-        /* ===== ABAS ===== */
+        /* ===== TABS (segmented) ===== */
+        .present-card {
+            background: var(--surface);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+            padding: 1.3rem;
+            margin-bottom: 1.5rem;
+        }
         .tabs {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.35rem;
             margin-bottom: 1.2rem;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 0.5rem;
+            background: var(--input-bg);
+            padding: 0.3rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
         }
         .tab {
-            padding: 0.4rem 1rem;
-            border-radius: 2rem;
+            flex: 1;
+            text-align: center;
+            padding: 0.55rem 0.4rem;
+            border-radius: 0.8rem;
             cursor: pointer;
-            background: var(--input-bg);
-            transition: 0.2s;
+            transition: all 0.2s;
             font-weight: 600;
             font-size: 0.8rem;
             color: var(--text-light);
-            border: 1px solid transparent;
         }
         .tab.active {
             background: var(--primary);
             color: white;
-            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(139,90,106,0.3);
         }
-        .tab:hover:not(.active) {
-            background: var(--border-color);
-        }
+        .tab:hover:not(.active) { background: #f3e7e2; color: var(--text-main); }
 
         /* ===== LISTA DE PRESENTES ===== */
         .present-item {
-            background: #faf7f5;
-            border-radius: 1rem;
-            padding: 0.8rem 1rem;
-            margin-bottom: 0.8rem;
+            background: var(--surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.9rem 1rem;
+            margin-bottom: 0.7rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
+            gap: 0.6rem;
             transition: 0.2s;
-            border-left: 4px solid var(--success-text);
-            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--success);
         }
-        .present-item:hover {
-            background: #f5efec;
-        }
-        .visitant-item {
-            border-left-color: var(--accent);
-            background: #fef9f5;
-        }
-        .present-info {
-            display: flex;
-            flex-direction: column;
-            gap: 0.2rem;
-        }
-        .present-name {
-            font-weight: 700;
-            color: var(--text-main);
-            font-size: 1rem;
-        }
-        .present-time {
-            font-size: 0.7rem;
-            color: var(--text-light);
-        }
-        .present-actions {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
+        .present-item:hover { box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+        .visitant-item { border-left-color: var(--accent); background: #fdf6ec; }
+        .present-info { display: flex; flex-direction: column; gap: 0.25rem; }
+        .present-name { font-weight: 700; color: var(--text-main); font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+        .present-time { font-size: 0.72rem; color: var(--text-light); font-weight: 500; }
+        .present-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
         .btn-icon {
-            background: white;
+            background: var(--input-bg);
             border: 1px solid var(--border-color);
-            padding: 0.3rem 0.8rem;
-            border-radius: 2rem;
-            font-size: 0.75rem;
+            padding: 0.4rem 0.75rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.78rem;
+            font-weight: 600;
             cursor: pointer;
             transition: 0.2s;
             display: inline-flex;
             align-items: center;
             gap: 0.3rem;
-            font-weight: 600;
             color: var(--text-main);
         }
-        .btn-icon:hover {
-            background: var(--input-bg);
-            border-color: var(--primary);
-        }
-
-        .badge {
-            background: var(--border-color);
-            padding: 0.2rem 0.6rem;
-            border-radius: 2rem;
-            font-size: 0.65rem;
-            font-weight: 600;
-            color: var(--text-light);
-        }
+        .btn-icon:hover { background: #f3e7e2; transform: scale(1.03); }
+        .btn-icon.btn-danger { background: var(--danger-bg); border-color: #edd3d3; color: var(--danger); }
+        .btn-icon.btn-danger:hover { background: #f7dcdc; }
 
         /* ===== FAB ===== */
         .fab-visitante {
             position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            background: var(--accent);
-            width: 56px;
-            height: 56px;
-            border-radius: 28px;
+            bottom: 1.6rem;
+            right: 1.6rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            width: 58px;
+            height: 58px;
+            border-radius: 1.4rem;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -381,98 +355,107 @@
             color: white;
             cursor: pointer;
             border: none;
-            box-shadow: 0 6px 20px rgba(212, 163, 115, 0.4);
-            transition: 0.2s;
+            box-shadow: 0 10px 24px rgba(212,163,115,0.45);
+            transition: all 0.2s;
             z-index: 100;
         }
-        .fab-visitante:hover {
-            transform: scale(1.05);
-            box-shadow: 0 8px 28px rgba(212, 163, 115, 0.5);
-        }
+        .fab-visitante:hover { transform: scale(1.06) rotate(-4deg); box-shadow: 0 14px 30px rgba(212,163,115,0.55); }
 
-        /* ===== MODAIS ===== */
+        /* ===== MODAIS (bottom sheet) ===== */
         .modal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.4);
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(61,47,50,0.45);
             backdrop-filter: blur(4px);
-            align-items: center;
+            align-items: flex-end;
             justify-content: center;
             z-index: 200;
         }
         .modal-content {
-            background: white;
-            width: 90%;
+            background: var(--surface);
+            width: 100%;
             max-width: 550px;
-            border-radius: 2rem;
-            padding: 1.8rem;
-            max-height: 85vh;
+            border-radius: 1.8rem 1.8rem 0 0;
+            padding: 1.6rem 1.5rem 2rem;
+            max-height: 88vh;
             overflow-y: auto;
             position: relative;
-            animation: modalFadeIn 0.2s ease;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.10);
+            animation: modalSlideUp 0.28s cubic-bezier(0.22, 1, 0.36, 1);
         }
-        @keyframes modalFadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
+        @media (min-width: 620px) {
+            .modal { align-items: center; }
+            .modal-content { border-radius: var(--radius-xl); }
+        }
+        @keyframes modalSlideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modal-content::before {
+            content: '';
+            display: block;
+            width: 40px; height: 4px;
+            background: var(--border-color);
+            border-radius: 4px;
+            margin: -0.4rem auto 1rem;
+        }
+        @media (min-width: 620px) {
+            .modal-content::before { display: none; }
         }
         .modal-close {
             position: absolute;
-            top: 1rem;
+            top: 1.1rem;
             right: 1.2rem;
-            font-size: 1.5rem;
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            font-size: 1.2rem;
             cursor: pointer;
-            color: var(--text-light);
+            color: var(--text-faint);
             transition: 0.2s;
-            background: none;
+            background: var(--input-bg);
             border: none;
             line-height: 1;
         }
-        .modal-close:hover {
-            color: var(--text-main);
-        }
+        .modal-close:hover { color: var(--text-main); background: #f0e6e2; }
         .modal-title {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 700;
-            margin-bottom: 1rem;
-            color: var(--primary);
+            margin-bottom: 1.1rem;
+            color: var(--text-main);
             padding-right: 2rem;
         }
         input, textarea, select {
             width: 100%;
-            padding: 0.7rem 0.9rem;
-            border-radius: 1rem;
+            padding: 0.8rem 0.9rem;
+            border-radius: var(--radius-sm);
             border: 1px solid var(--border-color);
-            margin: 0.3rem 0 0.8rem;
+            margin: 0.35rem 0 1rem;
             font-size: 0.9rem;
             background: var(--input-bg);
-            transition: 0.2s;
-            color: var(--text-main);
             font-family: 'Inter', sans-serif;
+            transition: 0.2s;
         }
         input:focus, textarea:focus, select:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(139, 90, 106, 0.1);
+            box-shadow: 0 0 0 3px rgba(139,90,106,0.12);
+            background: white;
         }
 
         /* ===== TOAST ===== */
         .toast {
             position: fixed;
-            bottom: 2rem;
+            bottom: 1.6rem;
             left: 50%;
             transform: translateX(-50%) translateY(100%);
             background: var(--text-main);
             color: white;
-            padding: 0.7rem 1.5rem;
-            border-radius: 3rem;
-            font-size: 0.85rem;
-            font-weight: 500;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            padding: 0.8rem 1.5rem;
+            border-radius: var(--radius-xl);
+            font-size: 0.88rem;
+            font-weight: 600;
+            box-shadow: var(--shadow-lg);
             z-index: 1000;
             display: flex;
             align-items: center;
@@ -481,92 +464,123 @@
             transition: all 0.3s ease;
             pointer-events: none;
         }
-        .toast.show {
-            transform: translateX(-50%) translateY(0);
-            opacity: 1;
-        }
-        .toast-success { background: var(--success-text); }
-        .toast-error { background: var(--danger-text); }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast-success { background: var(--success); }
+        .toast-error { background: var(--danger); }
         .toast-info { background: var(--primary); }
 
-        /* ===== ROOM LIST ===== */
-        .room-list {
-            max-height: 400px;
-            overflow-y: auto;
-        }
+        /* ===== ROOM LIST (modal mover de sala) ===== */
+        .room-list { max-height: 400px; overflow-y: auto; }
         .room-item {
             display: flex;
             align-items: center;
             gap: 1rem;
-            padding: 0.7rem;
+            padding: 0.7rem 0.2rem;
             border-bottom: 1px solid var(--border-color);
         }
-        .room-item img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
+        .room-item:last-child { border-bottom: none; }
+        .room-item img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; }
+
+        /* ===== BADGE ===== */
+        .badge {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            padding: 0.2rem 0.55rem;
+            border-radius: var(--radius-xl);
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: var(--text-light);
         }
+
+        /* ===== RELATÓRIO (PDF) ===== */
+        .report-container { font-family: 'Inter', sans-serif; color: #3d2f32; padding: 0.5rem; }
+        .report-header { text-align: center; margin-bottom: 1.2rem; }
+        .report-header img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; margin-bottom: 0.4rem; }
+        .report-title { font-size: 1.3rem; font-weight: 800; color: #8b5a6a; }
+        .report-subtitle { font-size: 0.9rem; color: #8a7a7e; margin-top: 0.2rem; }
+        .stats-grid { display: flex; gap: 0.7rem; margin-bottom: 1.2rem; }
+        .stat-card {
+            flex: 1;
+            background: #faf5f2;
+            border: 1px solid #ece2de;
+            border-radius: 0.9rem;
+            padding: 0.8rem;
+            text-align: center;
+        }
+        .stat-number { font-size: 1.4rem; font-weight: 800; color: #8b5a6a; }
+        .stat-label { font-size: 0.68rem; color: #8a7a7e; font-weight: 600; margin-top: 0.15rem; }
+        .report-container table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+        .report-container th {
+            background: #8b5a6a; color: white; padding: 0.5rem 0.6rem;
+            font-size: 0.75rem; text-align: left; font-weight: 600;
+        }
+        .report-container td {
+            padding: 0.45rem 0.6rem; font-size: 0.78rem;
+            border-bottom: 1px solid #ece2de;
+        }
+        .report-container tr.birthday { background: #fdf6ec; }
+        .report-container h3 { margin-top: 1.2rem; margin-bottom: 0.5rem; font-size: 1rem; color: #3d2f32; }
 
         /* ===== RESPONSIVO ===== */
         @media (max-width: 640px) {
-            .container { padding: 0 0.8rem; }
-            .header { flex-direction: column; align-items: stretch; text-align: center; }
-            .header-left { justify-content: center; }
-            .header-buttons { justify-content: center; }
-            .present-item { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+            .page { padding: 1rem 0.8rem 0; }
+            .topbar { padding: 0.9rem 1rem; }
+            .present-item { flex-direction: column; align-items: flex-start; }
             .present-actions { align-self: flex-end; }
         }
-       
     </style>
 </head>
 <body>
 
-    <!-- ===== HEADER ===== -->
-    <div class="header">
-        <div class="header-left">
-            <img src="logo.png" alt="Logo Kids Videira">
+    <!-- ===== TOPBAR ===== -->
+    <div class="topbar">
+        <div class="topbar-brand">
+            <div class="topbar-logo">👥</div>
             <div>
-                <h2>👥 Equipe Ministerial</h2>
-                <p>Gestão de crianças • check‑in e salas</p>
+                <h1>Equipe Ministerial</h1>
+                <span>Gestão de crianças, check-in e salas</span>
             </div>
         </div>
-        <div class="header-buttons">
-            <button class="btn-header" onclick="gerarRelatorio()">📊 Relatório</button>
-            <button class="btn-header" onclick="refreshPresentList()">🔄 Recarregar</button>
-            <button class="btn-header" onclick="logout()">🚪 Sair</button>
+        <div class="topbar-actions">
+            <button class="icon-btn" onclick="gerarRelatorio()" title="Relatório">📊</button>
+            <button class="icon-btn" onclick="refreshPresentList()" title="Recarregar">🔄</button>
+            <button class="icon-btn" onclick="logout()" title="Sair">🚪</button>
         </div>
     </div>
 
-    <!-- ===== CONTAINER ===== -->
-    <div class="container">
-
-        <!-- Sessão atual -->
-        <div class="card">
-            <div class="session-header">
-                <div class="session-selector">
-                    <select id="sessionSelect" onchange="changeSession()"></select>
-                </div>
-                <button class="btn-secondary" onclick="openSessionModal()">➕ Nova Sessão</button>
+    <div class="page">
+        <!-- ===== SESSÃO ATIVA ===== -->
+        <div class="session-strip">
+            <div class="session-strip-icon">📅</div>
+            <div class="session-strip-field">
+                <label>Sessão ativa</label>
+                <select id="sessionSelect" onchange="changeSession()"></select>
             </div>
+            <button class="btn-ghost" onclick="openSessionModal()">➕ Nova sessão</button>
         </div>
 
-        <!-- Scanner QR -->
-        <div class="card">
-            <div class="card-title"><span>📷</span> Escanear QR</div>
+        <!-- ===== SCANNER QR ===== -->
+        <div class="scanner-hero">
+            <div class="scanner-hero-head">
+                <div class="scanner-hero-icon">📷</div>
+                <div>
+                    <h2>Escanear QR Code</h2>
+                    <p>Aponte a câmera para o código da criança</p>
+                </div>
+            </div>
             <div class="scanner-area">
                 <div id="reader"></div>
                 <div class="scanner-buttons">
                     <button class="btn-primary" id="startScannerBtn" onclick="startScanner()">📸 Abrir Câmera</button>
                     <button class="btn-secondary" id="stopScannerBtn" onclick="stopScanner()" style="display:none;">⏹️ Parar</button>
                 </div>
-                <select id="cameraSelect" style="display:none; max-width:320px; margin:0.6rem auto 0;"></select>
+                <select id="cameraSelect" style="display:none;"></select>
                 <div id="scanResult" class="scan-result"></div>
             </div>
         </div>
 
-        <!-- Salas e lista de presentes -->
-        <div class="card">
+        <!-- ===== SALAS + LISTA DE PRESENTES ===== -->
+        <div class="present-card">
             <div class="tabs" id="tabsContainer">
                 <div class="tab active" data-room="todos">👶 Todos</div>
                 <div class="tab" data-room="Kids">🍼 Kids</div>
@@ -577,10 +591,9 @@
         </div>
     </div>
 
-    <!-- ===== FAB ===== -->
-    <div class="fab-visitante" onclick="openVisitanteModal()">➕📝</div>
+    <!-- FAB para visitante -->
+    <button class="fab-visitante" onclick="openVisitanteModal()" title="Visitante rápido">➕</button>
 
-    <!-- ===== MODAIS (todos mantidos) ===== -->
     <!-- Modal visitante -->
     <div id="visitanteModal" class="modal">
         <div class="modal-content">
@@ -589,7 +602,7 @@
             <input type="text" id="visitantName" placeholder="Nome da criança">
             <input type="text" id="respName" placeholder="Responsável">
             <input type="tel" id="respPhone" placeholder="Telefone (opcional)">
-            <button class="btn-primary" onclick="registerVisitant()" style="width:100%;">Registrar e fazer check‑in</button>
+            <button class="btn-primary" onclick="registerVisitant()" style="width:100%; justify-content:center;">Registrar e fazer check-in</button>
         </div>
     </div>
 
@@ -602,7 +615,7 @@
             <input type="date" id="sessionDate">
             <input type="time" id="sessionStart" placeholder="Início">
             <input type="time" id="sessionEnd" placeholder="Término">
-            <button class="btn-primary" onclick="createSession()">Criar</button>
+            <button class="btn-primary" onclick="createSession()" style="width:100%; justify-content:center;">Criar</button>
         </div>
     </div>
 
@@ -617,41 +630,45 @@
             <button class="modal-close" onclick="closeRoomModal()">&times;</button>
             <div class="modal-title" id="roomModalTitle">Mover para sala</div>
             <div id="roomChildrenList" class="room-list"></div>
-            <button class="btn-primary" onclick="saveRoomAssignments()" style="margin-top:1rem;">Salvar</button>
+            <button class="btn-primary" onclick="saveRoomAssignments()" style="margin-top:1rem; width:100%; justify-content:center;">Salvar</button>
         </div>
     </div>
 
-    <!-- Modal selecionar sala antes do check‑in -->
+    <!-- Modal para selecionar sala antes do check-in -->
     <div id="selectRoomModal" class="modal">
-        <div class="modal-content" style="max-width:400px; text-align:center;">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
             <button class="modal-close" onclick="closeSelectRoomModal()">&times;</button>
-            <div class="modal-title" style="margin-bottom:0.5rem;">🏷️ Check‑in</div>
-            <div id="roomChildInfo" style="margin-bottom:1.5rem; padding:1rem; background:var(--input-bg); border-radius:1rem;"></div>
-            <div style="display:flex; flex-direction:column; gap:0.8rem;">
-                <button class="room-option" data-room="todos" style="background:#64748b; color:white; border:none; padding:0.7rem; border-radius:2rem; font-weight:600; cursor:pointer;">👶 Todos</button>
-                <button class="room-option" data-room="Kids" style="background:#3b82f6; color:white; border:none; padding:0.7rem; border-radius:2rem; font-weight:600; cursor:pointer;">🍼 Kids</button>
-                <button class="room-option" data-room="Babys" style="background:#f59e0b; color:white; border:none; padding:0.7rem; border-radius:2rem; font-weight:600; cursor:pointer;">🧸 Babys</button>
-                <button class="room-option" data-room="Juvenis" style="background:#8b5cf6; color:white; border:none; padding:0.7rem; border-radius:2rem; font-weight:600; cursor:pointer;">⚡ Juvenis</button>
+            <div class="modal-title" style="margin-bottom: 0.5rem;">🏷️ Check-in</div>
+            <div id="roomChildInfo" style="margin-bottom: 1.5rem; padding: 1rem; background: var(--input-bg); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.7rem;">
+                <button class="room-option" data-room="todos" style="background: var(--room-todos); color: white; border: none; padding: 0.75rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">👶 Todos</button>
+                <button class="room-option" data-room="Kids" style="background: var(--room-kids); color: white; border: none; padding: 0.75rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">🍼 Kids</button>
+                <button class="room-option" data-room="Babys" style="background: var(--room-babys); color: white; border: none; padding: 0.75rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">🧸 Babys</button>
+                <button class="room-option" data-room="Juvenis" style="background: var(--room-juvenis); color: white; border: none; padding: 0.75rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">⚡ Juvenis</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal confirmação checkout -->
+    <!-- Modal de confirmação de checkout -->
     <div id="checkoutConfirmModal" class="modal">
-        <div class="modal-content" style="max-width:400px; text-align:center;">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
             <button class="modal-close" onclick="closeCheckoutConfirmModal()">&times;</button>
-            <div class="modal-title" style="margin-bottom:0.5rem;">🔔 Confirmar Check‑out</div>
-            <div id="checkoutChildInfo" style="margin-bottom:1.5rem; padding:1rem; background:var(--input-bg); border-radius:1rem;"></div>
-            <div style="display:flex; flex-direction:column; gap:0.8rem;">
-                <button class="btn-primary" onclick="confirmCheckout()" style="background:var(--danger-text);">✅ Confirmar Check‑out</button>
+            <div class="modal-title" style="margin-bottom: 0.5rem;">🔔 Confirmar Check-out</div>
+            <div id="checkoutChildInfo" style="margin-bottom: 1.5rem; padding: 1rem; background: var(--input-bg); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                <!-- Dados da criança serão preenchidos -->
+            </div>
+            <div style="display: flex; gap: 0.8rem; flex-direction: column;">
+                <button id="confirmCheckoutBtn" class="btn-primary" onclick="confirmCheckout()" style="background: var(--danger); justify-content:center; box-shadow:none;">✅ Confirmar Check-out</button>
                 <button class="btn-secondary" onclick="closeCheckoutConfirmModal()">Cancelar</button>
             </div>
         </div>
     </div>
 
-    <!-- Áreas de impressão -->
-    <div id="printArea" style="display:none;"></div>
-    <div id="reportPrintArea" style="display:none;"></div>
+    <!-- Área para impressão -->
+    <div id="printArea" style="display: none;"></div>
+    <div id="reportPrintArea" style="display: none;"></div>
 
     <!-- ============================================================ -->
     <!-- SCRIPT (funcionalidades 100% mantidas, apenas ajuste visual) -->
