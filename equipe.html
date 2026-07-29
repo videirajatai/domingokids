@@ -537,8 +537,8 @@
         <div class="topbar-brand">
             <div class="topbar-logo">👥</div>
             <div>
-                <h1>Equipe Ministerial</h1>
-                <span>Gestão de crianças, check-in e salas</span>
+                <h1>Radicais Kids Jataí</h1>
+                <span>Equipe Domingo Kids <br> Gestão de crianças e salas</span>
             </div>
         </div>
         <div class="topbar-actions">
@@ -565,7 +565,7 @@
                 <div class="scanner-hero-icon">📷</div>
                 <div>
                     <h2>Escanear QR Code</h2>
-                    <p>Aponte a câmera para o código da criança</p>
+                    <p>QR Code será gerado no painel dos pais</p>
                 </div>
             </div>
             <div class="scanner-area">
@@ -584,9 +584,9 @@
            <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem; flex-wrap: wrap;">
                 <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-light);">Filtrar por sala:</label>
                 <select id="roomFilterSelect" style="flex: 1; min-width: 150px; padding: 0.6rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--input-bg); font-weight: 500;">
-                    <option value="todos">👶 Todas as Salas</option>
-                    <option value="Babys">🧸 Babys</option>
-                    <option value="Kids">🍼 Kids</option>
+                    <option value="todos">Todas as Salas</option>
+                    <option value="Babys">🍼 Babys</option>
+                    <option value="Kids">🧸 Kids</option>
                     <option value="Juvenis">⚡ Juvenis</option>
                 </select>
             </div>
@@ -706,7 +706,6 @@
             }, 3000);
         }
 
-        // ========== INICIALIZAÇÃO ==========
         // ========== INICIALIZAÇÃO ==========
         async function init() {
             const { data: { user } } = await supabaseClient.auth.getUser();
