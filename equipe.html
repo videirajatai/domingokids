@@ -707,24 +707,28 @@
         }
 
         // ========== INICIALIZAÇÃO ==========
+        // ========== INICIALIZAÇÃO ==========
         async function init() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = 'index.html'; return; }
             currentStaffId = user.id;
             await loadSessions();
-            setupTabs();
             await loadCameras();
+            setupRoomFilter();
+        
             document.getElementById('cameraSelect').addEventListener('change', (e) => {
                 localStorage.setItem('kidsCheckinCameraId', e.target.value);
             });
-            document.querySelectorAll('.room-option').forEach(btn => {
-                btn.addEventListener('click', () => {
+        
+            // 🔹 DELEGAÇÃO DE EVENTOS PARA OS BOTÕES DE SALA
+            document.getElementById('selectRoomModal').addEventListener('click', function(e) {
+                const btn = e.target.closest('.room-option');
+                if (btn) {
                     const room = btn.dataset.room;
                     confirmCheckinWithRoom(room);
-                });
+                }
             });
         }
-
        async function loadSessions() {
                 // Buscar todas as sessões (para popular o dropdown)
                 const { data: todas, error } = await supabaseClient
@@ -789,7 +793,7 @@
             showToast('Lista atualizada', 'success');
         }
 
-        function setupRoomFilter() {
+       function setupRoomFilter() {
             const select = document.getElementById('roomFilterSelect');
             if (!select) return;
             select.addEventListener('change', async function() {
