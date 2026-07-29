@@ -658,7 +658,7 @@
                 splashScreen.style.display = 'flex';
                 setTimeout(() => splashScreen.style.opacity = '1', 10);
                 setTimeout(() => {
-                    window.location.href = urlDestino + ".html?t=" + Date.now();
+                    window.location.href = urlDestino + "?t=" + Date.now();
                 }, 1000);
             }, 400);
         }
@@ -711,7 +711,7 @@
                         role: 'parent'
                     });
                 }
-                window.location.href = '?t=' + Date.now()
+                window.location.href = 'pais.html?t=' + Date.now()
             }
         })();
     </script>
