@@ -1420,8 +1420,8 @@
                 .from('kids_visitants')
                 .select('*')
                 .eq('session_id', currentSessionId);
-            /*let html = '';
-            if (currentRoomFilter !== 'todos') {
+            let html = '';
+            /*if (currentRoomFilter !== 'todos') {
                 html += `
                     <div style="display:flex; justify-content:flex-end; margin-bottom:1rem;">
                         <button class="btn-secondary" onclick="openRoomModal('${currentRoomFilter}')" style="display:flex; align-items:center; gap:0.4rem;">
