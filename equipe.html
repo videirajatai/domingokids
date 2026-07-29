@@ -543,6 +543,7 @@
         </div>
         <div class="topbar-actions">
             <button class="icon-btn" onclick="gerarRelatorio()" title="Relatório">📊</button>
+            <button class="icon-btn" onclick="cycleCamera()" title="Alternar câmera">⚙️</button>
             <button class="icon-btn" onclick="refreshPresentList()" title="Recarregar">🔄</button>
             <button class="icon-btn" onclick="logout()" title="Sair">🚪</button>
         </div>
@@ -688,7 +689,7 @@
         let childrenForRoom = [];
         let pendingCheckinData = null;
         let pendingCheckoutData = null;
-        let availableCameras = [];
+        //let availableCameras = [];
 
         // ========== TOAST (mesmo) ==========
         function showToast(message, type = 'info') {
@@ -715,9 +716,9 @@
             await loadCameras();
             setupRoomFilter();
         
-            document.getElementById('cameraSelect').addEventListener('change', (e) => {
+            /*document.getElementById('cameraSelect').addEventListener('change', (e) => {
                 localStorage.setItem('kidsCheckinCameraId', e.target.value);
-            });
+            });*/
         
             // 🔹 DELEGAÇÃO DE EVENTOS PARA OS BOTÕES DE SALA
             document.getElementById('selectRoomModal').addEventListener('click', function(e) {
@@ -837,7 +838,7 @@
             }
         }*/
 
-        async function loadCameras() {
+        /*async function loadCameras() {
             try {
                 const allCameras = await Html5Qrcode.getCameras();
                 // Filtra apenas câmeras com "back", "traseira", "environment" no label (case insensitive)
@@ -859,10 +860,53 @@
             } catch (e) {
                 console.log('Não foi possível listar câmeras', e);
             }
+        }*/
+
+        async function loadCameras() {
+            try {
+                const allCameras = await Html5Qrcode.getCameras();
+                const backCameras = allCameras.filter(cam => {
+                    const label = cam.label.toLowerCase();
+                    return label.includes('back') || label.includes('traseira') || label.includes('environment') || label.includes('câmera traseira');
+                });
+                availableCameras = backCameras.length > 0 ? backCameras : allCameras;
+                // Restaurar a câmera salva
+                const savedCameraId = localStorage.getItem('kidsCheckinCameraId');
+                if (savedCameraId && availableCameras.some(c => c.id === savedCameraId)) {
+                    currentCameraIndex = availableCameras.findIndex(c => c.id === savedCameraId);
+                    if (currentCameraIndex === -1) currentCameraIndex = 0;
+                } else {
+                    currentCameraIndex = 0;
+                    if (availableCameras.length) {
+                        localStorage.setItem('kidsCheckinCameraId', availableCameras[0].id);
+                    }
+                }
+            } catch (e) {
+                console.log('Não foi possível listar câmeras', e);
+            }
+        }
+
+        function cycleCamera() {
+            if (!availableCameras.length) {
+                showToast('Nenhuma câmera disponível', 'error');
+                return;
+            }
+            // Avança para a próxima câmera
+            currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
+            const selectedCamera = availableCameras[currentCameraIndex];
+            // Salva no localStorage
+            localStorage.setItem('kidsCheckinCameraId', selectedCamera.id);
+            // Se o scanner estiver ativo, reinicia
+            if (scannerActive) {
+                stopScanner();
+                // Pequeno delay para reiniciar
+                setTimeout(() => startScanner(), 300);
+            }
+            showToast(`Câmera: ${selectedCamera.label || selectedCamera.id}`, 'info');
         }
 
         // ========== SCANNER ==========
-        async function startScanner() {
+        /*async function startScanner() {
             if (scannerActive) return;
             html5QrCode = new Html5Qrcode("reader");
             if (!availableCameras.length) await loadCameras();
@@ -876,6 +920,39 @@
                 document.getElementById('stopScannerBtn').style.display = 'inline-block';
                 showToast('Câmera ativada', 'success');
             } catch(e) { showToast('Erro ao acessar câmera: '+e, 'error'); }
+        }*/
+        async function startScanner() {
+            if (scannerActive) return;
+            html5QrCode = new Html5Qrcode("reader");
+            if (!availableCameras.length) await loadCameras();
+        
+            // Determina o ID da câmera a usar
+            const savedCameraId = localStorage.getItem('kidsCheckinCameraId');
+            let chosenCameraId = null;
+            if (savedCameraId && availableCameras.some(c => c.id === savedCameraId)) {
+                chosenCameraId = savedCameraId;
+                // Atualiza o índice atual para a câmera salva
+                const idx = availableCameras.findIndex(c => c.id === savedCameraId);
+                if (idx !== -1) currentCameraIndex = idx;
+            } else {
+                // Se não houver salva, usa a primeira (traseira)
+                chosenCameraId = availableCameras[0]?.id || null;
+                if (chosenCameraId) {
+                    localStorage.setItem('kidsCheckinCameraId', chosenCameraId);
+                    currentCameraIndex = 0;
+                }
+            }
+        
+            try {
+                const cameraConfig = chosenCameraId ? { deviceId: { exact: chosenCameraId } } : { facingMode: "environment" };
+                await html5QrCode.start(cameraConfig, { fps: 10, qrbox: 250 }, onScanSuccess, onScanError);
+                scannerActive = true;
+                document.getElementById('startScannerBtn').style.display = 'none';
+                document.getElementById('stopScannerBtn').style.display = 'inline-block';
+                showToast('Câmera ativada', 'success');
+            } catch(e) {
+                showToast('Erro ao acessar câmera: '+e, 'error');
+            }
         }
 
         function stopScanner() {
