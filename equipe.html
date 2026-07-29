@@ -221,6 +221,10 @@
             font-size: 1.3rem;
             flex-shrink: 0;
         }
+
+        .btn-visitante-discreto:hover {
+            background: var(--input-bg);
+        }
         .scanner-hero-head h2 { font-size: 1.05rem; font-weight: 700; }
         .scanner-hero-head p { font-size: 0.78rem; color: var(--text-light); margin-top: 0.1rem; }
 
@@ -594,12 +598,15 @@
 
         <!-- ===== SCANNER QR ===== -->
         <div class="scanner-hero">
-            <div class="scanner-hero-head">
+            <div class="scanner-hero-head" style="position:relative;">
                 <div class="scanner-hero-icon">📷</div>
-                <div>
+                <div style="flex:1;">
                     <h2>Escanear QR Code</h2>
                     <p>QR Code será gerado no painel dos pais</p>
                 </div>
+                <button class="btn-visitante-discreto" onclick="openVisitanteModal()" title="Visitante rápido" style="background:none; border:none; font-size:1.2rem; color:var(--primary); cursor:pointer; padding:4px 8px; border-radius:var(--radius-sm); transition:0.2s;">
+                    ➕
+                </button>
             </div>
             <div class="scanner-area">
                 <div id="reader"></div>
@@ -627,8 +634,6 @@
         </div>
     </div>
 
-    <!-- FAB para visitante -->
-    <button class="fab-visitante" onclick="openVisitanteModal()" title="Visitante rápido">➕</button>
 
     <!-- Modal visitante -->
     <div id="visitanteModal" class="modal">
