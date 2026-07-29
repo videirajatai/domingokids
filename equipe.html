@@ -1501,18 +1501,8 @@
         
             let html = '';
         
-           /*if (currentRoomFilter !== 'todos') {
-                html += `
-                    <div style="display:flex; justify-content:flex-end; margin-bottom:1rem;">
-                        <button class="btn-secondary" onclick="openRoomModal('${currentRoomFilter}')" style="display:flex; align-items:center; gap:0.4rem;">
-                            <span>🔄</span> Gerenciar crianças nesta sala
-                        </button>
-                    </div>
-                `;
-            }*/
-        
             if (checkins?.length) {
-                html += `<h4 style="margin-bottom:0.8rem; color:var(--primary);">Crianças nas Salas ${currentRoomFilter !== 'todos' ? `(Sala: ${currentRoomFilter})` : ''}</h4>`;
+                html += `<h4 style="margin-bottom:0.8rem; color:var(--primary);">Crianças nas Salas: ${currentRoomFilter !== 'todos' ? `(${currentRoomFilter})` : ''}</h4>`;
                 for (const c of checkins) {
                     let isBirthdayWeek = false;
                     if (c.child.birth_date) {
@@ -1525,15 +1515,14 @@
                     }
                     const birthdayIcon = isBirthdayWeek ? '🎂 ' : '';
         
-                    // Cores da borda conforme a sala
                     let borderColor = 'var(--success)';
                     if (c.room === 'Kids') borderColor = '#3b82f6';
                     else if (c.room === 'Babys') borderColor = '#f59e0b';
                     else if (c.room === 'Juvenis') borderColor = '#8b5cf6';
         
                     html += `
-                        <div class="present-item" style="border-left-color: ${borderColor}; padding: 0.6rem 0.8rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.4rem;">
-                            <div class="present-info" style="display:flex; flex-direction:column; flex:1; min-width:120px;">
+                        <div class="present-item" style="border-left-color: ${borderColor}; padding: 0.6rem 0.8rem; display:flex; align-items:center; gap:0.4rem;">
+                            <div class="present-info" style="display:flex; flex-direction:column; flex: 0 1 auto;">
                                 <div class="present-name" style="font-size:0.9rem; display:flex; align-items:center; gap:0.3rem; flex-wrap:wrap;">
                                     ${birthdayIcon}${escapeHtml(c.child.name)}
                                     ${c.badge_number ? `<span class="badge" style="font-size:0.6rem;">🏷️ ${c.badge_number}</span>` : ''}
@@ -1544,7 +1533,7 @@
                                     ${c.room !== 'todos' && currentRoomFilter === 'todos' ? ` · 📌 Sala: ${c.room}` : ''}
                                 </div>
                             </div>
-                            <div class="present-actions" style="display:flex; gap:0.3rem; flex-shrink:0;">
+                            <div class="present-actions" style="display:flex; gap:0.3rem; margin-left:auto; flex-shrink:0;">
                                 <button class="btn-icon" onclick="showChildDetails('${c.child_id}', '${c.id}')" style="padding:0.25rem 0.5rem; font-size:0.7rem; border-radius:0.5rem;">👁️</button>
                                 <button class="btn-icon" onclick="reprintLabelFromList('${c.id}')" style="padding:0.25rem 0.5rem; font-size:0.7rem; border-radius:0.5rem;">🖨️</button>
                             </div>
@@ -1552,18 +1541,18 @@
                     `;
                 }
             } else if (currentRoomFilter !== 'todos') {
-                html += `<p style="text-align:center;color:var(--text-light);">Nenhuma criança nesta sala. Clique em "Gerenciar" para adicionar.</p>`;
+                html += `<p style="text-align:center;color:var(--text-light);">Nenhuma criança nesta sala.</p>`;
             }
         
             if (currentRoomFilter === 'todos' && visitants?.length) {
                 html += `<h4 style="margin-top:1rem; color:var(--primary);">📝 Visitantes</h4>`;
                 html += visitants.map(v => `
-                    <div class="present-item visitant-item" style="padding:0.6rem 0.8rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.4rem;">
-                        <div class="present-info" style="display:flex; flex-direction:column; flex:1; min-width:120px;">
+                    <div class="present-item visitant-item" style="padding:0.6rem 0.8rem; display:flex; align-items:center; gap:0.4rem;">
+                        <div class="present-info" style="display:flex; flex-direction:column; flex: 0 1 auto;">
                             <div class="present-name" style="font-size:0.9rem;">${escapeHtml(v.child_name)} (${escapeHtml(v.responsible_name)})</div>
                             <div class="present-time" style="font-size:0.65rem; color:var(--text-light);">Check‑in: ${new Date(v.checked_in_at).toLocaleTimeString()}</div>
                         </div>
-                        <div class="present-actions" style="display:flex; gap:0.3rem; flex-shrink:0;">
+                        <div class="present-actions" style="display:flex; gap:0.3rem; margin-left:auto; flex-shrink:0;">
                             <button class="btn-icon btn-danger" onclick="removeVisitant('${v.id}')" style="padding:0.25rem 0.5rem; font-size:0.7rem; border-radius:0.5rem;">Finalizar</button>
                         </div>
                     </div>
