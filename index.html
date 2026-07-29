@@ -613,23 +613,25 @@
                 }
 
                 // ===== LÓGICA DE REDIRECIONAMENTO =====
-                const role = profile?.role || 'parent';
+               const role = profile?.role || 'parent';
 
-                if (role === 'staff') {
-                    entrarNoPainel(loginData.user.user_metadata?.full_name || 'Equipe', 'equipe');
-                } else if (role === 'parent') {
-                    entrarNoPainel(loginData.user.user_metadata?.full_name || 'Pai', 'pais');
-                } else if (role === 'both') {
-                    // Mostrar modal de escolha
-                    const nome = loginData.user.user_metadata?.full_name || 'usuário';
-                    document.getElementById('nome-usuario-escolha').innerText = nome;
-                    document.getElementById('modal-escolha').style.display = 'flex';
-                    btn.innerText = "Entrar";
-                    btn.disabled = false;
-                } else {
-                    // Fallback: redirecionar para pais
-                    entrarNoPainel(loginData.user.user_metadata?.full_name || 'Pai', 'pais');
-                }
+            if (role === 'admin') {
+                entrarNoPainel(loginData.user.user_metadata?.full_name || 'Admin', 'admin');
+            } else if (role === 'staff') {
+                entrarNoPainel(loginData.user.user_metadata?.full_name || 'Equipe', 'equipe');
+            } else if (role === 'parent') {
+                entrarNoPainel(loginData.user.user_metadata?.full_name || 'Pai', 'pais');
+            } else if (role === 'both') {
+                // Mostrar modal de escolha
+                const nome = loginData.user.user_metadata?.full_name || 'usuário';
+                document.getElementById('nome-usuario-escolha').innerText = nome;
+                document.getElementById('modal-escolha').style.display = 'flex';
+                btn.innerText = "Entrar";
+                btn.disabled = false;
+            } else {
+                // Fallback: redirecionar para pais
+                entrarNoPainel(loginData.user.user_metadata?.full_name || 'Pai', 'pais');
+            }
 
             } catch (err) {
                 console.error('Erro no login:', err);
