@@ -1221,7 +1221,7 @@
                 const numeroLimpo = telefone.replace(/\D/g, '');
                 if (numeroLimpo.length < 10) return '#';
                 const nomeParaMensagem = nomeResponsavel || 'responsável';
-                const mensagem = `Olá ${nomeParaMensagem}! 👋\n\nA criança **${child.name}** está participando do culto Kids hoje.\n\n Solicitamos que o responsável compareça à sala do Domigo Kids assim que possível.\n\nObrigado! 🙏`;
+                const mensagem = `Olá *${nomeParaMensagem}!* 👋\n\nA ovelhinha *${child.name}* está precisando do papai ou da mamãe.\n\n⚠️ Solicitamos que o responsável compareça à sala do Domigo Kids assim que possível.\n\nObrigada! 🙏`;
                 return `https://wa.me/55${numeroLimpo}?text=${encodeURIComponent(mensagem)}`;
             }
         
