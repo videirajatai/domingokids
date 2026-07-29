@@ -1521,21 +1521,21 @@
                     else if (c.room === 'Juvenis') borderColor = '#8b5cf6';
         
                     html += `
-                        <div class="present-item" style="border-left-color: ${borderColor}; padding: 0.6rem 0.8rem; display:flex; align-items:center; gap:0.4rem;">
-                            <div class="present-info" style="display:flex; flex-direction:column; flex: 0 1 auto;">
-                                <div class="present-name" style="font-size:0.9rem; display:flex; align-items:center; gap:0.3rem; flex-wrap:wrap;">
+                        <div class="present-item" style="border-left-color: ${borderColor}; padding: 0.5rem 0.7rem; display:flex; align-items:center; gap:0.5rem;">
+                            <div class="present-info" style="display:flex; flex-direction:column; flex:1;">
+                                <div class="present-name" style="font-size:0.85rem; display:flex; align-items:center; gap:0.2rem; flex-wrap:wrap;">
                                     ${birthdayIcon}${escapeHtml(c.child.name)}
-                                    ${c.badge_number ? `<span class="badge" style="font-size:0.6rem;">🏷️ ${c.badge_number}</span>` : ''}
-                                    ${c.child.allergies ? '<span class="badge" style="font-size:0.6rem; background:#fee2e2; color:#b91c1c;">⚠️</span>' : ''}
+                                    ${c.badge_number ? `<span class="badge" style="font-size:0.55rem; padding:0.1rem 0.3rem;">🏷️ ${c.badge_number}</span>` : ''}
+                                    ${c.child.allergies ? '<span class="badge" style="font-size:0.55rem; padding:0.1rem 0.3rem; background:#fee2e2; color:#b91c1c;">⚠️</span>' : ''}
                                 </div>
-                                <div class="present-time" style="font-size:0.65rem; color:var(--text-light);">
+                                <div class="present-time" style="font-size:0.6rem; color:var(--text-light);">
                                     Check‑in: ${new Date(c.checked_in_at).toLocaleTimeString()}
                                     ${c.room !== 'todos' && currentRoomFilter === 'todos' ? ` · 📌 Sala: ${c.room}` : ''}
                                 </div>
                             </div>
-                            <div class="present-actions" style="display:flex; gap:0.3rem; margin-left:auto; flex-shrink:0;">
-                                <button class="btn-icon" onclick="showChildDetails('${c.child_id}', '${c.id}')" style="padding:0.25rem 0.5rem; font-size:0.7rem; border-radius:0.5rem;">👁️</button>
-                                <button class="btn-icon" onclick="reprintLabelFromList('${c.id}')" style="padding:0.25rem 0.5rem; font-size:0.7rem; border-radius:0.5rem;">🖨️</button>
+                            <div class="present-actions" style="display:flex; gap:0.2rem; flex-shrink:0;">
+                                <button class="btn-icon" onclick="showChildDetails('${c.child_id}', '${c.id}')" style="padding:0.2rem 0.4rem; font-size:0.65rem; border-radius:0.4rem;">👁️</button>
+                                <button class="btn-icon" onclick="reprintLabelFromList('${c.id}')" style="padding:0.2rem 0.4rem; font-size:0.65rem; border-radius:0.4rem;">🖨️</button>
                             </div>
                         </div>
                     `;
@@ -1547,13 +1547,13 @@
             if (currentRoomFilter === 'todos' && visitants?.length) {
                 html += `<h4 style="margin-top:1rem; color:var(--primary);">📝 Visitantes</h4>`;
                 html += visitants.map(v => `
-                    <div class="present-item visitant-item" style="padding:0.6rem 0.8rem; display:flex; align-items:center; gap:0.4rem;">
-                        <div class="present-info" style="display:flex; flex-direction:column; flex: 0 1 auto;">
-                            <div class="present-name" style="font-size:0.9rem;">${escapeHtml(v.child_name)} (${escapeHtml(v.responsible_name)})</div>
-                            <div class="present-time" style="font-size:0.65rem; color:var(--text-light);">Check‑in: ${new Date(v.checked_in_at).toLocaleTimeString()}</div>
+                    <div class="present-item visitant-item" style="padding:0.5rem 0.7rem; display:flex; align-items:center; gap:0.5rem;">
+                        <div class="present-info" style="display:flex; flex-direction:column; flex:1;">
+                            <div class="present-name" style="font-size:0.85rem;">${escapeHtml(v.child_name)} (${escapeHtml(v.responsible_name)})</div>
+                            <div class="present-time" style="font-size:0.6rem; color:var(--text-light);">Check‑in: ${new Date(v.checked_in_at).toLocaleTimeString()}</div>
                         </div>
-                        <div class="present-actions" style="display:flex; gap:0.3rem; margin-left:auto; flex-shrink:0;">
-                            <button class="btn-icon btn-danger" onclick="removeVisitant('${v.id}')" style="padding:0.25rem 0.5rem; font-size:0.7rem; border-radius:0.5rem;">Finalizar</button>
+                        <div class="present-actions" style="display:flex; gap:0.2rem; flex-shrink:0;">
+                            <button class="btn-icon btn-danger" onclick="removeVisitant('${v.id}')" style="padding:0.2rem 0.4rem; font-size:0.65rem; border-radius:0.4rem;">Finalizar</button>
                         </div>
                     </div>
                 `).join('');
@@ -1565,7 +1565,6 @@
         
             document.getElementById('presentList').innerHTML = html;
         }
-
         // ========== CHECKOUT MANUAL ==========
         async function checkoutManual(checkinId) {
             await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', checkinId);
