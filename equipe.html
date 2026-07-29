@@ -1159,7 +1159,7 @@
         }
 
         // ========== DETALHES DA CRIANÇA ==========
-        async function showChildDetails(childId, checkinId) {
+       /* async function showChildDetails(childId, checkinId) {
             const { data: child, error } = await supabaseClient
                 .from('kids_children')
                 .select('*, family:family_id(*)')
@@ -1200,7 +1200,83 @@
             `;
             document.getElementById('childDetailsContent').innerHTML = html;
             document.getElementById('childDetailsModal').style.display = 'flex';
-        }
+        }*/
+
+
+        async function showChildDetails(childId, checkinId) {
+                const { data: child, error } = await supabaseClient
+                    .from('kids_children')
+                    .select('*, family:family_id(*)')
+                    .eq('id', childId)
+                    .single();
+                if (error || !child) {
+                    showToast('Erro ao carregar detalhes', 'error');
+                    return;
+                }
+                const family = child.family || {};
+            
+                // Definir o nome do responsável para a mensagem (prioridade: pai > mãe)
+                const responsavelNome = family.father_name || family.mother_name || 'responsável';
+                const responsavelTelefone = family.father_phone || family.mother_phone || '';
+            
+                // Montar mensagem para WhatsApp
+                const mensagem = `Olá ${responsavelNome}! 👋\n\nA criança **${child.name}** está participando do culto Kids hoje.\n\n📅 Compareça à sala do Domingo Kids para buscá-la no horário de saída.\n\nObrigado! 🙏`;
+                const mensagemEncoded = encodeURIComponent(mensagem);
+                const linkWhatsApp = responsavelTelefone ? `https://wa.me/55${responsavelTelefone.replace(/\D/g, '')}?text=${mensagemEncoded}` : '#';
+            
+                const html = `
+                    <button class="modal-close" onclick="closeChildDetailsModal()">&times;</button>
+                    <div style="text-align:center;">
+                        ${child.photo_url ? `<img src="${child.photo_url}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;margin-bottom:0.5rem;">` : '<div style="width:100px;height:100px;background:var(--border-color);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:3rem;margin:0 auto 0.5rem;">👶</div>'}
+                        <h3 style="margin:0.2rem 0;">${escapeHtml(child.name)}</h3>
+                        <p style="margin:0.2rem 0;"><strong>📅 Nascimento:</strong> ${child.birth_date ? new Date(child.birth_date).toLocaleDateString() : 'Não informado'}</p>
+                        <p style="margin:0.2rem 0;"><strong>⚠️ Alergias:</strong> ${escapeHtml(child.allergies) || 'Nenhuma'}</p>
+                        <p style="margin:0.2rem 0;"><strong>🔹 Necessidades:</strong> ${escapeHtml(child.special_needs) || 'Nenhuma'}</p>
+                    </div>
+            
+                    <hr style="margin:1rem 0; border-color:var(--border-color);">
+            
+                    <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+                        <!-- Card do Pai -->
+                        <div style="flex:1; min-width:120px; text-align:center; background:var(--input-bg); border-radius:var(--radius-md); padding:0.8rem; border:1px solid var(--border-color);">
+                            <div style="width:60px;height:60px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;margin:0 auto 0.3rem;overflow:hidden;">
+                                ${family.father_photo_url ? `<img src="${family.father_photo_url}" style="width:100%;height:100%;object-fit:cover;">` : '👨'}
+                            </div>
+                            <div><strong>Pai:</strong> ${escapeHtml(family.father_name) || 'Não informado'}</div>
+                            <div style="font-size:0.85rem; color:var(--text-light);">📞 ${escapeHtml(family.father_phone) || '-'}</div>
+                        </div>
+            
+                        <!-- Card da Mãe -->
+                        <div style="flex:1; min-width:120px; text-align:center; background:var(--input-bg); border-radius:var(--radius-md); padding:0.8rem; border:1px solid var(--border-color);">
+                            <div style="width:60px;height:60px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;margin:0 auto 0.3rem;overflow:hidden;">
+                                ${family.mother_photo_url ? `<img src="${family.mother_photo_url}" style="width:100%;height:100%;object-fit:cover;">` : '👩'}
+                            </div>
+                            <div><strong>Mãe:</strong> ${escapeHtml(family.mother_name) || 'Não informado'}</div>
+                            <div style="font-size:0.85rem; color:var(--text-light);">📞 ${escapeHtml(family.mother_phone) || '-'}</div>
+                        </div>
+                    </div>
+            
+                    <div style="display:flex; gap:0.8rem; margin-top:1.5rem; flex-wrap:wrap; justify-content:center;">
+                        <!-- Botão WhatsApp (se houver telefone) -->
+                        ${responsavelTelefone ? `
+                            <a href="${linkWhatsApp}" target="_blank" style="flex:1; min-width:150px; background:#25D366; color:white; border:none; padding:0.7rem; border-radius:var(--radius-md); font-weight:600; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:0.5rem; font-size:0.9rem; box-shadow:0 4px 12px rgba(37,211,102,0.3); transition:0.2s;">
+                                <i class="fab fa-whatsapp" style="font-size:1.2rem;"></i> Chamar Responsável
+                            </a>
+                        ` : `
+                            <div style="flex:1; min-width:150px; background:#e2e8f0; color:#94a3b8; padding:0.7rem; border-radius:var(--radius-md); font-weight:600; text-align:center; font-size:0.85rem;">📱 Sem telefone cadastrado</div>
+                        `}
+            
+                        <!-- Botão Check-out Manual -->
+                        <button class="btn-primary" onclick="checkoutManual('${checkinId}')" style="flex:1; min-width:150px; background:var(--danger); justify-content:center; box-shadow:none; border:none; color:white; padding:0.7rem; border-radius:var(--radius-md); font-weight:600; cursor:pointer;">
+                            ✅ Check-out Manual
+                        </button>
+                    </div>
+                `;
+            
+                document.getElementById('childDetailsContent').innerHTML = html;
+                document.getElementById('childDetailsModal').style.display = 'flex';
+            }
+        
         function closeChildDetailsModal() { document.getElementById('childDetailsModal').style.display = 'none'; }
 
         // ========== LISTA DE PRESENTES ==========
