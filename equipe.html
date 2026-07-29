@@ -799,12 +799,36 @@
         }
 
         // ========== CÂMERAS ==========
-        async function loadCameras() {
+        /*async function loadCameras() {
             try {
                 availableCameras = await Html5Qrcode.getCameras();
                 const select = document.getElementById('cameraSelect');
                 select.innerHTML = availableCameras.map(cam => `<option value="${cam.id}">${cam.label || cam.id}</option>`).join('');
                 select.style.display = availableCameras.length > 1 ? 'block' : 'none';
+                const savedCameraId = localStorage.getItem('kidsCheckinCameraId');
+                if (savedCameraId && availableCameras.some(c => c.id === savedCameraId)) {
+                    select.value = savedCameraId;
+                }
+            } catch (e) {
+                console.log('Não foi possível listar câmeras', e);
+            }
+        }*/
+
+        async function loadCameras() {
+            try {
+                const allCameras = await Html5Qrcode.getCameras();
+                // Filtra apenas câmeras com "back", "traseira", "environment" no label (case insensitive)
+                const backCameras = allCameras.filter(cam => {
+                    const label = cam.label.toLowerCase();
+                    return label.includes('back') || label.includes('traseira') || label.includes('environment') || label.includes('câmera traseira');
+                });
+                // Se não encontrar nenhuma, usa todas (fallback)
+                availableCameras = backCameras.length > 0 ? backCameras : allCameras;
+                
+                const select = document.getElementById('cameraSelect');
+                select.innerHTML = availableCameras.map(cam => `<option value="${cam.id}">${cam.label || cam.id}</option>`).join('');
+                select.style.display = availableCameras.length > 1 ? 'block' : 'none';
+                
                 const savedCameraId = localStorage.getItem('kidsCheckinCameraId');
                 if (savedCameraId && availableCameras.some(c => c.id === savedCameraId)) {
                     select.value = savedCameraId;
