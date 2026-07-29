@@ -1274,50 +1274,6 @@
         }
 
         // ========== DETALHES DA CRIANÇA ==========
-       /* async function showChildDetails(childId, checkinId) {
-            const { data: child, error } = await supabaseClient
-                .from('kids_children')
-                .select('*, family:family_id(*)')
-                .eq('id', childId)
-                .single();
-            if (error || !child) {
-                showToast('Erro ao carregar detalhes', 'error');
-                return;
-            }
-            const family = child.family || {};
-            const html = `
-                <button class="modal-close" onclick="closeChildDetailsModal()">&times;</button>
-                <div style="text-align:center;">
-                    ${child.photo_url ? `<img src="${child.photo_url}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;">` : '<div style="width:100px;height:100px;background:var(--border-color);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:3rem;">👶</div>'}
-                    <h3 style="margin:0.5rem 0;">${escapeHtml(child.name)}</h3>
-                    <p><strong>📅 Nascimento:</strong> ${child.birth_date ? new Date(child.birth_date).toLocaleDateString() : 'Não informado'}</p>
-                    <p><strong>⚠️ Alergias:</strong> ${escapeHtml(child.allergies) || 'Nenhuma'}</p>
-                    <p><strong>🔹 Necessidades:</strong> ${escapeHtml(child.special_needs) || 'Nenhuma'}</p>
-                    <hr style="margin:1rem 0; border-color:var(--border-color);">
-                    <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
-                        <div style="text-align:center;">
-                            ${family.father_photo_url ? `<img src="${family.father_photo_url}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;">` : '<div style="width:60px;height:60px;background:var(--border-color);border-radius:50%;display:flex;align-items:center;justify-content:center;">👨</div>'}
-                            <div><strong>Pai:</strong> ${escapeHtml(family.father_name) || 'Não informado'}</div>
-                            <div>📞 ${escapeHtml(family.father_phone) || '-'}</div>
-                        </div>
-                        <div style="text-align:center;">
-                            ${family.mother_photo_url ? `<img src="${family.mother_photo_url}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;">` : '<div style="width:60px;height:60px;background:var(--border-color);border-radius:50%;display:flex;align-items:center;justify-content:center;">👩</div>'}
-                            <div><strong>Mãe:</strong> ${escapeHtml(family.mother_name) || 'Não informado'}</div>
-                            <div>📞 ${escapeHtml(family.mother_phone) || '-'}</div>
-                        </div>
-                    </div>
-                    <div style="margin-top: 1.5rem;">
-                        <button class="btn-primary" onclick="checkoutManual('${checkinId}')" style="background: var(--danger); justify-content:center; width:100%;">
-                            Check-out Manual (Não recomendado)
-                        </button>
-                    </div>
-                </div>
-            `;
-            document.getElementById('childDetailsContent').innerHTML = html;
-            document.getElementById('childDetailsModal').style.display = 'flex';
-        }*/
-
-
        async function showChildDetails(childId, checkinId) {
             const { data: child, error } = await supabaseClient
                 .from('kids_children')
