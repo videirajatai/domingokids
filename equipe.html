@@ -1420,7 +1420,7 @@
                 .from('kids_visitants')
                 .select('*')
                 .eq('session_id', currentSessionId);
-            let html = '';
+            /*let html = '';
             if (currentRoomFilter !== 'todos') {
                 html += `
                     <div style="display:flex; justify-content:flex-end; margin-bottom:1rem;">
@@ -1429,7 +1429,7 @@
                         </button>
                     </div>
                 `;
-            }
+            }*/
             if (checkins?.length) {
                 html += `<h4 style="margin-bottom:0.8rem; color:var(--primary);">Crianças nas Salas ${currentRoomFilter !== 'todos' ? `(Sala: ${currentRoomFilter})` : ''}</h4>`;
                 for (const c of checkins) {
