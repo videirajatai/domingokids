@@ -1179,7 +1179,7 @@
             window.location.href = 'rawbt:' + etiquetaBase64;
         }*/
 
-        async function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPhone, checkinId) {
+        /*async function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPhone, checkinId) {
     // ===== AJUSTE AQUI =====
     // A etiqueta física é 48mm x 30mm (384px x 240px a 8px/mm).
     // Como a impressora (KP-1025) não tem sensor de gap, ela avança
@@ -1238,7 +1238,62 @@
 
     // 4) Envia DIRETO pro RawBT
     window.location.href = 'rawbt:' + etiquetaBase64;
-}
+}*/
+
+        async function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPhone, checkinId) {
+            const LABEL_WIDTH = 384;
+            const LABEL_HEIGHT = 216;
+        
+            // Gera QR Code
+            const tempDiv = document.createElement('div');
+            tempDiv.style.position = 'fixed';
+            tempDiv.style.left = '-9999px';
+            tempDiv.style.top = '0';
+            document.body.appendChild(tempDiv);
+            new QRCode(tempDiv, { text: qrToken, width: 240, height: 240 });
+            await new Promise(resolve => setTimeout(resolve, 300));
+            let qrSrc = '';
+            const canvasQr = tempDiv.querySelector('canvas');
+            const imgQr = tempDiv.querySelector('img');
+            if (canvasQr) qrSrc = canvasQr.toDataURL('image/png');
+            else if (imgQr && imgQr.src) qrSrc = imgQr.src;
+            document.body.removeChild(tempDiv);
+        
+            // Monta etiqueta com logo
+            const labelContainer = document.createElement('div');
+            labelContainer.style.position = 'fixed';
+            labelContainer.style.left = '-9999px';
+            labelContainer.style.top = '0';
+            labelContainer.style.width = LABEL_WIDTH + 'px';
+            labelContainer.style.height = LABEL_HEIGHT + 'px';
+            labelContainer.innerHTML = `
+                <div style="width:${LABEL_WIDTH}px;height:${LABEL_HEIGHT}px;padding:6px;box-sizing:border-box;background:#fff;color:#000;
+                            font-family:Arial, Helvetica, sans-serif;display:flex;align-items:center;gap:8px;overflow:hidden;position:relative;">
+                    <img src="logo.png" alt="Logo" style="position:absolute; top:4px; right:6px; width:32px; height:32px; border-radius:50%; object-fit:cover; opacity:0.8;">
+                    <div style="flex:0 0 154px;width:154px;height:154px;">
+                        ${qrSrc ? `<img src="${qrSrc}" style="width:154px;height:154px;display:block;">` : ''}
+                    </div>
+                    <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:2px;overflow:hidden;padding-right:32px;">
+                        <div style="font-size:24px;font-weight:bold;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(childName)}</div>
+                        ${idade ? `<div style="font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Idade: ${escapeHtml(idade)}</div>` : ''}
+                        ${allergies ? `<div style="font-size:17px;font-weight:bold;color:#b91c1c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">⚠️ ${escapeHtml(allergies)}</div>` : ''}
+                        <div style="font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Pai: ${escapeHtml(fatherPhone)}</div>
+                        <div style="font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Mãe: ${escapeHtml(motherPhone)}</div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(labelContainer);
+        
+            // Captura com html2canvas
+            const canvasEtiqueta = await html2canvas(labelContainer, {
+                width: LABEL_WIDTH, height: LABEL_HEIGHT, scale: 1, backgroundColor: '#ffffff'
+            });
+            document.body.removeChild(labelContainer);
+            const etiquetaBase64 = canvasEtiqueta.toDataURL('image/png');
+        
+            // Envia para impressora (RawBT)
+            window.location.href = 'rawbt:' + etiquetaBase64;
+        }
         
 
         // ========== REIMPRESSÃO ==========
