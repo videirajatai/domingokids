@@ -1457,17 +1457,21 @@
                         </div>
                     `;*/
                     html += `
-                        <div class="present-item" style="border-left-color: ${c.room === 'Kids' ? '#3b82f6' : (c.room === 'Babys' ? '#f59e0b' : (c.room === 'Juvenis' ? '#8b5cf6' : 'var(--success)'))}; display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0.7rem;">
-                            <div class="present-info" style="display:flex; flex-direction:column; flex:1;">
-                                <div class="present-name" style="font-size:0.9rem;">${birthdayIcon}${escapeHtml(c.child.name)} ${c.badge_number ? `<span class="badge">🏷️ ${c.badge_number}</span>` : ''} ${c.child.allergies ? '<span class="badge">⚠️</span>' : ''}</div>
+                        <div class="present-item" style="border-left-color: ${c.room === 'Kids' ? '#3b82f6' : (c.room === 'Babys' ? '#f59e0b' : (c.room === 'Juvenis' ? '#8b5cf6' : 'var(--success-text)'))}; display:flex; align-items:center; justify-content:space-between; padding:0.5rem 0.7rem;">
+                            <div class="present-info" style="display:flex; flex-direction:column; flex:1; min-width:0;">
+                                <div class="present-name" style="font-size:0.9rem; display:flex; align-items:center; gap:0.3rem; flex-wrap:wrap;">
+                                    ${birthdayIcon}${escapeHtml(c.child.name)}
+                                    ${c.badge_number ? `<span class="badge" style="font-size:0.6rem;">🏷️ ${c.badge_number}</span>` : ''}
+                                    ${c.child.allergies ? '<span class="badge" style="font-size:0.6rem; background:#fee2e2; color:#b91c1c;">⚠️</span>' : ''}
+                                </div>
                                 <div class="present-time" style="font-size:0.7rem; color:var(--text-light);">
                                     Check‑in: ${new Date(c.checked_in_at).toLocaleTimeString()}
                                     ${c.room !== 'todos' && currentRoomFilter === 'todos' ? ` · 📌 Sala: ${c.room}` : ''}
                                 </div>
                             </div>
                             <div class="present-actions" style="display:flex; gap:0.3rem; flex-shrink:0;">
-                                <button class="btn-icon" onclick="showChildDetails('${c.child_id}', '${c.id}')" style="padding:0.2rem 0.5rem;">👁️</button>
-                                <button class="btn-icon" onclick="reprintLabelFromList('${c.id}')" style="padding:0.2rem 0.5rem;">🖨️</button>
+                                <button class="btn-icon" onclick="showChildDetails('${c.child_id}', '${c.id}')" style="padding:0.2rem 0.5rem; font-size:0.7rem; border-radius:0.4rem;">👁️</button>
+                                <button class="btn-icon" onclick="reprintLabelFromList('${c.id}')" style="padding:0.2rem 0.5rem; font-size:0.7rem; border-radius:0.4rem;">🖨️</button>
                             </div>
                         </div>
                     `;
