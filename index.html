@@ -388,8 +388,8 @@
                         <input type="text" id="usuario-input" placeholder="Seu usuário ou e-mail" onkeypress="verificarEnter(event, 'login')" autocomplete="off">
                     </div>
                     <div class="input-group">
-                        <label>Senha (Somente Números)</label>
-                        <input type="password" id="senha-input" inputmode="numeric" pattern="[0-9]*" placeholder="••••••" onkeypress="verificarEnter(event, 'login')">
+                        <label>Senha (Somente Números)</label>                       
+                        <input type="password" id="senha-input" inputmode="numeric" pattern="[0-9]*" placeholder="••••••" onkeypress="verificarEnter(event, 'login')" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                     </div>
 
                     <button id="btn-entrar" onclick="verificarLogin()">Entrar</button>
@@ -475,7 +475,7 @@
         }
 
         // ==================== CADASTRO DE PAI ====================
-        async function cadastrarPai() {
+        /*async function cadastrarPai() {
             const email = document.getElementById('usuario-input').value.trim();
             const senha = document.getElementById('senha-input').value.trim();
             const erro = document.getElementById('mensagem-erro');
@@ -531,6 +531,114 @@
                     window.location.href = 'pais.html?t=' + Date.now();
                 }, 2000);
 
+            } catch (err) {
+                console.error(err);
+                exibirErro('mensagem-erro', 'Erro ao criar conta: ' + err.message);
+                btn.disabled = false;
+                btn.innerText = 'Entrar';
+            }
+        }*/
+
+        // ==================== CADASTRO DE PAI ====================
+        async function cadastrarPai() {
+            const email = document.getElementById('usuario-input').value.trim();
+            const senha = document.getElementById('senha-input').value.trim();
+            const erro = document.getElementById('mensagem-erro');
+        
+            if (!email || !senha) {
+                exibirErro('mensagem-erro', 'Preencha e-mail e senha para criar sua conta.');
+                return;
+            }
+        
+            if (!email.includes('@')) {
+                exibirErro('mensagem-erro', 'Digite um e-mail válido.');
+                return;
+            }
+        
+            if (senha.length < 6 || !/^\d+$/.test(senha)) {
+                exibirErro('mensagem-erro', 'A senha deve ter 6 dígitos numéricos.');
+                return;
+            }
+        
+            const btn = document.getElementById('btn-entrar');
+            btn.disabled = true;
+            btn.innerText = 'Verificando...';
+            erro.style.display = 'none';
+        
+            try {
+                // 1) Extrair nome de usuário (parte antes do @)
+                const usernameSugerido = email.split('@')[0].toLowerCase();
+        
+                // 2) Verificar se o e-mail ou username já existem na tabela kids_profiles
+                const { data: existentes, error: buscaError } = await supabaseClient
+                    .from('kids_profiles')
+                    .select('email, username')
+                    .or(`email.eq.${email},username.eq.${usernameSugerido}`)
+                    .maybeSingle();
+        
+                if (buscaError) {
+                    throw buscaError;
+                }
+        
+                if (existentes) {
+                    if (existentes.email === email) {
+                        exibirErro('mensagem-erro', 'Este e-mail já está cadastrado. Faça login ou recupere a senha.');
+                    } else if (existentes.username === usernameSugerido) {
+                        exibirErro('mensagem-erro', `O nome de usuário "${usernameSugerido}" já está em uso. Tente outro e-mail ou faça login.`);
+                    } else {
+                        exibirErro('mensagem-erro', 'Este e-mail ou nome de usuário já está cadastrado.');
+                    }
+                    btn.disabled = false;
+                    btn.innerText = 'Entrar';
+                    return;
+                }
+        
+                // 3) Criar usuário no Auth (se não existir)
+                btn.innerText = 'Criando conta...';
+                const { data: authData, error: signUpError } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: senha,
+                    options: {
+                        data: {
+                            full_name: 'Pai/Mãe',
+                            role: 'parent'
+                        }
+                    }
+                });
+        
+                if (signUpError) {
+                    if (signUpError.message.includes('already registered')) {
+                        exibirErro('mensagem-erro', 'Este e-mail já está cadastrado no sistema. Tente fazer login.');
+                    } else {
+                        throw signUpError;
+                    }
+                    btn.disabled = false;
+                    btn.innerText = 'Entrar';
+                    return;
+                }
+        
+                const userId = authData.user.id;
+        
+                // 4) Criar perfil na tabela kids_profiles (se não existir)
+                const { error: profileError } = await supabaseClient
+                    .from('kids_profiles')
+                    .insert({
+                        id: userId,
+                        email: email,
+                        username: usernameSugerido,
+                        role: 'parent'
+                    });
+        
+                if (profileError && profileError.code !== '23505') {
+                    throw profileError;
+                }
+        
+                // Sucesso
+                exibirSucesso('Conta criada com sucesso! Redirecionando...');
+                setTimeout(() => {
+                    window.location.href = 'pais.html?t=' + Date.now();
+                }, 2000);
+        
             } catch (err) {
                 console.error(err);
                 exibirErro('mensagem-erro', 'Erro ao criar conta: ' + err.message);
