@@ -1,7 +1,7 @@
 {
   "name": "Domingno Kids",
   "short_name": "Domingo Kids",
-  "start_url": "./",
+  "start_url": "./index.html",
   "display": "standalone",
   "theme_color": "#0f172a",
   "background_color": "#f1f5f9",
