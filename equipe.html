@@ -555,45 +555,123 @@
             border-bottom: 1px solid #ece2de;
         }
         .report-container tr.birthday { background: #fdf6ec; }
-        .report-container tr.alerta { background: #fbebeb; }
         .report-container h3 { margin-top: 1.2rem; margin-bottom: 0.5rem; font-size: 1rem; color: #3d2f32; }
-        .report-obs { font-size: 0.72rem; color: #8a7a7e; margin-top: 0.5rem; }
 
-        /* ===== MODAL DE RELATÓRIOS ===== */
-        .report-type-tabs {
-            display: flex;
-            gap: 0.35rem;
-            margin-bottom: 1.2rem;
-            background: var(--input-bg);
-            padding: 0.3rem;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border-color);
-        }
-        .report-type-tab {
-            flex: 1;
-            text-align: center;
-            padding: 0.55rem 0.4rem;
-            border-radius: 0.8rem;
-            cursor: pointer;
-            transition: all 0.2s;
+        /* ===== MODAL RELATÓRIOS ===== */
+        .tab-relatorio {
+            background: none;
+            border: none;
+            padding: 0.5rem 1rem;
             font-weight: 600;
-            font-size: 0.78rem;
+            font-size: 0.85rem;
             color: var(--text-light);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: 0.2s;
         }
-        .report-type-tab.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(139,90,106,0.3); }
-        .report-type-tab:hover:not(.active) { background: #f3e7e2; color: var(--text-main); }
-        .report-panel label {
-            display: block;
+        .tab-relatorio.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .tab-relatorio:hover {
+            color: var(--text-main);
+        }
+        .aba-relatorio {
+            animation: fadeIn 0.3s ease;
+        }
+        
+        /* Estilos para o PDF (serão aplicados na impressão) */
+        .report-pdf {
+            font-family: 'Inter', sans-serif;
+            color: #3d2f32;
+            padding: 20px;
+            background: white;
+        }
+        .report-pdf .header {
+            text-align: center;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .report-pdf .header img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .report-pdf .header h1 {
+            color: var(--primary);
+            font-size: 1.8rem;
+            margin: 5px 0 0;
+        }
+        .report-pdf .header p {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+        .report-pdf .stats-grid {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .report-pdf .stat-card {
+            flex: 1;
+            background: #faf5f2;
+            border: 1px solid #ece2de;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+        .report-pdf .stat-number {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        .report-pdf .stat-label {
             font-size: 0.7rem;
-            font-weight: 700;
             color: var(--text-light);
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            margin-top: 0.7rem;
-            margin-bottom: 0.1rem;
+            font-weight: 600;
         }
-        .report-panel .report-row { display: flex; gap: 0.6rem; }
-        .report-panel .report-row > div { flex: 1; }
+        .report-pdf table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .report-pdf th {
+            background: var(--primary);
+            color: white;
+            padding: 8px 10px;
+            font-size: 0.75rem;
+            text-align: left;
+        }
+        .report-pdf td {
+            padding: 6px 10px;
+            font-size: 0.8rem;
+            border-bottom: 1px solid #ece2de;
+        }
+        .report-pdf .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-light);
+            border-top: 1px solid #ece2de;
+            padding-top: 10px;
+        }
+        .report-pdf .espaco-lideres {
+            margin-top: 20px;
+            border-top: 1px dashed #ccc;
+            padding-top: 10px;
+        }
+        .report-pdf .espaco-lideres h4 {
+            margin: 0 0 10px 0;
+            color: var(--text-main);
+        }
+        .report-pdf .espaco-lideres .linha {
+            display: inline-block;
+            width: 120px;
+            border-bottom: 1px solid #000;
+            margin: 0 10px;
+        }
 
         /* ===== RESPONSIVO ===== */
         @media (max-width: 640px) {
@@ -746,80 +824,81 @@
         </div>
     </div>
 
-    <!-- Modal de Relatórios -->
+    <!-- ===== MODAL DE RELATÓRIOS ===== -->
     <div id="reportModal" class="modal">
-        <div class="modal-content" style="max-width: 520px;">
-            <button class="modal-close" onclick="closeReportModal()">&times;</button>
+        <div class="modal-content" style="max-width: 700px;">
+            <button class="modal-close" onclick="fecharModalRelatorio()">&times;</button>
             <div class="modal-title">📊 Relatórios</div>
-
-            <div class="report-type-tabs">
-                <div class="report-type-tab active" data-report="1" onclick="switchReportTab(1)">Por Culto</div>
-                <div class="report-type-tab" data-report="2" onclick="switchReportTab(2)">Por Mês</div>
-                <div class="report-type-tab" data-report="3" onclick="switchReportTab(3)">Faltas</div>
+    
+            <!-- Abas dos tipos de relatório -->
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem;">
+                <button class="tab-relatorio active" data-tipo="sessao" onclick="trocarAbaRelatorio('sessao')">📅 Por Sessão</button>
+                <button class="tab-relatorio" data-tipo="mes" onclick="trocarAbaRelatorio('mes')">📆 Por Mês</button>
+                <button class="tab-relatorio" data-tipo="faltas" onclick="trocarAbaRelatorio('faltas')">📉 Faltas</button>
             </div>
-
-            <!-- Relatório 1: Por Culto/Sessão -->
-            <div id="reportPanel1" class="report-panel">
-                <label>Culto (sessão)</label>
-                <select id="report1Session"></select>
-                <label>Sala</label>
-                <select id="report1Room">
-                    <option value="todos">Todas as salas</option>
-                    <option value="Kids">🧸 Kids</option>
-                    <option value="Babys">🍼 Babys</option>
-                    <option value="Juvenis">⚡ Juvenis</option>
-                </select>
-                <button class="btn-primary" onclick="gerarRelatorio1()" style="width:100%; justify-content:center; margin-top:0.8rem;">📄 Gerar PDF</button>
-            </div>
-
-            <!-- Relatório 2: Por Mês -->
-            <div id="reportPanel2" class="report-panel" style="display:none;">
-                <div class="report-row">
-                    <div>
-                        <label>Mês</label>
-                        <select id="report2Month">
-                            <option value="0">Janeiro</option>
-                            <option value="1">Fevereiro</option>
-                            <option value="2">Março</option>
-                            <option value="3">Abril</option>
-                            <option value="4">Maio</option>
-                            <option value="5">Junho</option>
-                            <option value="6">Julho</option>
-                            <option value="7">Agosto</option>
-                            <option value="8">Setembro</option>
-                            <option value="9">Outubro</option>
-                            <option value="10">Novembro</option>
-                            <option value="11">Dezembro</option>
+    
+            <!-- Conteúdo da aba Por Sessão -->
+            <div id="aba-sessao" class="aba-relatorio">
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="display: block; font-weight: 600; font-size: 0.8rem;">Sessão *</label>
+                        <select id="relSessaoSelect" style="width:100%; padding:0.5rem; border-radius:0.5rem; border:1px solid var(--border-color);"></select>
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="display: block; font-weight: 600; font-size: 0.8rem;">Sala</label>
+                        <select id="relSalaSelect" style="width:100%; padding:0.5rem; border-radius:0.5rem; border:1px solid var(--border-color);">
+                            <option value="todos">Todas</option>
+                            <option value="Kids">Kids</option>
+                            <option value="Babys">Babys</option>
+                            <option value="Juvenis">Juvenis</option>
                         </select>
                     </div>
-                    <div>
-                        <label>Ano</label>
-                        <select id="report2Year"></select>
+                </div>
+                <button class="btn-primary" onclick="gerarPDF('sessao')" style="width:100%; justify-content:center;">📄 Gerar PDF</button>
+            </div>
+    
+            <!-- Conteúdo da aba Por Mês -->
+            <div id="aba-mes" class="aba-relatorio" style="display:none;">
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="display: block; font-weight: 600; font-size: 0.8rem;">Mês *</label>
+                        <input type="month" id="relMesInput" style="width:100%; padding:0.5rem; border-radius:0.5rem; border:1px solid var(--border-color);">
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="display: block; font-weight: 600; font-size: 0.8rem;">Sala</label>
+                        <select id="relSalaMesSelect" style="width:100%; padding:0.5rem; border-radius:0.5rem; border:1px solid var(--border-color);">
+                            <option value="todos">Todas</option>
+                            <option value="Kids">Kids</option>
+                            <option value="Babys">Babys</option>
+                            <option value="Juvenis">Juvenis</option>
+                        </select>
                     </div>
                 </div>
-                <label>Sala</label>
-                <select id="report2Room">
-                    <option value="todos">Todas as salas</option>
-                    <option value="Kids">🧸 Kids</option>
-                    <option value="Babys">🍼 Babys</option>
-                    <option value="Juvenis">⚡ Juvenis</option>
-                </select>
-                <button class="btn-primary" onclick="gerarRelatorio2()" style="width:100%; justify-content:center; margin-top:0.8rem;">📄 Gerar PDF</button>
+                <button class="btn-primary" onclick="gerarPDF('mes')" style="width:100%; justify-content:center;">📄 Gerar PDF</button>
             </div>
-
-            <!-- Relatório 3: Faltas (ranking anual) -->
-            <div id="reportPanel3" class="report-panel" style="display:none;">
-                <label>Ano</label>
-                <select id="report3Year"></select>
-                <label>Sala</label>
-                <select id="report3Room">
-                    <option value="todos">Todas as salas (ranking geral)</option>
-                    <option value="Kids">🧸 Kids</option>
-                    <option value="Babys">🍼 Babys</option>
-                    <option value="Juvenis">⚡ Juvenis</option>
-                </select>
-                <p class="report-obs">Compara quantos cultos cada criança participou em relação ao total de cultos realizados no ano selecionado.</p>
-                <button class="btn-primary" onclick="gerarRelatorio3()" style="width:100%; justify-content:center;">📄 Gerar PDF</button>
+    
+            <!-- Conteúdo da aba Faltas -->
+            <div id="aba-faltas" class="aba-relatorio" style="display:none;">
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="display: block; font-weight: 600; font-size: 0.8rem;">Ano *</label>
+                        <input type="number" id="relAnoInput" style="width:100%; padding:0.5rem; border-radius:0.5rem; border:1px solid var(--border-color);" placeholder="AAAA" value="2025">
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="display: block; font-weight: 600; font-size: 0.8rem;">Sala</label>
+                        <select id="relSalaFaltasSelect" style="width:100%; padding:0.5rem; border-radius:0.5rem; border:1px solid var(--border-color);">
+                            <option value="todos">Todas</option>
+                            <option value="Kids">Kids</option>
+                            <option value="Babys">Babys</option>
+                            <option value="Juvenis">Juvenis</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="gerarPDF('faltas')" style="width:100%; justify-content:center;">📄 Gerar PDF</button>
+            </div>
+    
+            <div style="margin-top: 1rem; text-align: center;">
+                <button class="btn-secondary" onclick="fecharModalRelatorio()">Fechar</button>
             </div>
         </div>
     </div>
@@ -1741,59 +1820,13 @@
         function openVisitanteModal() { document.getElementById('visitanteModal').style.display = 'flex'; }
         function closeModal() { document.getElementById('visitanteModal').style.display = 'none'; }
 
-        // ========== RELATÓRIO PDF ==========
-        async function gerarRelatorio() {
-            if (!currentSessionId) { showToast('Selecione uma sessão primeiro', 'error'); return; }
-            const { data: sessionData } = await supabaseClient.from('kids_sessions').select('name, session_date').eq('id', currentSessionId).single();
-            const { data: checkins } = await supabaseClient
-                .from('kids_check_ins')
-                .select('*, child:child_id(id, name, birth_date, allergies)')
-                .eq('session_id', currentSessionId);
-            const totalCriancas = checkins?.length || 0;
-            const presentesAgora = checkins?.filter(c => !c.checked_out_at).length || 0;
-            const hoje = new Date();
-            const semanaFim = new Date(hoje); semanaFim.setDate(hoje.getDate() + 7);
-            const aniversariantes = (checkins || []).filter(c => {
-                if (!c.child.birth_date) return false;
-                const nasc = new Date(c.child.birth_date);
-                const aniversarioEsteAno = new Date(hoje.getFullYear(), nasc.getMonth(), nasc.getDate());
-                return aniversarioEsteAno >= hoje && aniversarioEsteAno <= semanaFim;
-            }).map(c => c.child.name);
-            const reportHtml = `
-                <div class="report-container" id="reportContent">
-                    <div class="report-header">
-                        <img src="logo.png" style="width:80px; border-radius:50%; margin-bottom:10px;" alt="Logo">
-                        <div class="report-title">Relatório de Presenças</div>
-                        <div class="report-subtitle">${escapeHtml(sessionData?.name || 'Sessão')} - ${new Date(sessionData?.session_date).toLocaleDateString()}</div>
-                    </div>
-                    <div class="stats-grid">
-                        <div class="stat-card"><div class="stat-number">${totalCriancas}</div><div class="stat-label">Total de crianças</div></div>
-                        <div class="stat-card"><div class="stat-number">${presentesAgora}</div><div class="stat-label">Presentes agora</div></div>
-                        <div class="stat-card"><div class="stat-number">${aniversariantes.length}</div><div class="stat-label">Aniversariantes da semana</div></div>
-                    </div>
-                    <h3>📋 Lista de crianças</h3>
-                    <table><thead><tr><th>Nome</th><th>Idade</th><th>Alergias</th><th>Check‑in</th><th>Check‑out</th></tr></thead><tbody>
-                        ${(checkins || []).map(c => {
-                            let idade = '';
-                            if (c.child.birth_date) {
-                                const nasc = new Date(c.child.birth_date);
-                                let age = hoje.getFullYear() - nasc.getFullYear();
-                                const m = hoje.getMonth() - nasc.getMonth();
-                                if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) age--;
-                                idade = `${age} anos`;
-                            }
-                            const isBirthday = aniversariantes.includes(c.child.name);
-                            return `<tr class="${isBirthday ? 'birthday' : ''}"><td>${escapeHtml(c.child.name)} ${isBirthday ? '🎂' : ''}</td><td>${idade}</td><td>${escapeHtml(c.child.allergies || '-')}</td><td>${new Date(c.checked_in_at).toLocaleString()}</td><td>${c.checked_out_at ? new Date(c.checked_out_at).toLocaleString() : 'Ainda presente'}</td></tr>`;
-                        }).join('')}
-                    </tbody></table>
-                    <p><em>Relatório gerado em ${new Date().toLocaleString()}</em></p>
-                </div>
-            `;
-            const printDiv = document.getElementById('reportPrintArea');
-            printDiv.innerHTML = reportHtml;
-            printDiv.style.display = 'block';
-            const element = document.getElementById('reportContent');
-            html2pdf().from(element).set({ margin: [0.5,0.5,0.5,0.5], filename: `relatorio_${sessionData?.name || 'sessao'}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } }).save().then(() => { printDiv.style.display = 'none'; }).catch(() => { showToast('Erro ao gerar PDF', 'error'); printDiv.style.display = 'none'; });
+        // ========== RELATÓRIO (abrir modal) ==========
+        function gerarRelatorio() {
+            if (!currentSessionId) {
+                showToast('Selecione uma sessão primeiro.', 'error');
+                return;
+            }
+            abrirModalRelatorio();
         }
 
         // ========== CHECKOUT COM CONFIRMAÇÃO ==========
@@ -1846,6 +1879,337 @@
             closeCheckoutConfirmModal();
             await loadPresentList();
         }
+
+
+
+        // ========== MODAL RELATÓRIOS ==========
+        let relTipoAtual = 'sessao';
+        
+        function abrirModalRelatorio() {
+            // Carregar sessões para o select
+            carregarSessoesSelect();
+            // Definir mês atual no input
+            const hoje = new Date();
+            document.getElementById('relMesInput').value = hoje.getFullYear() + '-' + String(hoje.getMonth()+1).padStart(2,'0');
+            document.getElementById('relAnoInput').value = hoje.getFullYear();
+            document.getElementById('reportModal').style.display = 'flex';
+        }
+        
+        function fecharModalRelatorio() {
+            document.getElementById('reportModal').style.display = 'none';
+        }
+        
+        function trocarAbaRelatorio(tipo) {
+            relTipoAtual = tipo;
+            // Atualizar abas
+            document.querySelectorAll('.tab-relatorio').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`.tab-relatorio[data-tipo="${tipo}"]`).classList.add('active');
+            // Mostrar conteúdo correspondente
+            document.querySelectorAll('.aba-relatorio').forEach(div => div.style.display = 'none');
+            document.getElementById(`aba-${tipo}`).style.display = 'block';
+        }
+        
+        async function carregarSessoesSelect() {
+            const { data } = await supabaseClient
+                .from('kids_sessions')
+                .select('id, name, session_date')
+                .order('session_date', { ascending: false });
+            const select = document.getElementById('relSessaoSelect');
+            select.innerHTML = '';
+            if (data && data.length) {
+                data.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = `${s.name} (${new Date(s.session_date).toLocaleDateString('pt-BR')})`;
+                    select.appendChild(opt);
+                });
+                // Selecionar a sessão atual se existir
+                if (currentSessionId) select.value = currentSessionId;
+            } else {
+                select.innerHTML = '<option value="">Nenhuma sessão</option>';
+            }
+        }
+        
+        // ========== GERAR PDF CONFORME TIPO ==========
+        async function gerarPDF(tipo) {
+            if (tipo === 'sessao') {
+                await gerarPDFSessao();
+            } else if (tipo === 'mes') {
+                await gerarPDFMes();
+            } else if (tipo === 'faltas') {
+                await gerarPDFFaltas();
+            }
+        }
+        
+        // ---------- RELATÓRIO POR SESSÃO ----------
+        async function gerarPDFSessao() {
+            const sessaoId = document.getElementById('relSessaoSelect').value;
+            const salaFiltro = document.getElementById('relSalaSelect').value;
+            if (!sessaoId) {
+                showToast('Selecione uma sessão.', 'error');
+                return;
+            }
+        
+            // Buscar dados da sessão
+            const { data: sessao } = await supabaseClient
+                .from('kids_sessions')
+                .select('name, session_date')
+                .eq('id', sessaoId)
+                .single();
+        
+            // Buscar check-ins da sessão
+            let query = supabaseClient
+                .from('kids_check_ins')
+                .select('*, child:child_id(id, name, birth_date, allergies)')
+                .eq('session_id', sessaoId);
+            if (salaFiltro !== 'todos') {
+                query = query.eq('room', salaFiltro);
+            }
+            const { data: checkins } = await query;
+        
+            // Calcular totais por sala
+            const totaisPorSala = {};
+            checkins?.forEach(c => {
+                const room = c.room || 'todos';
+                totaisPorSala[room] = (totaisPorSala[room] || 0) + 1;
+            });
+            const totalGeral = checkins?.length || 0;
+        
+            // Montar HTML do PDF
+            const html = `
+                <div class="report-pdf" id="reportContent">
+                    <div class="header">
+                        <img src="logo.png" alt="Logo">
+                        <h1>Relatório de Presenças</h1>
+                        <p>${sessao?.name || 'Sessão'} - ${new Date(sessao?.session_date).toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card"><div class="stat-number">${totalGeral}</div><div class="stat-label">Total de crianças</div></div>
+                        ${Object.entries(totaisPorSala).map(([sala, qtd]) => `
+                            <div class="stat-card"><div class="stat-number">${qtd}</div><div class="stat-label">Sala ${sala}</div></div>
+                        `).join('')}
+                    </div>
+                    <table>
+                        <thead><tr><th>Nome</th><th>Idade</th><th>Alergias</th><th>Sala</th><th>Check-in</th><th>Check-out</th></tr></thead>
+                        <tbody>
+                            ${(checkins || []).map(c => {
+                                const idade = c.child.birth_date ? `${calcularIdade(c.child.birth_date)} anos` : '';
+                                const alergias = c.child.allergies || 'Nenhuma';
+                                const checkin = new Date(c.checked_in_at).toLocaleString('pt-BR');
+                                const checkout = c.checked_out_at ? new Date(c.checked_out_at).toLocaleString('pt-BR') : 'Ainda presente';
+                                return `<tr>
+                                    <td>${escapeHtml(c.child.name)}</td>
+                                    <td>${idade}</td>
+                                    <td>${escapeHtml(alergias)}</td>
+                                    <td>${c.room || 'Não definida'}</td>
+                                    <td>${checkin}</td>
+                                    <td>${checkout}</td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                    <div class="espaco-lideres">
+                        <h4>Líderes e Auxiliares</h4>
+                        ${[1,2,3,4,5,6].map(i => `<div style="margin:4px 0;"><span>Líder ${i}:</span> <span class="linha"></span></div>`).join('')}
+                        ${[1,2].map(i => `<div style="margin:4px 0;"><span>Auxiliar ${i}:</span> <span class="linha"></span></div>`).join('')}
+                    </div>
+                    <div class="footer">Relatório gerado em ${new Date().toLocaleString('pt-BR')}</div>
+                </div>
+            `;
+        
+            gerarPDFComHtml(html, `relatorio_${sessao?.name || 'sessao'}`);
+        }
+        
+        // ---------- RELATÓRIO POR MÊS ----------
+        async function gerarPDFMes() {
+            const mesAno = document.getElementById('relMesInput').value; // formato "YYYY-MM"
+            const salaFiltro = document.getElementById('relSalaMesSelect').value;
+            if (!mesAno) {
+                showToast('Selecione um mês.', 'error');
+                return;
+            }
+            const [ano, mes] = mesAno.split('-').map(Number);
+            const dataInicio = new Date(ano, mes-1, 1);
+            const dataFim = new Date(ano, mes, 0); // último dia do mês
+        
+            // Buscar check-ins do mês
+            let query = supabaseClient
+                .from('kids_check_ins')
+                .select('*, child:child_id(id, name, birth_date, allergies)')
+                .gte('checked_in_at', dataInicio.toISOString())
+                .lte('checked_in_at', dataFim.toISOString());
+            if (salaFiltro !== 'todos') {
+                query = query.eq('room', salaFiltro);
+            }
+            const { data: checkins } = await query;
+        
+            // Agrupar por criança
+            const freqMap = {};
+            checkins?.forEach(c => {
+                const childId = c.child.id;
+                if (!freqMap[childId]) {
+                    freqMap[childId] = {
+                        nome: c.child.name,
+                        idade: c.child.birth_date ? `${calcularIdade(c.child.birth_date)} anos` : '',
+                        alergias: c.child.allergies || 'Nenhuma',
+                        presencas: 0
+                    };
+                }
+                freqMap[childId].presencas++;
+            });
+        
+            // Ordenar por nome
+            const lista = Object.values(freqMap).sort((a,b) => a.nome.localeCompare(b.nome));
+        
+            const totalCriancas = lista.length;
+        
+            const html = `
+                <div class="report-pdf" id="reportContent">
+                    <div class="header">
+                        <img src="logo.png" alt="Logo">
+                        <h1>Relatório Mensal</h1>
+                        <p>${new Date(ano, mes-1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })} - ${salaFiltro === 'todos' ? 'Todas as salas' : `Sala ${salaFiltro}`}</p>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card"><div class="stat-number">${totalCriancas}</div><div class="stat-label">Total de crianças</div></div>
+                        <div class="stat-card"><div class="stat-number">${checkins?.length || 0}</div><div class="stat-label">Total de presenças</div></div>
+                    </div>
+                    <table>
+                        <thead><tr><th>Nome</th><th>Idade</th><th>Alergias</th><th>Presenças</th></tr></thead>
+                        <tbody>
+                            ${lista.map(c => `
+                                <tr>
+                                    <td>${escapeHtml(c.nome)}</td>
+                                    <td>${c.idade}</td>
+                                    <td>${escapeHtml(c.alergias)}</td>
+                                    <td>${c.presencas}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    <div class="footer">Relatório gerado em ${new Date().toLocaleString('pt-BR')}</div>
+                </div>
+            `;
+        
+            gerarPDFComHtml(html, `relatorio_mes_${mesAno}`);
+        }
+        
+        // ---------- RELATÓRIO DE FALTAS ----------
+        async function gerarPDFFaltas() {
+            const ano = parseInt(document.getElementById('relAnoInput').value);
+            const salaFiltro = document.getElementById('relSalaFaltasSelect').value;
+            if (!ano || isNaN(ano)) {
+                showToast('Informe um ano válido.', 'error');
+                return;
+            }
+        
+            // Buscar todas as sessões no ano
+            const { data: sessoes } = await supabaseClient
+                .from('kids_sessions')
+                .select('id')
+                .gte('session_date', `${ano}-01-01`)
+                .lte('session_date', `${ano}-12-31`);
+            const totalSessoes = sessoes?.length || 0;
+        
+            if (totalSessoes === 0) {
+                showToast('Nenhuma sessão encontrada para este ano.', 'error');
+                return;
+            }
+        
+            // Buscar check-ins do ano
+            let query = supabaseClient
+                .from('kids_check_ins')
+                .select('*, child:child_id(id, name, birth_date, allergies)')
+                .gte('checked_in_at', `${ano}-01-01`)
+                .lte('checked_in_at', `${ano}-12-31`);
+            if (salaFiltro !== 'todos') {
+                query = query.eq('room', salaFiltro);
+            }
+            const { data: checkins } = await query;
+        
+            // Agrupar por criança
+            const freqMap = {};
+            checkins?.forEach(c => {
+                const childId = c.child.id;
+                if (!freqMap[childId]) {
+                    freqMap[childId] = {
+                        nome: c.child.name,
+                        idade: c.child.birth_date ? `${calcularIdade(c.child.birth_date)} anos` : '',
+                        alergias: c.child.allergies || 'Nenhuma',
+                        presencas: 0
+                    };
+                }
+                freqMap[childId].presencas++;
+            });
+        
+            // Calcular faltas = totalSessoes - presencas
+            const lista = Object.values(freqMap).map(c => ({
+                ...c,
+                faltas: totalSessoes - c.presencas
+            })).sort((a,b) => b.faltas - a.faltas); // ranking por mais faltas
+        
+            // Filtrar apenas quem tem pelo menos 1 falta (ou pode mostrar todos)
+            const comFaltas = lista.filter(c => c.faltas > 0);
+        
+            const html = `
+                <div class="report-pdf" id="reportContent">
+                    <div class="header">
+                        <img src="logo.png" alt="Logo">
+                        <h1>Relatório de Faltas</h1>
+                        <p>Ano ${ano} - ${salaFiltro === 'todos' ? 'Todas as salas' : `Sala ${salaFiltro}`}</p>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card"><div class="stat-number">${comFaltas.length}</div><div class="stat-label">Crianças com faltas</div></div>
+                        <div class="stat-card"><div class="stat-number">${totalSessoes}</div><div class="stat-label">Total de sessões</div></div>
+                        <div class="stat-card"><div class="stat-number">${checkins?.length || 0}</div><div class="stat-label">Total de presenças</div></div>
+                    </div>
+                    <table>
+                        <thead><tr><th>#</th><th>Nome</th><th>Idade</th><th>Presenças</th><th>Faltas</th></tr></thead>
+                        <tbody>
+                            ${comFaltas.map((c, idx) => `
+                                <tr>
+                                    <td>${idx+1}</td>
+                                    <td>${escapeHtml(c.nome)}</td>
+                                    <td>${c.idade}</td>
+                                    <td>${c.presencas}</td>
+                                    <td style="color:${c.faltas > 5 ? 'var(--danger)' : 'var(--text-main)'}">${c.faltas}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    <div class="footer">Relatório gerado em ${new Date().toLocaleString('pt-BR')}</div>
+                </div>
+            `;
+        
+            gerarPDFComHtml(html, `relatorio_faltas_${ano}`);
+        }
+        
+        // ---------- FUNÇÃO AUXILIAR PARA GERAR PDF ----------
+        function gerarPDFComHtml(htmlContent, nomeArquivo = 'relatorio') {
+            // Criar um elemento temporário para o conteúdo
+            const container = document.createElement('div');
+            container.innerHTML = htmlContent;
+            const element = container.firstElementChild;
+        
+            // Gerar PDF com html2pdf
+            const opt = {
+                margin: [0.5, 0.5, 0.5, 0.5],
+                filename: `${nomeArquivo}.pdf`,
+                html2canvas: { scale: 2, letterRendering: true },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+        
+            // Usar o elemento encontrado
+            html2pdf().from(element).set(opt).save().then(() => {
+                showToast('PDF gerado com sucesso!', 'success');
+            }).catch(() => {
+                showToast('Erro ao gerar PDF', 'error');
+            });
+        
+            // Fechar modal
+            fecharModalRelatorio();
+        }
+        
 
         // ========== UTILITÁRIOS ==========
         function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : (m === '<' ? '&lt;' : '&gt;')); }
