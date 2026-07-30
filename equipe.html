@@ -1480,7 +1480,7 @@
             labelContainer.innerHTML = `
                 <div style="width:${LABEL_WIDTH}px;height:${LABEL_HEIGHT}px;padding:4px;box-sizing:border-box;background:#fff;color:#000;
                             font-family:Arial, Helvetica, sans-serif;display:flex;align-items:center;gap:8px;overflow:hidden;position:relative;">
-                    <img src="logo2.png" alt="Logo" style="position:absolute; top:6px; right:9px; width:40px; height:40px; border-radius:50%; object-fit:cover;">
+                    <img src="logo2.png" alt="Logo" style="position:absolute; top:6px; right:6px; width:40px; height:40px; border-radius:50%; object-fit:cover;">
                     <div style="flex:0 0 154px;width:154px;height:154px;">
                         ${qrSrc ? `<img src="${qrSrc}" style="width:154px;height:154px;display:block;">` : ''}
                     </div>
@@ -1490,6 +1490,7 @@
                         ${allergies ? `<div style="font-size:17px;font-weight:bold;color:#b91c1c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">⚠️ ${escapeHtml(allergies)}</div>` : ''}
                         <div style="font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Pai: ${escapeHtml(fatherPhone)}</div>
                         <div style="font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Mãe: ${escapeHtml(motherPhone)}</div>
+                        <div style="font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><br>Domingo Kids</div>
                     </div>
                 </div>
             `;
