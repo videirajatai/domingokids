@@ -555,7 +555,45 @@
             border-bottom: 1px solid #ece2de;
         }
         .report-container tr.birthday { background: #fdf6ec; }
+        .report-container tr.alerta { background: #fbebeb; }
         .report-container h3 { margin-top: 1.2rem; margin-bottom: 0.5rem; font-size: 1rem; color: #3d2f32; }
+        .report-obs { font-size: 0.72rem; color: #8a7a7e; margin-top: 0.5rem; }
+
+        /* ===== MODAL DE RELATÓRIOS ===== */
+        .report-type-tabs {
+            display: flex;
+            gap: 0.35rem;
+            margin-bottom: 1.2rem;
+            background: var(--input-bg);
+            padding: 0.3rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+        .report-type-tab {
+            flex: 1;
+            text-align: center;
+            padding: 0.55rem 0.4rem;
+            border-radius: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+            font-size: 0.78rem;
+            color: var(--text-light);
+        }
+        .report-type-tab.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(139,90,106,0.3); }
+        .report-type-tab:hover:not(.active) { background: #f3e7e2; color: var(--text-main); }
+        .report-panel label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-top: 0.7rem;
+            margin-bottom: 0.1rem;
+        }
+        .report-panel .report-row { display: flex; gap: 0.6rem; }
+        .report-panel .report-row > div { flex: 1; }
 
         /* ===== RESPONSIVO ===== */
         @media (max-width: 640px) {
@@ -704,6 +742,84 @@
             <div style="display: flex; gap: 0.8rem; flex-direction: column;">
                 <button id="confirmCheckoutBtn" class="btn-primary" onclick="confirmCheckout()" style="background: var(--danger); justify-content:center; box-shadow:none;">✅ Confirmar Check-out</button>
                 <button class="btn-secondary" onclick="closeCheckoutConfirmModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Relatórios -->
+    <div id="reportModal" class="modal">
+        <div class="modal-content" style="max-width: 520px;">
+            <button class="modal-close" onclick="closeReportModal()">&times;</button>
+            <div class="modal-title">📊 Relatórios</div>
+
+            <div class="report-type-tabs">
+                <div class="report-type-tab active" data-report="1" onclick="switchReportTab(1)">Por Culto</div>
+                <div class="report-type-tab" data-report="2" onclick="switchReportTab(2)">Por Mês</div>
+                <div class="report-type-tab" data-report="3" onclick="switchReportTab(3)">Faltas</div>
+            </div>
+
+            <!-- Relatório 1: Por Culto/Sessão -->
+            <div id="reportPanel1" class="report-panel">
+                <label>Culto (sessão)</label>
+                <select id="report1Session"></select>
+                <label>Sala</label>
+                <select id="report1Room">
+                    <option value="todos">Todas as salas</option>
+                    <option value="Kids">🧸 Kids</option>
+                    <option value="Babys">🍼 Babys</option>
+                    <option value="Juvenis">⚡ Juvenis</option>
+                </select>
+                <button class="btn-primary" onclick="gerarRelatorio1()" style="width:100%; justify-content:center; margin-top:0.8rem;">📄 Gerar PDF</button>
+            </div>
+
+            <!-- Relatório 2: Por Mês -->
+            <div id="reportPanel2" class="report-panel" style="display:none;">
+                <div class="report-row">
+                    <div>
+                        <label>Mês</label>
+                        <select id="report2Month">
+                            <option value="0">Janeiro</option>
+                            <option value="1">Fevereiro</option>
+                            <option value="2">Março</option>
+                            <option value="3">Abril</option>
+                            <option value="4">Maio</option>
+                            <option value="5">Junho</option>
+                            <option value="6">Julho</option>
+                            <option value="7">Agosto</option>
+                            <option value="8">Setembro</option>
+                            <option value="9">Outubro</option>
+                            <option value="10">Novembro</option>
+                            <option value="11">Dezembro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Ano</label>
+                        <select id="report2Year"></select>
+                    </div>
+                </div>
+                <label>Sala</label>
+                <select id="report2Room">
+                    <option value="todos">Todas as salas</option>
+                    <option value="Kids">🧸 Kids</option>
+                    <option value="Babys">🍼 Babys</option>
+                    <option value="Juvenis">⚡ Juvenis</option>
+                </select>
+                <button class="btn-primary" onclick="gerarRelatorio2()" style="width:100%; justify-content:center; margin-top:0.8rem;">📄 Gerar PDF</button>
+            </div>
+
+            <!-- Relatório 3: Faltas (ranking anual) -->
+            <div id="reportPanel3" class="report-panel" style="display:none;">
+                <label>Ano</label>
+                <select id="report3Year"></select>
+                <label>Sala</label>
+                <select id="report3Room">
+                    <option value="todos">Todas as salas (ranking geral)</option>
+                    <option value="Kids">🧸 Kids</option>
+                    <option value="Babys">🍼 Babys</option>
+                    <option value="Juvenis">⚡ Juvenis</option>
+                </select>
+                <p class="report-obs">Compara quantos cultos cada criança participou em relação ao total de cultos realizados no ano selecionado.</p>
+                <button class="btn-primary" onclick="gerarRelatorio3()" style="width:100%; justify-content:center;">📄 Gerar PDF</button>
             </div>
         </div>
     </div>
