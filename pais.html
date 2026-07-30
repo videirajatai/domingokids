@@ -471,8 +471,8 @@
             <button class="btn-header" onclick="openConfigModal()">⚙️</button>
             <button class="btn-header" onclick="logout()">Sair</button>
         </div>
-        <h1>👨‍👩‍👧 Painel da Família</h1>
-        <p>Gerencie seus filhos e faça check-in rápido</p>
+        <h1>👨‍👩‍👧 Domingo Kids</h1>
+        <p>Radicais Kids - Check-in</p>
     </div>
 
     <div class="container">
@@ -488,7 +488,7 @@
         <!-- Gerador QR Code (só aparece se houver família) -->
         <div id="qrSection" style="display:none;">
             <div class="card">
-                <h3>🔐 Check-in com QR Code</h3>
+                <h3>Check-in com QR Code</h3>
                 <label>Selecione:</label>
                 <select id="childSelect"></select>
                 <button class="btn-generate" onclick="generateQR()">📱 Gerar QR Code </button>
@@ -500,7 +500,7 @@
         <!-- Último registro -->
         <div class="card">
             <div class="card-header-with-button">
-                <h3>📌 Último registro</h3>
+                <h3>Último registro</h3>
                 <button class="btn-outline-small" onclick="openHistoryModal()">Ver todos</button>
             </div>
             <div id="lastRegisterInfo" class="last-register">Carregando...</div>
@@ -538,7 +538,7 @@
             <div style="margin-bottom: 1.5rem;">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.8rem;">
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="font-size: 1.3rem;">🏷️</span>
+                        <span style="font-size: 1.3rem;"></span>
                         <h4 style="margin: 0; color: #0f172a;">Nome da Família</h4>
                     </div>
                     <button class="btn-edit-card" onclick="openEditFamilyNameModal()">✏️ Editar</button>
@@ -550,7 +550,7 @@
 
             <div style="margin-bottom: 1.5rem;">
                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
-                    <span style="font-size: 1.3rem;">👨‍👩‍👧</span>
+                    <span style="font-size: 1.3rem;"></span>
                     <h4 style="margin: 0; color: #0f172a;">Responsáveis</h4>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 1rem;">
@@ -584,7 +584,7 @@
             <div style="margin-bottom: 1rem;">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.8rem;">
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="font-size: 1.3rem;">🏠</span>
+                        <span style="font-size: 1.3rem;"></span>
                         <h4 style="margin: 0; color: #0f172a;">Residência</h4>
                     </div>
                     <button class="btn-edit-card" onclick="openEditResidenceModal()">✏️ Editar</button>
@@ -668,7 +668,6 @@
         
         let currentFamilyId = null;
         let currentUser = null;
-        //const IMGBB_API_KEY = 'd3ec802e2dfc1896a26e44b80d489f17';
         let currentFamilyData = {};
 
         // ==================== INICIALIZAÇÃO ====================
