@@ -1453,7 +1453,7 @@
 
         async function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPhone, checkinId) {
             const LABEL_WIDTH = 384;
-            const LABEL_HEIGHT = 192; //ogirinal é 216 //184 FICOU exaamente do tamanho da etiqueta // usando 176 pra testar  (176 / 184 / 192)
+            const LABEL_HEIGHT = 200; //ogirinal é 216 //184 FICOU exaamente do tamanho da etiqueta // usando 176 pra testar  (176 / 184 / 192 / 200)
         
             // Gera QR Code
             const tempDiv = document.createElement('div');
@@ -1480,7 +1480,7 @@
             labelContainer.innerHTML = `
                 <div style="width:${LABEL_WIDTH}px;height:${LABEL_HEIGHT}px;padding:4px;box-sizing:border-box;background:#fff;color:#000;
                             font-family:Arial, Helvetica, sans-serif;display:flex;align-items:center;gap:8px;overflow:hidden;position:relative;">
-                    <img src="logo2.png" alt="Logo" style="position:absolute; top:6px; right:6px; width:40px; height:40px; border-radius:50%; object-fit:cover;">
+                    <img src="logo2.png" alt="Logo" style="position:absolute; top:6px; right:7px; width:40px; height:40px; border-radius:50%; object-fit:cover;">
                     <div style="flex:0 0 154px;width:154px;height:154px;">
                         ${qrSrc ? `<img src="${qrSrc}" style="width:154px;height:154px;display:block;">` : ''}
                     </div>
