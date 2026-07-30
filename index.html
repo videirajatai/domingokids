@@ -796,8 +796,10 @@
 
             try {
                 const urlDestino = window.location.origin + "/domingokids/novasenha.html";
-                const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-                    redirectTo: urlDestino,
+                /*const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                  redirectTo: urlDestino,*/
+                const { data, error } = await supabaseClient.rpc('buscar_email_por_username', { username_busca: entrada });
+                if (data) emailParaLogin = data;    
                 });
                 if (error) throw error;
 
