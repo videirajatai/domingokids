@@ -1475,14 +1475,14 @@
             labelContainer.style.position = 'fixed';
             labelContainer.style.left = '-9999px';
             labelContainer.style.top = '0';
-            labelContainer.style.width = LABEL_WIDTH + 'px';
+            labelContainer.style.width = LABEL_WIDTH + 'px'; //style="flex:0 0 154px;width:154px;height:154px;margin-left: 10px;"
             labelContainer.style.height = LABEL_HEIGHT + 'px';
             labelContainer.innerHTML = `
                 <div style="width:${LABEL_WIDTH}px;height:${LABEL_HEIGHT}px;padding:4px;box-sizing:border-box;background:#fff;color:#000;
                             font-family:Arial, Helvetica, sans-serif;display:flex;align-items:center;gap:8px;overflow:hidden;position:relative;">
                     <img src="logo2.png" alt="Logo" style="position:absolute; top:6px; right:1px; width:40px; height:40px; border-radius:50%; object-fit:cover;">
                     <div style="flex:0 0 154px;width:154px;height:154px;">
-                        ${qrSrc ? `<img src="${qrSrc}" style="width:154px;height:154px;display:block;">` : ''}
+                        ${qrSrc ? `<img src="${qrSrc}" style="flex:0 0 154px;width:154px;height:154px;margin-left: 10px;">` : ''}
                     </div>
                     <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:2px;overflow:hidden;padding-right:32px;">
                         <div style="font-size:24px;font-weight:bold;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(childName)}</div>
