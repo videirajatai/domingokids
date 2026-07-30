@@ -574,21 +574,21 @@
             <img src="logo.png" alt="Radicais Kids" class="topbar-logo-img">
             <div>
                 <h1>Radicais Kids</h1>
-                <span>Jataí · Equipe</span>
+                <span>Domingo Kids · Controle de Salas</span>
             </div>
         </div>
         <div class="topbar-actions">
-            <button class="icon-btn" onclick="gerarRelatorio()" title="Relatório">📊</button>
-            <button class="icon-btn" onclick="cycleCamera()" title="Alternar câmera">⚙️</button>
             <button class="icon-btn" onclick="refreshPresentList()" title="Recarregar">🔄</button>
-            <button class="icon-btn" onclick="logout()" title="Sair">🚪</button>
+            <button class="icon-btn" onclick="gerarRelatorio()" title="Relatório">📊</button>
+            <button class="icon-btn" onclick="cycleCamera()" title="Alternar câmera">⚙️</button>            
+            <button class="icon-btn" onclick="logout()" title="Sair">➜]</button>
         </div>
     </div>
 
     <div class="page">
         <!-- ===== SESSÃO ATIVA ===== -->
         <div class="session-strip">
-            <div class="session-strip-icon">📅</div>
+            <!--<div class="session-strip-icon">📅</div>-->
             <div class="session-strip-field">
                 <label>Sessão ativa</label>
                 <select id="sessionSelect" onchange="changeSession()"></select>
@@ -599,7 +599,7 @@
         <!-- ===== SCANNER QR ===== -->
         <div class="scanner-hero">
             <div class="scanner-hero-head" style="position:relative;">
-                <div class="scanner-hero-icon">📷</div>
+                <!--<div class="scanner-hero-icon">📷</div>-->
                 <div style="flex:1;">
                     <h2>Escanear QR Code</h2>
                     <p>Gerado no painel dos pais</p>
@@ -685,10 +685,10 @@
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 0.7rem;">
-                <!--<button class="room-option" data-room="todos" style="background: var(--room-todos); color: white; border: none; padding: 0.75rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">👶 Todos</button>-->
-                <button class="room-option" data-room="Kids" style="background: var(--room-kids); color: white; border: none; padding: 0.75rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">🍼 Kids</button>
-                <button class="room-option" data-room="Babys" style="background: var(--room-babys); color: white; border: none; padding: 0.75rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">🧸 Babys</button>
-                <button class="room-option" data-room="Juvenis" style="background: var(--room-juvenis); color: white; border: none; padding: 0.75rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">⚡ Juvenis</button>
+                <!--<button class="room-option" data-room="todos" style="background: var(--room-todos); color: white; border: none; padding: 0.75rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;"> Todos</button>-->
+                <button class="room-option" data-room="Kids" style="background: var(--room-kids); color: white; border: none; padding: 0.75rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">Kids</button>
+                <button class="room-option" data-room="Babys" style="background: var(--room-babys); color: white; border: none; padding: 0.75rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">Babys</button>
+                <button class="room-option" data-room="Juvenis" style="background: var(--room-juvenis); color: white; border: none; padding: 0.75rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">Juvenis</button>
             </div>
         </div>
     </div>
