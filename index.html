@@ -379,7 +379,7 @@
             <!-- Bloco Login -->
             <div id="bloco-login" class="bloco ativo">
                 <img src="logo.png" class="logo" alt="Logo Kids">
-                <h2 id="titulo-login">Acesso Kids</h2>
+                <h2 id="titulo-login">Domingo Kids</h2>
                 <p class="subtitulo" id="subtitulo-login">Entre com seu usuário ou e-mail</p>
 
                 <div id="area-form">
@@ -388,7 +388,7 @@
                         <input type="text" id="usuario-input" placeholder="Seu usuário ou e-mail" onkeypress="verificarEnter(event, 'login')" autocomplete="off">
                     </div>
                     <div class="input-group">
-                        <label>Senha</label>
+                        <label>Senha (Somente Números)</label>
                         <input type="password" id="senha-input" inputmode="numeric" pattern="[0-9]*" placeholder="••••••" onkeypress="verificarEnter(event, 'login')">
                     </div>
 
@@ -707,13 +707,13 @@
                     .select('role')
                     .eq('id', user.id)
                     .maybeSingle();
-                /*if (!profile) {
+                if (!profile) {
                     await supabaseClient.from('kids_profiles').insert({
                         id: user.id,
                         role: 'parent'
                     });
                 }
-                window.location.href = 'pais.html?t=' + Date.now()*/
+                window.location.href = 'pais.html?t=' + Date.now()
             }
         })();
     </script>
