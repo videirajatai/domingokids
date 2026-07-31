@@ -507,7 +507,7 @@
                 <div style="display: flex; align-items: flex-start; gap: 0.5rem; margin: 0.5rem 0 1.2rem;">
                     <input type="checkbox" id="cadastro-termos" style="width: 18px; height: 18px; margin-top: 2px; accent-color: var(--primary);">
                     <label for="cadastro-termos" style="font-size: 0.8rem; color: var(--text-light);">
-                        Concordo com os <a href="#" style="color: var(--primary); text-decoration: underline;">termos de uso</a>.
+                        Concordo com os <a href="#" onclick="abrirTermos(); return false;" style="color:var(--primary); text-decoration:underline;">Termos de Uso</a>                        
                     </label>
                 </div>
     
@@ -515,6 +515,23 @@
                 <div id="mensagem-cadastro" style="margin-top: 1rem; font-size: 0.85rem; display: none; padding: 0.5rem; border-radius: 8px;"></div>
                 <button type="button" onclick="fecharModalCadastro()" class="btn-secondary" style="width: 100%; margin-top: 0.6rem; padding: 0.7rem; background: white; color: var(--primary); border: 2px solid var(--primary); border-radius: 12px; font-weight: 600; cursor: pointer;">Cancelar</button>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal Termos de Uso -->
+    <div id="modal-termos" class="modal" style="display:none; align-items:center; justify-content:center;">
+        <div class="modal-content" style="max-width:500px; text-align:left;">
+            <button class="modal-close" onclick="fecharTermos()">&times;</button>
+            <h3 style="color:var(--primary);">📜 Termos de Uso</h3>
+            <div style="font-size:0.9rem; line-height:1.6; color:var(--text-main);">
+                <p><strong>1. Aceitação dos Termos</strong><br>Ao criar uma conta no Kids Checkin, você concorda com estes termos.</p>
+                <p><strong>2. Uso do Sistema</strong><br>O sistema é destinado exclusivamente ao controle de check-in de crianças em eventos da Igreja Videira.</p>
+                <p><strong>3. Responsabilidades</strong><br>Os pais/responsáveis são responsáveis pela veracidade das informações cadastradas.</p>
+                <p><strong>4. Privacidade</strong><br>Seus dados serão utilizados apenas para fins de gestão e comunicação interna.</p>
+                <p><strong>5. Alterações</strong><br>Os termos podem ser atualizados a qualquer momento, sem aviso prévio.</p>
+                <p style="margin-top:1rem; font-size:0.8rem; color:var(--text-light);">Última atualização: Julho/2025</p>
+            </div>
+            <button class="btn-primary" onclick="fecharTermos()" style="margin-top:1rem;">Li e concordo</button>
         </div>
     </div>
 
@@ -1052,6 +1069,13 @@
             msg.style.background = tipo === 'error' ? '#fdf0ee' : '#d1e7dd';
             msg.style.border = '1px solid ' + (tipo === 'error' ? '#f5d6d2' : '#b8d9c0');
             msg.className = tipo === 'error' ? 'mensagem-erro' : 'mensagem-sucesso';
+        }
+
+        function abrirTermos() {
+            document.getElementById('modal-termos').style.display = 'flex';
+        }
+        function fecharTermos() {
+            document.getElementById('modal-termos').style.display = 'none';
         }
         
         // ==================== INICIALIZAÇÃO ====================
