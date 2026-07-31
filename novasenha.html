@@ -87,6 +87,12 @@
             border-radius: 50%;
         }
 
+        .logo2 {
+            width: 60px;
+            height: auto;
+            margin-bottom: 20px;            
+        }
+
         h2 {
             color: var(--primary);
             font-size: 1.3rem;
@@ -220,12 +226,13 @@
     <div id="tela-redefinir">
         <div class="card-redefinir">
             <img src="logo.png" class="logo" alt="Logo Kids">
+            <img src="logo3.png" class="logo2" alt="Logo Vd" style="opacity: 0.8;">
             <h2>Redefinir Senha</h2>
             <p class="subtitulo">Digite sua nova senha (apenas números)</p>
 
             <div id="area-form">
                 <div class="input-group">
-                    <label>Nova Senha (6 dígitos)</label>
+                    <label>Nova Senha (6 dígitos Numéricos)</label>
                     <input type="password" id="nova-senha-input" inputmode="numeric" pattern="[0-9]*" placeholder="••••••" oninput="this.value = this.value.replace(/[^0-9]/g, '')" maxlength="10">
                 </div>
                 <div class="input-group">
