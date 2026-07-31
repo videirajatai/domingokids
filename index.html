@@ -162,9 +162,10 @@
             transform: translateY(-1px);
         }
 
-        button:disabled {
-            background-color: #c9a7b3;
+        button:disabled {            
             cursor: not-allowed;
+            background-color: #fdf8f6;
+            transform: translateY(0);
         }
 
         .btn-secondary {
@@ -193,6 +194,18 @@
 
         .btn-link:hover {
             color: var(--primary-hover);
+        }
+        .btn-link2 {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: 0.8rem;
+            text-decoration: underline;
+            cursor: pointer;
+            padding: 4px;
+            margin-top: 6px;
+            width: 100%;
+            display: inline-block;
         }
 
         .mensagem-erro,
