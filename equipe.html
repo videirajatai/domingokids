@@ -1849,38 +1849,81 @@
         }
 
         // ========== CHECKOUT COM CONFIRMAÇÃO ==========
-        function openCheckoutConfirmModal(childId, checkinId) {
-            supabaseClient
-                .from('kids_children')
-                .select('*, family:family_id(*)')
-                .eq('id', childId)
-                .single()
-                .then(({ data: child, error }) => {
-                    if (error) {
-                        showToast('Erro ao carregar dados', 'error');
-                        return;
-                    }
-                    const family = child.family || {};
-                    const idade = child.birth_date ? `${calcularIdade(child.birth_date)} anos` : 'Não informado';
-                    const html = `
-                        <div style="text-align:center;">
-                            ${child.photo_url ? `<img src="${child.photo_url}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:0.5rem;">` : '<div style="width:80px;height:80px;background:var(--border-color);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;margin:0 auto 0.5rem;">👶</div>'}
-                            <h3 style="margin:0.2rem 0;">${escapeHtml(child.name)}</h3>
-                            <p><strong>📅 Idade:</strong> ${idade}</p>
-                            ${child.allergies ? `<p><strong>⚠️ Alergias:</strong> ${escapeHtml(child.allergies)}</p>` : ''}
-                            ${child.special_needs ? `<p><strong>🔹 Necessidades:</strong> ${escapeHtml(child.special_needs)}</p>` : ''}
-                            <hr style="margin:0.5rem 0; border-color:var(--border-color);">
-                            <div style="display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap; font-size:0.85rem;">
-                                <div><strong>Pai:</strong> ${escapeHtml(family.father_name || 'N/I')} - ${escapeHtml(family.father_phone || '')}</div>
-                                <div><strong>Mãe:</strong> ${escapeHtml(family.mother_name || 'N/I')} - ${escapeHtml(family.mother_phone || '')}</div>
-                            </div>
+       function openCheckoutConfirmModal(childId, checkinId) {
+    supabaseClient
+        .from('kids_children')
+        .select('*, family:family_id(*)')
+        .eq('id', childId)
+        .single()
+        .then(({ data: child, error }) => {
+            if (error) {
+                showToast('Erro ao carregar dados', 'error');
+                return;
+            }
+            const family = child.family || {};
+            const idade = child.birth_date ? `${calcularIdade(child.birth_date)} anos` : 'Não informado';
+
+            // Mesma função usada no "olhinho" (showChildDetails), pra padronizar a mensagem
+            function gerarLinkWhatsApp(telefone, nomeResponsavel) {
+                if (!telefone) return '#';
+                const numeroLimpo = telefone.replace(/\D/g, '');
+                if (numeroLimpo.length < 10) return '#';
+                const nomeParaMensagem = nomeResponsavel || 'responsável';
+                const mensagem = `Olá *${nomeParaMensagem}!* 👋\n\nA ovelhinha *${child.name}* está precisando do papai ou da mamãe.\n\n⚠️ Solicitamos que o responsável compareça à sala do Domigo Kids assim que possível.\n\nObrigada! 🙏`;
+                return `https://wa.me/55${numeroLimpo}?text=${encodeURIComponent(mensagem)}`;
+            }
+
+            const linkPai = gerarLinkWhatsApp(family.father_phone, family.father_name);
+            const linkMae = gerarLinkWhatsApp(family.mother_phone, family.mother_name);
+            const temPai = family.father_phone && family.father_phone.replace(/\D/g, '').length >= 10;
+            const temMae = family.mother_phone && family.mother_phone.replace(/\D/g, '').length >= 10;
+
+            const html = `
+                <div style="text-align:center;">
+                    ${child.photo_url ? `<img src="${child.photo_url}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:0.5rem;">` : '<div style="width:80px;height:80px;background:var(--border-color);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;margin:0 auto 0.5rem;">👶</div>'}
+                    <h3 style="margin:0.2rem 0;">${escapeHtml(child.name)}</h3>
+                    <p style="margin:0.2rem 0;"><strong>📅 Idade:</strong> ${idade}</p>
+                    ${child.allergies ? `<p style="margin:0.2rem 0;"><strong>⚠️ Alergias:</strong> ${escapeHtml(child.allergies)}</p>` : ''}
+                    ${child.special_needs ? `<p style="margin:0.2rem 0;"><strong>🔹 Necessidades:</strong> ${escapeHtml(child.special_needs)}</p>` : ''}
+                </div>
+
+                <hr style="margin:1rem 0; border-color:var(--border-color);">
+
+                <div style="display:flex; gap:0.7rem; justify-content:center; flex-wrap:wrap;">
+                    <!-- Card do Pai -->
+                    <div style="flex:1; min-width:130px; text-align:center; background:var(--input-bg); border-radius:var(--radius-md); padding:0.7rem; border:1px solid var(--border-color);">
+                        <div style="width:50px;height:50px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;margin:0 auto 0.3rem;overflow:hidden;">
+                            ${family.father_photo_url ? `<img src="${family.father_photo_url}" style="width:100%;height:100%;object-fit:cover;">` : '👨'}
                         </div>
-                    `;
-                    document.getElementById('checkoutChildInfo').innerHTML = html;
-                    pendingCheckoutData = { checkinId };
-                    document.getElementById('checkoutConfirmModal').style.display = 'flex';
-                });
-        }
+                        <div style="font-size:0.85rem;"><strong>Pai:</strong> ${escapeHtml(family.father_name) || 'Não informado'}</div>
+                        <div style="font-size:0.78rem; color:var(--text-light);">📞 ${escapeHtml(family.father_phone) || '-'}</div>
+                        ${temPai ? `
+                            <a href="${linkPai}" target="_blank" style="display:inline-block; margin-top:0.4rem; background:#25D366; color:white; border:none; padding:0.35rem 0.7rem; border-radius:var(--radius-sm); font-weight:600; text-decoration:none; font-size:0.75rem; box-shadow:0 2px 8px rgba(37,211,102,0.25);">
+                                💬 WhatsApp
+                            </a>
+                        ` : `<div style="margin-top:0.4rem; font-size:0.7rem; color:var(--text-faint);">📱 Sem número</div>`}
+                    </div>
+
+                    <!-- Card da Mãe -->
+                    <div style="flex:1; min-width:130px; text-align:center; background:var(--input-bg); border-radius:var(--radius-md); padding:0.7rem; border:1px solid var(--border-color);">
+                        <div style="width:50px;height:50px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;margin:0 auto 0.3rem;overflow:hidden;">
+                            ${family.mother_photo_url ? `<img src="${family.mother_photo_url}" style="width:100%;height:100%;object-fit:cover;">` : '👩'}
+                        </div>
+                        <div style="font-size:0.85rem;"><strong>Mãe:</strong> ${escapeHtml(family.mother_name) || 'Não informado'}</div>
+                        <div style="font-size:0.78rem; color:var(--text-light);">📞 ${escapeHtml(family.mother_phone) || '-'}</div>
+                        ${temMae ? `
+                            <a href="${linkMae}" target="_blank" style="display:inline-block; margin-top:0.4rem; background:#25D366; color:white; border:none; padding:0.35rem 0.7rem; border-radius:var(--radius-sm); font-weight:600; text-decoration:none; font-size:0.75rem; box-shadow:0 2px 8px rgba(37,211,102,0.25);">
+                                💬 WhatsApp
+                            </a>
+                        ` : `<div style="margin-top:0.4rem; font-size:0.7rem; color:var(--text-faint);">📱 Sem número</div>`}
+                    </div>
+                </div>
+            `;
+            document.getElementById('checkoutChildInfo').innerHTML = html;
+            pendingCheckoutData = { checkinId };
+            document.getElementById('checkoutConfirmModal').style.display = 'flex';
+        });
+}
 
         function closeCheckoutConfirmModal() {
             document.getElementById('checkoutConfirmModal').style.display = 'none';
