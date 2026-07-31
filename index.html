@@ -259,6 +259,29 @@
             font-weight: 600;
         }
 
+        /* Modal de cadastro */
+        #modal-cadastro {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        #modal-cadastro .modal-box {
+            animation: modalFadeIn 0.3s ease;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .btn-close-modal-cadastro:hover {
+            color: #333;
+        }
+
         @keyframes pulse {
             0% { transform: scale(0.95); opacity: 0.8; }
             50% { transform: scale(1.05); opacity: 1; }
@@ -414,8 +437,7 @@
                     <p id="mensagem-erro" class="mensagem-erro">⚠️ Usuário ou senha incorretos.</p>
 
                     <button class="btn-link" onclick="mudarTela('bloco-recuperar')">Esqueci minha senha</button>
-                    <button class="btn-link2" onclick="cadastrarPai()">Ainda não tenho conta</button>
-                    <!--<button class="btn-secondary" onclick="cadastrarPai()" style="margin-top: 12px; padding: 12px; font-size: 0.9rem;">Criar Nova Conta</button>-->
+                    <button class="btn-link" onclick="abrirModalCadastro()" style="margin-top: 8px;">Ainda não tenho conta</button>                    
                 </div>
             </div>
 
@@ -452,6 +474,47 @@
             <p>Como você deseja acessar hoje?</p>
             <button class="btn-escolha btn-pai" onclick="escolherPapel('parent')">👨‍👩‍👧 Acessar como Pai</button>
             <button class="btn-escolha btn-equipe" onclick="escolherPapel('staff')">👥 Acessar como Equipe</button>
+        </div>
+    </div>
+
+
+    <!-- ===== MODAL DE CADASTRO ===== -->
+    <div id="modal-cadastro" class="modal">
+        <div class="modal-box" style="max-width: 420px; width: 90%; background: white; padding: 2rem 1.8rem; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); text-align: left; position: relative; max-height: 90vh; overflow-y: auto;">
+            <button class="btn-close-modal-cadastro" onclick="fecharModalCadastro()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999;">&times;</button>
+            <h3 style="color: var(--primary); margin: 0 0 0.3rem 0; text-align: center;">Criar conta</h3>
+            <p style="text-align: center; color: var(--text-light); font-size: 0.85rem; margin-bottom: 1.5rem;">Preencha os campos abaixo para se registrar</p>
+            
+            <form id="form-cadastro" onsubmit="return false;">
+                <div class="input-group">
+                    <label>Nome de usuário *</label>
+                    <input type="text" id="cadastro-username" placeholder="ex: maria.silva" required style="text-transform: lowercase;">
+                </div>
+                <div class="input-group">
+                    <label>E-mail *</label>
+                    <input type="email" id="cadastro-email" placeholder="seu@email.com" required>
+                </div>
+                <div class="input-group">
+                    <label>Senha (6 dígitos numéricos) *</label>
+                    <input type="password" id="cadastro-senha" inputmode="numeric" pattern="[0-9]*" placeholder="••••••" required oninput="this.value = this.value.replace(/[^0-9]/g, '')" maxlength="10">
+                </div>
+                <div class="input-group">
+                    <label>Confirmar senha *</label>
+                    <input type="password" id="cadastro-confirma-senha" inputmode="numeric" pattern="[0-9]*" placeholder="••••••" required oninput="this.value = this.value.replace(/[^0-9]/g, '')" maxlength="10">
+                </div>
+    
+                <!-- Termos -->
+                <div style="display: flex; align-items: flex-start; gap: 0.5rem; margin: 0.5rem 0 1.2rem;">
+                    <input type="checkbox" id="cadastro-termos" style="width: 18px; height: 18px; margin-top: 2px; accent-color: var(--primary);">
+                    <label for="cadastro-termos" style="font-size: 0.8rem; color: var(--text-light);">
+                        Concordo com os <a href="#" style="color: var(--primary); text-decoration: underline;">termos de uso</a>.
+                    </label>
+                </div>
+    
+                <button type="button" id="btn-cadastrar" onclick="cadastrarNovoUsuario()" class="btn-primary" style="width: 100%; padding: 0.9rem; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: 0.2s;">Criar conta</button>
+                <div id="mensagem-cadastro" style="margin-top: 1rem; font-size: 0.85rem; display: none; padding: 0.5rem; border-radius: 8px;"></div>
+                <button type="button" onclick="fecharModalCadastro()" class="btn-secondary" style="width: 100%; margin-top: 0.6rem; padding: 0.7rem; background: white; color: var(--primary); border: 2px solid var(--primary); border-radius: 12px; font-weight: 600; cursor: pointer;">Cancelar</button>
+            </form>
         </div>
     </div>
 
@@ -824,6 +887,173 @@
                 btn.disabled = false;
             }
         }
+
+        // ==================== ABRIR/FECHAR MODAL CADASTRO ====================
+        function abrirModalCadastro() {
+            document.getElementById('modal-cadastro').style.display = 'flex';
+            // Limpar campos e mensagens
+            document.getElementById('cadastro-username').value = '';
+            document.getElementById('cadastro-email').value = '';
+            document.getElementById('cadastro-senha').value = '';
+            document.getElementById('cadastro-confirma-senha').value = '';
+            document.getElementById('cadastro-termos').checked = false;
+            const msg = document.getElementById('mensagem-cadastro');
+            msg.style.display = 'none';
+            msg.className = '';
+        }
+        
+        function fecharModalCadastro() {
+            document.getElementById('modal-cadastro').style.display = 'none';
+        }
+        
+        // ==================== CADASTRAR NOVO USUÁRIO (MODAL) ====================
+        async function cadastrarNovoUsuario() {
+            const username = document.getElementById('cadastro-username').value.trim().toLowerCase();
+            const email = document.getElementById('cadastro-email').value.trim();
+            const senha = document.getElementById('cadastro-senha').value.trim();
+            const confirmaSenha = document.getElementById('cadastro-confirma-senha').value.trim();
+            const termos = document.getElementById('cadastro-termos').checked;
+            const msg = document.getElementById('mensagem-cadastro');
+            const btn = document.getElementById('btn-cadastrar');
+        
+            // Limpar mensagem anterior
+            msg.style.display = 'none';
+            msg.className = '';
+        
+            // Validações
+            if (!username || !email || !senha || !confirmaSenha) {
+                exibirMsgCadastro('Preencha todos os campos.', 'error');
+                return;
+            }
+        
+            if (username.length < 3) {
+                exibirMsgCadastro('O nome de usuário deve ter pelo menos 3 caracteres.', 'error');
+                return;
+            }
+        
+            if (!email.includes('@')) {
+                exibirMsgCadastro('Digite um e-mail válido.', 'error');
+                return;
+            }
+        
+            if (senha.length < 6 || !/^\d+$/.test(senha)) {
+                exibirMsgCadastro('A senha deve ter 6 dígitos numéricos.', 'error');
+                return;
+            }
+        
+            if (senha !== confirmaSenha) {
+                exibirMsgCadastro('As senhas não coincidem.', 'error');
+                return;
+            }
+        
+            if (!termos) {
+                exibirMsgCadastro('Você precisa concordar com os termos de uso.', 'error');
+                return;
+            }
+        
+            // Verificar se username já existe
+            btn.disabled = true;
+            btn.innerText = 'Verificando...';
+        
+            try {
+                const { data: existente, error: buscaError } = await supabaseClient
+                    .from('kids_profiles')
+                    .select('username, email')
+                    .or(`username.eq.${username},email.eq.${email}`)
+                    .maybeSingle();
+        
+                if (buscaError) throw buscaError;
+        
+                if (existente) {
+                    if (existente.username === username) {
+                        exibirMsgCadastro(`O nome de usuário "${username}" já está em uso.`, 'error');
+                    } else if (existente.email === email) {
+                        exibirMsgCadastro('Este e-mail já está cadastrado.', 'error');
+                    } else {
+                        exibirMsgCadastro('Usuário ou e-mail já cadastrado.', 'error');
+                    }
+                    btn.disabled = false;
+                    btn.innerText = 'Criar conta';
+                    return;
+                }
+        
+                // Criar usuário no Auth
+                btn.innerText = 'Criando conta...';
+                const { data: authData, error: signUpError } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: senha,
+                    options: {
+                        data: {
+                            full_name: username,
+                            role: 'parent',
+                            username: username // passado via meta dados
+                        }
+                    }
+                });
+        
+                if (signUpError) {
+                    if (signUpError.message.includes('already registered')) {
+                        exibirMsgCadastro('Este e-mail já está cadastrado.', 'error');
+                    } else {
+                        throw signUpError;
+                    }
+                    btn.disabled = false;
+                    btn.innerText = 'Criar conta';
+                    return;
+                }
+        
+                const userId = authData.user.id;
+        
+                // O trigger criará o perfil, mas caso não tenha sido criado, inserimos manualmente
+                // Aguardamos um momento para o trigger ser executado
+                await new Promise(resolve => setTimeout(resolve, 1500));
+        
+                // Verifica se o perfil foi criado, se não, insere
+                const { data: perfilExistente } = await supabaseClient
+                    .from('kids_profiles')
+                    .select('id')
+                    .eq('id', userId)
+                    .maybeSingle();
+        
+                if (!perfilExistente) {
+                    const { error: insertError } = await supabaseClient
+                        .from('kids_profiles')
+                        .insert({
+                            id: userId,
+                            email: email,
+                            username: username,
+                            role: 'parent',
+                            full_name: username
+                        });
+                    if (insertError) throw insertError;
+                }
+        
+                exibirMsgCadastro('Conta criada com sucesso! Redirecionando...', 'success');
+                btn.innerText = 'Concluído';
+        
+                setTimeout(() => {
+                    window.location.href = 'pais.html?t=' + Date.now();
+                }, 2000);
+        
+            } catch (err) {
+                console.error(err);
+                exibirMsgCadastro('Erro ao criar conta: ' + err.message, 'error');
+                btn.disabled = false;
+                btn.innerText = 'Criar conta';
+            }
+        }
+        
+        // ==================== EXIBIR MENSAGEM NO MODAL ====================
+        function exibirMsgCadastro(mensagem, tipo = 'error') {
+            const msg = document.getElementById('mensagem-cadastro');
+            msg.style.display = 'block';
+            msg.innerText = mensagem;
+            msg.style.color = tipo === 'error' ? 'var(--danger-text)' : 'var(--success-text)';
+            msg.style.background = tipo === 'error' ? '#fdf0ee' : '#d1e7dd';
+            msg.style.border = '1px solid ' + (tipo === 'error' ? '#f5d6d2' : '#b8d9c0');
+            msg.className = tipo === 'error' ? 'mensagem-erro' : 'mensagem-sucesso';
+        }
+        
         // ==================== INICIALIZAÇÃO ====================
         /*(async () => {
             const { data: { user } } = await supabaseClient.auth.getUser();
