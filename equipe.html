@@ -997,7 +997,7 @@
                 if (todas && todas.length > 0) {
                     todas.forEach(s => {
                         const dataFormatada = new Date(s.session_date).toLocaleDateString('pt-BR');
-                        const label = `${s.name} (${dataFormatada}) ${s.is_active ? '⭐' : ''}`;
+                        const label = `${s.name} (${dataFormatada}) ${s.is_active ? '🟢' : ''}`;
                         const option = document.createElement('option');
                         option.value = s.id;
                         option.textContent = label;
