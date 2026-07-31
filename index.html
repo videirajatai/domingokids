@@ -797,24 +797,23 @@
             const email = document.getElementById('rec-email').value.trim();
             const btn = document.getElementById('btn-recuperar');
             const erro = document.getElementById('mensagem-erro-rec');
-
+        
             if (!email) {
                 exibirErro('mensagem-erro-rec', 'Informe seu e-mail cadastrado.');
                 return;
             }
-
+        
             btn.innerText = "Processando...";
             btn.disabled = true;
             erro.style.display = 'none';
-
+        
             try {
                 const urlDestino = window.location.origin + "/domingokids/novasenha.html";
-                /*const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-                  redirectTo: urlDestino,*/
-                const { data, error } = await supabaseClient.rpc('buscar_email_por_username', { username_busca: entrada });
-                if (data) emailParaLogin = data;                    
+                const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                    redirectTo: urlDestino,
+                });
                 if (error) throw error;
-
+        
                 exibirSucesso('E-mail de recuperação enviado! Verifique sua caixa de entrada.');
                 document.getElementById('rec-email').value = "";
                 mudarTela('bloco-login');
@@ -825,7 +824,6 @@
                 btn.disabled = false;
             }
         }
-
         // ==================== INICIALIZAÇÃO ====================
         /*(async () => {
             const { data: { user } } = await supabaseClient.auth.getUser();
