@@ -259,27 +259,58 @@
             font-weight: 600;
         }
 
-        /* Modal de cadastro */
-        #modal-cadastro {
+       /* ===== MODAL PADRÃO (base) ===== */
+        .modal {
             position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(4px);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 1000;
         }
-        #modal-cadastro .modal-box {
+        
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 20px;
+            padding: 2rem;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
             animation: modalFadeIn 0.3s ease;
         }
+        
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1.2rem;
+            font-size: 1.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #999;
+            transition: 0.2s;
+        }
+        .modal-close:hover { color: #333; }
+        
+        /* Para o modal de termos ter prioridade */
+        #modal-termos {
+            z-index: 2000;
+        }
+        
+        #modal-cadastro {
+            z-index: 1000;
+        }
+        
         @keyframes modalFadeIn {
             from { opacity: 0; transform: scale(0.95) translateY(10px); }
             to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        .btn-close-modal-cadastro:hover {
-            color: #333;
         }
 
         @keyframes pulse {
@@ -478,10 +509,10 @@
     </div>
 
 
-    <!-- ===== MODAL DE CADASTRO ===== -->
+   <!-- ===== MODAL DE CADASTRO ===== -->
     <div id="modal-cadastro" class="modal">
         <div class="modal-box" style="max-width: 420px; width: 90%; background: white; padding: 2rem 1.8rem; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); text-align: left; position: relative; max-height: 90vh; overflow-y: auto;">
-            <button class="btn-close-modal-cadastro" onclick="fecharModalCadastro()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999;">&times;</button>
+            <button class="btn-close-modal-cadastro" onclick="fecharModalCadastro()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999; transition:0.2s;">&times;</button>
             <h3 style="color: var(--primary); margin: 0 0 0.3rem 0; text-align: center;">Criar conta</h3>
             <p style="text-align: center; color: var(--text-light); font-size: 0.85rem; margin-bottom: 1.5rem;">Preencha os campos abaixo para se registrar</p>
             
@@ -519,8 +550,8 @@
     </div>
 
     <!-- Modal Termos de Uso -->
-    <div id="modal-termos" class="modal" style="display:none; align-items:center; justify-content:center;">
-        <div class="modal-content" style="max-width:500px; text-align:left;">
+    <div id="modal-termos" class="modal">
+        <div class="modal-content">
             <button class="modal-close" onclick="fecharTermos()">&times;</button>
             <h3 style="color:var(--primary);">📜 Termos de Uso</h3>
             <div style="font-size:0.9rem; line-height:1.6; color:var(--text-main);">
@@ -531,7 +562,7 @@
                 <p><strong>5. Alterações</strong><br>Os termos podem ser atualizados a qualquer momento, sem aviso prévio.</p>
                 <p style="margin-top:1rem; font-size:0.8rem; color:var(--text-light);">Última atualização: Julho/2025</p>
             </div>
-            <button class="btn-primary" onclick="fecharTermos()" style="margin-top:1rem;">Li e concordo</button>
+            <button class="btn-primary" onclick="fecharTermos()" style="margin-top:1rem; width:100%; justify-content:center;">Li e concordo</button>
         </div>
     </div>
 
