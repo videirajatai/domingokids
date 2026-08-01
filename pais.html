@@ -166,23 +166,16 @@
         }
 
         .btn-refresh {
-            width: 34px;
-            height: 34px;
-            border-radius: 0.7rem;
-            background: rgba(255,255,255,0.14);
-            border: none;
-            color: white;
-            font-size: 0.95rem;
+            background: transparent;  
+            border: none;          
+            color: #3b82f6;
+            padding: 0.3rem 0.8rem;
+            font-size: 1rem;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             transition: 0.2s;
-            backdrop-filter: blur(2px);
         }
         .btn-refresh:hover {
-            background: rgba(255,255,255,0.3);
-            transform: scale(1.05);
+            background: #eef2ff;
         }
        
         .card-header-with-button {
@@ -520,7 +513,7 @@
         <!-- Último registro -->
         <div class="card">
             <div class="card-header-with-button">                
-                <h3>Último registro <button class="btn-outline-small" onclick="refreshPresentList()" title="Recarregar">🔄</button></h3>                
+                <h3>Último registro <button class="btn-refresh" onclick="refreshPresentList()" title="Recarregar">🔄</button></h3>                
                 <button class="btn-outline-small" onclick="openHistoryModal()">Ver todos</button>
             </div>
             <div id="lastRegisterInfo" class="last-register">Carregando...</div>
