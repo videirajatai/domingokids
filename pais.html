@@ -546,7 +546,7 @@
     <div id="configModal" class="modal">
         <div class="modal-content" style="max-width: 700px;">
             <button class="modal-close" onclick="closeConfigModal()">&times;</button>
-            <h3 style="margin-bottom: 1.5rem;">⚙️ Configurações da Família</h3>
+            <h3 style="margin-bottom: 1.5rem;">⚙️ Dados da Família</h3>
 
             <div style="margin-bottom: 1.5rem;">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.8rem;">
@@ -598,13 +598,13 @@
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.8rem;">
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
                         <span style="font-size: 1.3rem;"></span>
-                        <h4 style="margin: 0; color: #0f172a;">Residência</h4>
+                        <h4 style="margin: 0; color: #0f172a;">Meu Endereço</h4>
                     </div>
                     <button class="btn-edit-card" onclick="openEditResidenceModal()">✏️</button>
                 </div>
                 <div style="background: #f8fafc; border-radius: 1rem; padding: 0.8rem 1rem; border: 1px solid #e2e8f0;">
                     <div id="addressDisplay" style="margin-bottom: 6px;">Endereço não informado</div>
-                    <div id="cellGroupDisplay" style="font-size: 0.85rem; color: #475569;">Célula: não informada</div>
+                    <!--<div id="cellGroupDisplay" style="font-size: 0.85rem; color: #475569;">Célula: não informada</div>-->
                 </div>
             </div>
         </div>
@@ -649,8 +649,8 @@
             <h3>Editar Residência</h3>
             <label>Endereço</label>
             <textarea id="editAddress" rows="3" placeholder="Endereço completo"></textarea>
-            <label>Célula / Pequeno Grupo</label>
-            <input type="text" id="editCellGroup" placeholder="Ex: Célula dos Jovens">
+            <!--<label>Célula / Pequeno Grupo</label>
+            <input type="text" id="editCellGroup" placeholder="Ex: Célula dos Jovens">-->
             <button class="btn-primary" onclick="saveResidenceData()">Salvar</button>
             <button class="btn-outline" onclick="closeEditResidenceModal()">Cancelar</button>
         </div>
@@ -1203,6 +1203,10 @@
          function refreshPresentList() {
             loadFamilyData();
             showToast('Registros atualizados', 'success');
+        }
+
+        function aviso() {
+            showToast('Funcionalidae em breve', 'error');
         }
 
         // ==================== MODAL CONFIGURAÇÃO ====================
