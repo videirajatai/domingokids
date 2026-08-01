@@ -164,6 +164,17 @@
         .btn-icon:hover {
             background: #f1f5f9;
         }
+        .btn-refresh {
+            padding: 0.3rem 1rem;
+            border-radius: 2rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-refresh:hover {
+         background: #f1f5f9;
+        }
 
         .card-header-with-button {
             display: flex;
@@ -501,7 +512,7 @@
         <div class="card">
             <div class="card-header-with-button">
                 <h3>Último registro</h3>
-                <button class="btn-outline-small" onclick="refreshPresentList()" title="Recarregar">🔄</button>
+                <button class="btn-refresh" onclick="refreshPresentList()" title="Recarregar">🔄</button>
                 <button class="btn-outline-small" onclick="openHistoryModal()">Ver todos</button>
             </div>
             <div id="lastRegisterInfo" class="last-register">Carregando...</div>
