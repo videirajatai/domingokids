@@ -2340,7 +2340,7 @@
             }
         
             // Criar a nova sessão
-            const nomeSessao = `Culto Kids - ${dataString.split('-').reverse().join('/')}`;
+            const nomeSessao = `Culto Kids - ${dataString.split('-')}`;
             const { data: nova, error: criarError } = await supabaseClient
                 .from('kids_sessions')
                 .insert({
