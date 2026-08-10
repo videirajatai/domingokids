@@ -2083,13 +2083,14 @@
                         </tbody>
                     </table>
                     <div class="espaco-lideres">
-                        <h4>Líderes e Auxiliares (Babys)</h4>
+                        <h4>Babys</h4>
                         ${[1,2].map(i => `<div style="margin:4px 0;"><span>Líder ${i}:</span> <span class="linha"></span></div>`).join('')}
-                        <h4>Líderes e Auxiliares (Kids)</h4>
+                        <h4>Kids</h4>
                          ${[3,4].map(i => `<div style="margin:4px 0;"><span>Líder ${i}:</span> <span class="linha"></span></div>`).join('')}
-                         <h4>Líderes e Auxiliares (Juvenis)</h4>
+                         <h4>Juvenis</h4>
                          ${[5,6].map(i => `<div style="margin:4px 0;"><span>Líder ${i}:</span> <span class="linha"></span></div>`).join('')}
-                         ${[1,2].map(i => `<div style="margin:4px 0;"><span>Auxiliar ${i}:</span> <span class="linha"></span></div>`).join('')}
+                         <h4>Auxiliares</h4>
+                         ${[1,2,3,4].map(i => `<div style="margin:4px 0;"><span>Auxiliar ${i}:</span> <span class="linha"></span></div>`).join('')}
                     </div>
                     <div class="footer">Relatório gerado em ${new Date().toLocaleString('pt-BR')}</div>
                 </div>
