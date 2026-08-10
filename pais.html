@@ -992,7 +992,7 @@
                     html += `
                         <div style="border-bottom: 1px solid #eef2ff; padding-bottom: 0.6rem;">
                             <div><strong>${escapeHtml(child.name)}</strong></div>
-                            <div style="font-size: 0.8rem; color: #475569;">${ci.session?.name || 'Sessão'}</div>
+                            <div style="font-size: 0.8rem; color: #475569;">${ci.session?.name || 'Sessão'} - </div>
                             <div style="font-size: 0.8rem;">${status}</div>
                         </div>
                     `;
@@ -1035,7 +1035,7 @@
             if (checkins && checkins.length) {
                 historyDiv.innerHTML = checkins.map(ci => `
                     <div class="history-item-modal">
-                        ✅ <strong>${escapeHtml(ci.child.name)}</strong> - ${ci.session.name} (${new Date(ci.checked_in_at).toLocaleString()})
+                        ✅ <strong>${escapeHtml(ci.child.name)}</strong> - ${ci.session.name})
                         ${!ci.checked_out_at ? ' <span style="color:#2563eb;">(ATIVO)</span>' : ` - Saída: ${new Date(ci.checked_out_at).toLocaleTimeString()}`}
                     </div>
                 `).join('');
