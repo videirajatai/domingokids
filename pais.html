@@ -755,6 +755,16 @@
             await loadFamilyData();
         }
 
+        // ==================== UTILITÁRIO DE FORMATAÇÃO DE DATA ====================
+            function formatDate(dateStr) {
+                if (!dateStr) return '';
+                // Aceita formato YYYY-MM-DD
+                const parts = dateStr.split('-');
+                if (parts.length !== 3) return dateStr;
+                const [year, month, day] = parts;
+                return `${day}/${month}/${year}`; // DD/MM/YYYY
+            }
+
         // Carregar dados da família
         async function loadFamilyData() {
             if (!currentFamilyId) return;
@@ -1063,7 +1073,7 @@
                             <div class="child-name">${escapeHtml(child.name)}</div>
                             ${child.allergies ? `<div class="allergy">⚠️ ${escapeHtml(child.allergies)}</div>` : ''}
                             ${child.special_needs ? `<div class="special-need">🔹 ${escapeHtml(child.special_needs)}</div>` : ''}
-                            ${child.birth_date ? `<div style="font-size:0.7rem; color:#64748b;">📅 ${new Date(child.birth_date).toLocaleDateString()}</div>` : ''}
+                            ${child.birth_date ? `<div style="font-size:0.7rem; color:#64748b;">📅 ${formatDate(child.birth_date)}</div>` : ''}
                         </div>
                         <div class="child-actions">
                             <button class="btn-icon" onclick="editChild('${child.id}')" title="Editar">✏️</button>
