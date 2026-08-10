@@ -773,8 +773,10 @@
         <div class="modal-content">
             <button class="modal-close" onclick="closeModal()">&times;</button>
             <div class="modal-title">📝 Visitante</div>
-            <input type="text" id="visitantName" placeholder="Nome da criança">
-            <input type="text" id="respName" placeholder="Responsável">
+            <input type="text" id="visitantName" placeholder="Nome da criança *">
+            <input type="date" id="visitantBirthDate" placeholder="Data de nascimento">
+            <input type="text" id="visitantAllergies" placeholder="Alergias (opcional)">
+            <input type="text" id="respName" placeholder="Responsável *">
             <input type="tel" id="respPhone" placeholder="Telefone (opcional)">
             <button class="btn-primary" onclick="registerVisitant()" style="width:100%; justify-content:center;">Registrar e fazer check-in</button>
         </div>
@@ -1275,8 +1277,66 @@
                 birthDate: birthDate,
                 tokenValue: token
             };
+
+            // Verificar se é visitante
+            if (tokenData.visitant_id) {
+                // É visitante
+                const visitant = tokenData.visitant;
+                if (!visitant) {
+                    showToast('Erro: visitante não encontrado', 'error');
+                    return;
+                }
+                if (visitant.checked_out_at) {
+                    showToast('Visitante já finalizou', 'info');
+                    return;
+                }
+                // Abrir modal de checkout confirm para visitante
+                openCheckoutConfirmModalVisitant(visitant);
+                return;
+            }
             openSelectRoomModal(childName, allergies, birthDate);
         }
+
+        function openCheckoutConfirmModalVisitant(visitant) {
+                // Mostrar modal com dados do visitante
+                const html = `
+                    <div style="text-align:center;">
+                        <h3 style="margin:0.2rem 0;">${escapeHtml(visitant.child_name)}</h3>
+                        <p><strong>Responsável:</strong> ${escapeHtml(visitant.responsible_name)}</p>
+                        ${visitant.birth_date ? `<p><strong>📅 Nascimento:</strong> ${formatDate(visitant.birth_date)}</p>` : ''}
+                        ${visitant.allergies ? `<p><strong>⚠️ Alergias:</strong> ${escapeHtml(visitant.allergies)}</p>` : ''}
+                    </div>
+                    <div style="display: flex; gap: 0.8rem; flex-direction: column; margin-top:1rem;">
+                        <button id="confirmCheckoutBtn" class="btn-primary" onclick="confirmCheckoutVisitant('${visitant.id}')" style="background: var(--danger); justify-content:center; box-shadow:none;">✅ Confirmar Check-out</button>
+                        <button class="btn-secondary" onclick="closeCheckoutConfirmModal()">Cancelar</button>
+                    </div>
+                `;
+                document.getElementById('checkoutChildInfo').innerHTML = html;
+                pendingCheckoutData = { visitantId: visitant.id };
+                document.getElementById('checkoutConfirmModal').style.display = 'flex';
+            }
+            
+            async function confirmCheckoutVisitant(visitantId) {
+                await supabaseClient
+                    .from('kids_visitants')
+                    .update({ checked_out_at: new Date().toISOString() })
+                    .eq('id', visitantId);
+                // Expirar token
+                const { data: visitant } = await supabaseClient
+                    .from('kids_visitants')
+                    .select('token_id')
+                    .eq('id', visitantId)
+                    .single();
+                if (visitant && visitant.token_id) {
+                    await supabaseClient
+                        .from('kids_temporary_tokens')
+                        .update({ expires_at: new Date().toISOString() })
+                        .eq('id', visitant.token_id);
+                }
+                showToast('Check-out do visitante realizado!', 'success');
+                closeCheckoutConfirmModal();
+                await loadPresentList();
+            }
 
         // ========== CALCULAR IDADE ==========
         function calcularIdade(birthDateStr) {
@@ -1312,6 +1372,32 @@
 
         // ========== CONFIRMAR CHECK‑IN ==========
         async function confirmCheckinWithRoom(room) {
+
+            if (pendingVisitantData) {
+                // É visitante
+                const { visitantId, childName, allergies, birthDate, token, tokenId } = pendingVisitantData;
+                // Atualizar visitant com room
+                const { error: updateError } = await supabaseClient
+                    .from('kids_visitants')
+                    .update({ room: room })
+                    .eq('id', visitantId);
+                if (updateError) { showToast('Erro ao definir sala', 'error'); return; }
+                // Imprimir etiqueta
+                const idade = birthDate ? `${calcularIdade(birthDate)} anos` : '';
+                // Buscar responsável e telefone do visitant
+                const { data: visitant } = await supabaseClient
+                    .from('kids_visitants')
+                    .select('responsible_name, responsible_phone')
+                    .eq('id', visitantId)
+                    .single();
+                await printLabel(token, childName, allergies, idade, visitant.responsible_name, visitant.responsible_phone, visitantId);
+                showToast(`Visitante ${childName} check-in realizado (${room})`, 'success');
+                pendingVisitantData = null;
+                closeSelectRoomModal();
+                await loadPresentList();
+                return;
+            }
+            
             if (!pendingCheckinData) return;
             const { tokenId, childId, childName, allergies, tokenValue, birthDate } = pendingCheckinData;
             const badgeNumber = null;
@@ -1463,7 +1549,8 @@
     window.location.href = 'rawbt:' + etiquetaBase64;
 }*/
 
-        async function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPhone, checkinId) {
+        //async function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPhone, checkinId, isVisitant = false) {
+        async function printLabel(qrToken, childName, allergies, idade, fatherPhone, phone1, motherPhone, phone2, checkinId, isVisitant = false) {
             const LABEL_WIDTH = 384; // 384 original 
             const LABEL_HEIGHT = 200; //ogirinal é 216 //184 FICOU exaamente do tamanho da etiqueta // usando 176 pra testar  (176 / 184 / 192 / 200 / 208 /)
         
@@ -1501,6 +1588,7 @@
                         <div style="font-size:24px;font-weight:bold;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(childName)}</div>
                         ${idade ? `<div style="font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Idade: ${escapeHtml(idade)}</div>` : ''}
                         ${allergies ? `<div style="font-size:17px;font-weight:bold;color:#b91c1c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">⚠️ ${escapeHtml(allergies)}</div>` : ''}
+                        ${isVisitant ? `<div>Resp: ${phone1}</div><div>Tel: ${phone2}</div>` : `<div>Pai: ${phone1}</div><div>Mãe: ${phone2}</div>`}
                         <div style="font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Pai: ${escapeHtml(fatherPhone)}</div>
                         <div style="font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Mãe: ${escapeHtml(motherPhone)}</div>
                         <!--<div style="font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><br>Domingo Kids</div>-->
@@ -1641,6 +1729,7 @@
         // ========== LISTA DE PRESENTES ==========
         async function loadPresentList() {
             if (!currentSessionId) return;
+            // Buscar check-ins de crianças
             let query = supabaseClient
                 .from('kids_check_ins')
                 .select('*, child:child_id(id, name, allergies, birth_date, photo_url)')
@@ -1649,78 +1738,123 @@
             if (currentRoomFilter !== 'todos') {
                 query = query.eq('room', currentRoomFilter);
             }
-            const { data: allCheckins } = await query;
-            let checkins = allCheckins;
-            if (currentRoomFilter !== 'todos') {
-                checkins = allCheckins?.filter(c => c.room === currentRoomFilter) || [];
-            }
-            const { data: visitants } = await supabaseClient
+            const { data: childCheckins } = await query;
+        
+            // Buscar visitantes ativos
+            let visitantsQuery = supabaseClient
                 .from('kids_visitants')
                 .select('*')
-                .eq('session_id', currentSessionId);
+                .eq('session_id', currentSessionId)
+                .is('checked_out_at', null);
+            if (currentRoomFilter !== 'todos') {
+                visitantsQuery = visitantsQuery.eq('room', currentRoomFilter);
+            }
+            const { data: visitants } = await visitantsQuery;
+        
+            // Combinar
+            let allItems = [];
+            // Check-ins de crianças
+            if (childCheckins) {
+                childCheckins.forEach(c => {
+                    allItems.push({
+                        type: 'child',
+                        id: c.id,
+                        childId: c.child_id,
+                        name: c.child.name,
+                        allergies: c.child.allergies,
+                        birthDate: c.child.birth_date,
+                        room: c.room,
+                        checkedInAt: c.checked_in_at,
+                        checkinData: c,
+                        photo: c.child.photo_url,
+                        badge: null // ou número
+                    });
+                });
+            }
+            // Visitantes
+            if (visitants) {
+                visitants.forEach(v => {
+                    allItems.push({
+                        type: 'visitant',
+                        id: v.id,
+                        childId: null,
+                        name: v.child_name,
+                        allergies: v.allergies,
+                        birthDate: v.birth_date,
+                        room: v.room,
+                        checkedInAt: v.checked_in_at,
+                        visitantData: v,
+                        photo: null,
+                        badge: 'Visitante'
+                    });
+                });
+            }
+        
+            // Ordenar por nome
+            allItems.sort((a,b) => a.name.localeCompare(b.name));
+        
+            // Gerar HTML
             let html = '';
-            /*if (currentRoomFilter !== 'todos') {
-                html += `
-                    <div style="display:flex; justify-content:flex-end; margin-bottom:1rem;">
-                        <button class="btn-secondary" onclick="openRoomModal('${currentRoomFilter}')" style="display:flex; align-items:center; gap:0.4rem;">
-                            <span>🔄</span> Gerenciar crianças nesta sala
-                        </button>
-                    </div>
-                `;
-            }*/
-            if (checkins?.length) {
-                html += `<h4 style="margin-bottom:0.8rem; color:var(--primary);">Crianças nas Salas ${currentRoomFilter !== 'todos' ? `(Sala: ${currentRoomFilter})` : ''}</h4>`;
-                for (const c of checkins) {
-                    let isBirthdayWeek = false;
-                    if (c.child.birth_date) {
-                        const birth = new Date(c.child.birth_date);
+            if (allItems.length === 0) {
+                html = '<p style="text-align:center;color:var(--text-light);">Nenhuma criança presente.</p>';
+            } else {
+                for (const item of allItems) {
+                    // Estilo baseado na sala
+                    const borderColor = item.room === 'Kids' ? '#3b82f6' : (item.room === 'Babys' ? '#f59e0b' : (item.room === 'Juvenis' ? '#8b5cf6' : 'var(--success)'));
+                    const isBirthdayWeek = item.birthDate ? (() => {
+                        const birth = new Date(item.birthDate);
                         const today = new Date();
                         const weekLater = new Date();
                         weekLater.setDate(today.getDate() + 7);
                         const birthThisYear = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
-                        if (birthThisYear >= today && birthThisYear <= weekLater) isBirthdayWeek = true;
-                    }
-                    const birthdayIcon = isBirthdayWeek ? '🎂 ' : '';                    
+                        return birthThisYear >= today && birthThisYear <= weekLater;
+                    })() : false;
+                    const birthdayIcon = isBirthdayWeek ? '🎂 ' : '';
+                    const visitantBadge = item.type === 'visitant' ? '<span class="badge" style="background:#f0e6ff; color:#6d4c8a;">Visitante</span>' : '';
                     html += `
-                        <div class="present-item" style="border-left-color: ${c.room === 'Kids' ? '#3b82f6' : (c.room === 'Babys' ? '#f59e0b' : (c.room === 'Juvenis' ? '#8b5cf6' : 'var(--success-text)'))}; padding:0.5rem 0.7rem; position:relative;">
+                        <div class="present-item" style="border-left-color: ${borderColor}; padding:0.5rem 0.7rem; position:relative;">
                             <div class="present-info">
-                                <div class="present-name" style="font-size:0.9rem;">${birthdayIcon}${escapeHtml(c.child.name)} ${c.badge_number ? `<span class="badge">🏷️ ${c.badge_number}</span>` : ''} ${c.child.allergies ? '<span class="badge">⚠️</span>' : ''}</div>
+                                <div class="present-name" style="font-size:0.9rem;">${birthdayIcon}${escapeHtml(item.name)} ${visitantBadge} ${item.allergies ? '<span class="badge">⚠️</span>' : ''}</div>
                                 <div class="present-time" style="font-size:0.7rem; color:var(--text-light);">
-                                    Check‑in: ${new Date(c.checked_in_at).toLocaleTimeString()}
-                                    ${c.room !== 'todos' && currentRoomFilter === 'todos' ? ` · 📌 Sala: ${c.room}` : ''}
+                                    Check‑in: ${new Date(item.checkedInAt).toLocaleTimeString()}
+                                    ${item.room ? ` · 📌 Sala: ${item.room}` : ''}
                                 </div>
                             </div>
                             <div class="present-actions" style="position:absolute; top:0.3rem; right:0.5rem; display:flex; gap:0.2rem;">
-                                <button class="btn-icon" onclick="showChildDetails('${c.child_id}', '${c.id}')" style="padding:0.2rem 0.5rem; font-size:0.75rem; border-radius:0.4rem;">👁️</button>
-                                <button class="btn-icon" onclick="reprintLabelFromList('${c.id}')" style="padding:0.2rem 0.5rem; font-size:0.75rem; border-radius:0.4rem;">🖨️</button>
+                                ${item.type === 'child' ? `<button class="btn-icon" onclick="showChildDetails('${item.childId}', '${item.id}')" style="padding:0.2rem 0.5rem; font-size:0.75rem; border-radius:0.4rem;">👁️</button>` : ''}
+                                ${item.type === 'child' ? `<button class="btn-icon" onclick="reprintLabelFromList('${item.id}')" style="padding:0.2rem 0.5rem; font-size:0.75rem; border-radius:0.4rem;">🖨️</button>` : ''}
+                                ${item.type === 'visitant' ? `<button class="btn-icon" onclick="checkoutVisitant('${item.id}')" style="padding:0.2rem 0.5rem; font-size:0.75rem; border-radius:0.4rem;">Finalizar</button>` : ''}
                             </div>
                         </div>
                     `;
                 }
-            } else if (currentRoomFilter !== 'todos') {
-                html += `<p style="text-align:center;color:var(--text-light);">Nenhuma criança nesta sala. Clique em "Gerenciar" para adicionar.</p>`;
-            }
-            if (currentRoomFilter === 'todos' && visitants?.length) {
-                html += `<h4 style="margin-top:1rem; color:var(--primary);">Visitantes</h4>`;
-                html += visitants.map(v => `
-                    <div class="present-item visitant-item">
-                        <div class="present-info">
-                            <div class="present-name">${escapeHtml(v.child_name)} (resp: ${escapeHtml(v.responsible_name)})</div>
-                            <div class="present-time">Check‑in: ${new Date(v.checked_in_at).toLocaleTimeString()}</div>
-                        </div>
-                        <div class="present-actions">
-                            <button class="btn-icon btn-danger" onclick="removeVisitant('${v.id}')">Finalizar</button>
-                        </div>
-                    </div>
-                `).join('');
-            }
-            if (!checkins?.length && (!visitants?.length || currentRoomFilter !== 'todos')) {
-                html = '<p style="text-align:center;color:var(--text-light);">Nenhuma criança presente.</p>';
             }
             document.getElementById('presentList').innerHTML = html;
         }
 
-        
+        async function checkoutVisitant(visitantId) {
+            if (!confirm('Finalizar visita de ' + nome?))? Pode usar modal de confirmação. Vamos usar o mesmo modal de checkout confirm? Podemos adaptar. Vou fazer simples: confirm e atualizar.
+            if (confirm('Confirmar saída do visitante?')) {
+                await supabaseClient
+                    .from('kids_visitants')
+                    .update({ checked_out_at: new Date().toISOString() })
+                    .eq('id', visitantId);
+                // Expirar token associado
+                const { data: visitant } = await supabaseClient
+                    .from('kids_visitants')
+                    .select('token_id')
+                    .eq('id', visitantId)
+                    .single();
+                if (visitant && visitant.token_id) {
+                    await supabaseClient
+                        .from('kids_temporary_tokens')
+                        .update({ expires_at: new Date().toISOString() })
+                        .eq('id', visitant.token_id);
+                }
+                await loadPresentList();
+                showToast('Visitante finalizado', 'success');
+            }
+        }
         // ========== CHECKOUT MANUAL ==========
         async function checkoutManual(checkinId) {
             await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', checkinId);
@@ -1805,25 +1939,63 @@
         // ========== VISITANTE ==========
         async function registerVisitant() {
             const childName = document.getElementById('visitantName').value.trim();
+            const birthDate = document.getElementById('visitantBirthDate').value;
+            const allergies = document.getElementById('visitantAllergies').value.trim();
             const respName = document.getElementById('respName').value.trim();
             const respPhone = document.getElementById('respPhone').value.trim();
             if (!childName || !respName) { showToast('Preencha nome da criança e responsável', 'error'); return; }
-            const { error } = await supabaseClient.from('kids_visitants').insert({
-                child_name: childName,
-                responsible_name: respName,
-                responsible_phone: respPhone,
-                session_id: currentSessionId,
-                checked_in_by: currentStaffId
-            });
+            
+            // Inserir visitant
+            const { data: visitant, error } = await supabaseClient
+                .from('kids_visitants')
+                .insert({
+                    child_name: childName,
+                    responsible_name: respName,
+                    responsible_phone: respPhone,
+                    session_id: currentSessionId,
+                    checked_in_by: currentStaffId,
+                    allergies: allergies,
+                    birth_date: birthDate || null,
+                    // room será definido depois
+                })
+                .select()
+                .single();
             if (error) { showToast(error.message, 'error'); return; }
-            showToast('Visitante registrado', 'success');
+        
+            // Gerar token
+            const token = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+            const expiresAt = new Date();
+            expiresAt.setDate(expiresAt.getDate() + 30);
+            const { data: tokenData, error: tokenError } = await supabaseClient
+                .from('kids_temporary_tokens')
+                .insert({
+                    token: token,
+                    visitant_id: visitant.id,
+                    expires_at: expiresAt.toISOString()
+                })
+                .select()
+                .single();
+            if (tokenError) { showToast('Erro ao gerar token', 'error'); return; }
+        
+            // Atualizar visitant com token_id
+            await supabaseClient
+                .from('kids_visitants')
+                .update({ token_id: tokenData.id })
+                .eq('id', visitant.id);
+        
+            // Fechar modal visitante
             closeModal();
-            await loadPresentList();
-            document.getElementById('visitantName').value = '';
-            document.getElementById('respName').value = '';
-            document.getElementById('respPhone').value = '';
+            // Abrir modal de seleção de sala com dados do visitante
+            pendingVisitantData = {
+                visitantId: visitant.id,
+                childName: childName,
+                allergies: allergies,
+                birthDate: birthDate,
+                token: token,
+                tokenId: tokenData.id
+            };
+            openSelectRoomModalVisitant(childName, allergies, birthDate);
         }
-
         // ========== SESSÃO ==========
         function openSessionModal() { document.getElementById('sessionModal').style.display = 'flex'; }
         function closeSessionModal() { document.getElementById('sessionModal').style.display = 'none'; }
