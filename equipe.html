@@ -773,14 +773,13 @@
         <div class="modal-content">
             <button class="modal-close" onclick="closeModal()">&times;</button>
             <div class="modal-title">📝 Visitante</div>
-            <input type="text" id="visitantName" placeholder="Nome da criança *" required>
-            <input type="date" id="visitantBirthDate" placeholder="Data de nascimento (opcional)">
-            <input type="text" id="visitantAllergies" placeholder="Alergias (opcional)">
-            <input type="text" id="respName" placeholder="Responsável *" required>
+            <input type="text" id="visitantName" placeholder="Nome da criança">
+            <input type="text" id="respName" placeholder="Responsável">
             <input type="tel" id="respPhone" placeholder="Telefone (opcional)">
-            <button class="btn-primary" onclick="prepararVisitante()" style="width:100%; justify-content:center;">Registrar e escolher sala</button>
+            <button class="btn-primary" onclick="registerVisitant()" style="width:100%; justify-content:center;">Registrar e fazer check-in</button>
         </div>
     </div>
+
     <!-- Modal nova sessão -->
     <div id="sessionModal" class="modal">
         <div class="modal-content">
@@ -939,7 +938,6 @@
         let childrenForRoom = [];
         let pendingCheckinData = null;
         let pendingCheckoutData = null;
-        let pendingVisitantData = null;
         //let availableCameras = [];
 
         // ========== TOAST (mesmo) ==========
@@ -981,6 +979,7 @@
             });
         }
 
+
         // ==================== UTILITÁRIO DE FORMATAÇÃO DE DATA ====================
         function formatDate(dateStr) {
             if (!dateStr) return '';
@@ -990,7 +989,6 @@
             const [year, month, day] = parts;
             return `${day}/${month}/${year}`; // DD/MM/YYYY
         }
-
         
        async function loadSessions() {
                 // Buscar todas as sessões (para popular o dropdown)
@@ -1312,77 +1310,8 @@
             pendingCheckinData = null;
         }
 
-        // ========== CONFIRMAR CHECK‑IN (criança ou visitante) ==========
+        // ========== CONFIRMAR CHECK‑IN ==========
         async function confirmCheckinWithRoom(room) {
-            // Se for visitante (pendingVisitantData existe)
-            if (pendingVisitantData) {
-                const { visitantId, childName, allergies, birthDate, respName, respPhone, token, tokenExpires } = pendingVisitantData;
-        
-                // Criar check-in na tabela kids_check_ins com visitant_id
-                const { data: newCheckin, error: insertError } = await supabaseClient
-                    .from('kids_check_ins')
-                    .insert({
-                        child_id: null,
-                        visitant_id: visitantId,
-                        session_id: currentSessionId,
-                        checked_in_by: currentStaffId,
-                        token_id: token ? token : null, // associar token se tiver
-                        room: room,
-                        badge_number: null,
-                        notes: `Visitante: ${childName}, Responsável: ${respName}`
-                    })
-                    .select()
-                    .single();
-        
-                if (insertError) {
-                    showToast('Erro no check‑in do visitante', 'error');
-                    document.getElementById('scanResult').innerHTML = '❌ Erro no check‑in do visitante.';
-                    return;
-                }
-        
-                // Atualizar token com checkin_id (se houver token)
-                if (token) {
-                    await supabaseClient
-                        .from('kids_temporary_tokens')
-                        .update({ checkin_id: newCheckin.id })
-                        .eq('token', token);
-                }
-        
-                const roomDisplay = room === 'todos' ? 'Todos' : room;
-                document.getElementById('scanResult').innerHTML = `✅ Check‑in do visitante: ${childName} (${roomDisplay})`;
-                showToast(`Visitante ${childName} - Sala ${roomDisplay}`, 'success');
-                await loadPresentList();
-        
-                // Imprimir etiqueta
-                let idade = '';
-                if (birthDate) {
-                    const idadeNum = calcularIdade(birthDate);
-                    idade = `${idadeNum} anos`;
-                }
-                printLabel(
-                    token,
-                    childName,
-                    allergies || '',
-                    idade,
-                    respName || 'Não informado',
-                    respPhone || 'Não informado',
-                    newCheckin.id
-                );
-        
-                // Limpar dados pendentes
-                pendingVisitantData = null;
-                closeSelectRoomModal();
-        
-                // Limpar campos do modal visitante
-                document.getElementById('visitantName').value = '';
-                document.getElementById('visitantBirthDate').value = '';
-                document.getElementById('visitantAllergies').value = '';
-                document.getElementById('respName').value = '';
-                document.getElementById('respPhone').value = '';
-                return;
-            }
-        
-            // ===== FLUXO NORMAL (criança cadastrada) =====
             if (!pendingCheckinData) return;
             const { tokenId, childId, childName, allergies, tokenValue, birthDate } = pendingCheckinData;
             const badgeNumber = null;
@@ -1598,243 +1527,198 @@
             showToast('Gerando 2ª via da etiqueta...', 'info');
             const { data: checkin, error } = await supabaseClient
                 .from('kids_check_ins')
-                .select('*, child:child_id(*, family:family_id(*)), visitant:visitant_id(*)')
+                .select('*, child:child_id(*, family:family_id(*)), token:token_id(token, expires_at)')
                 .eq('id', checkinId)
                 .single();
             if (error || !checkin) {
                 showToast('Erro ao buscar dados para reimpressão', 'error');
                 return;
             }
-        
-            let child, family = {};
-            let childName, allergies, idade, fatherPhone, motherPhone;
-        
-            if (checkin.child_id) {
-                child = checkin.child;
-                family = child.family || {};
-                childName = child.name || 'Criança';
-                allergies = child.allergies || '';
-                idade = child.birth_date ? `${calcularIdade(child.birth_date)} anos` : '';
-                fatherPhone = family.father_phone || 'Não informado';
-                motherPhone = family.mother_phone || 'Não informado';
-            } else if (checkin.visitant_id) {
-                const visitant = checkin.visitant;
-                childName = visitant.child_name || 'Visitante';
-                allergies = visitant.allergies || '';
-                idade = visitant.birth_date ? `${calcularIdade(visitant.birth_date)} anos` : '';
-                fatherPhone = visitant.responsible_name || 'Responsável';
-                motherPhone = visitant.responsible_phone || 'Não informado';
-            } else {
-                showToast('Dados não encontrados para reimpressão.', 'error');
-                return;
-            }
-        
+            const child = checkin.child || {};
+            const family = child.family || {};
             if (!checkin.token || !checkin.token.token) {
-                showToast('Não foi possível encontrar o QR original.', 'error');
+                showToast('Não foi possível encontrar o QR original desta criança', 'error');
                 return;
             }
-        
+            let idade = '';
+            if (child.birth_date) idade = `${calcularIdade(child.birth_date)} anos`;
             await printLabel(
                 checkin.token.token,
-                childName,
-                allergies,
+                child.name || 'Criança',
+                child.allergies || '',
                 idade,
-                fatherPhone,
-                motherPhone,
+                family.father_phone || 'Não informado',
+                family.mother_phone || 'Não informado',
                 checkin.id
             );
             showToast('2ª via enviada para impressão', 'success');
         }
 
         // ========== DETALHES DA CRIANÇA ==========
-          async function showChildDetails(childIdOrVisitantId, checkinId) {
-                const isVisitant = typeof childIdOrVisitantId === 'string' && childIdOrVisitantId.startsWith('vis_');
-                let child, family = {};
-                let nome, fotoUrl, alergias, nascimento, paiNome, paiTel, maeNome, maeTel;
-            
-                if (isVisitant) {
-                    const visitantId = childIdOrVisitantId.replace('vis_', '');
-                    const { data: visitant, error } = await supabaseClient
-                        .from('kids_visitants')
-                        .select('*')
-                        .eq('id', visitantId)
-                        .single();
-                    if (error || !visitant) {
-                        showToast('Visitante não encontrado.', 'error');
-                        return;
-                    }
-                    nome = visitant.child_name;
-                    fotoUrl = null;
-                    alergias = visitant.allergies || 'Nenhuma';
-                    nascimento = visitant.birth_date || null;
-                    paiNome = visitant.responsible_name || 'Responsável não informado';
-                    paiTel = visitant.responsible_phone || '';
-                    maeNome = null;
-                    maeTel = '';
-                    family = {};
-                } else {
-                    const { data: childData, error } = await supabaseClient
-                        .from('kids_children')
-                        .select('*, family:family_id(*)')
-                        .eq('id', childIdOrVisitantId)
-                        .single();
-                    if (error || !childData) {
-                        showToast('Erro ao carregar detalhes', 'error');
-                        return;
-                    }
-                    child = childData;
-                    family = child.family || {};
-                    nome = child.name;
-                    fotoUrl = child.photo_url || null;
-                    alergias = child.allergies || 'Nenhuma';
-                    nascimento = child.birth_date || null;
-                    paiNome = family.father_name || 'Não informado';
-                    paiTel = family.father_phone || '';
-                    maeNome = family.mother_name || 'Não informado';
-                    maeTel = family.mother_phone || '';
-                }
-            
-                const idade = nascimento ? `${calcularIdade(nascimento)} anos` : 'Não informado';
-            
-                function gerarLinkWhatsApp(telefone, nomeResponsavel) {
-                    if (!telefone) return '#';
-                    const numeroLimpo = telefone.replace(/\D/g, '');
-                    if (numeroLimpo.length < 10) return '#';
-                    const nomeParaMensagem = nomeResponsavel || 'responsável';
-                    const mensagem = `Olá *${nomeParaMensagem}!* 👋\n\nA ovelhinha *${nome}* está precisando do papai ou da mamãe.\n\n⚠️ Solicitamos que o responsável compareça à sala do Domigo Kids assim que possível.\n\nObrigada! 🙏`;
-                    return `https://wa.me/55${numeroLimpo}?text=${encodeURIComponent(mensagem)}`;
-                }
-            
-                const linkPai = gerarLinkWhatsApp(paiTel, paiNome);
-                const linkMae = gerarLinkWhatsApp(maeTel, maeNome);
-                const temPai = paiTel && paiTel.replace(/\D/g, '').length >= 10;
-                const temMae = maeTel && maeTel.replace(/\D/g, '').length >= 10;
-            
-                const html = `
-                    <button class="modal-close" onclick="closeChildDetailsModal()">&times;</button>
-                    <div style="text-align:center;">
-                        ${fotoUrl ? `<img src="${fotoUrl}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;margin-bottom:0.5rem;">` : '<div style="width:100px;height:100px;background:var(--border-color);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:3rem;margin:0 auto 0.5rem;">👶</div>'}
-                        <h3 style="margin:0.2rem 0;">${escapeHtml(nome)} ${isVisitant ? '<span class="badge" style="background:#f59e0b; color:white;">Visitante</span>' : ''}</h3>
-                        <p style="margin:0.2rem 0;"><strong>📅 Nascimento:</strong> ${nascimento ? formatDate(nascimento) : 'Não informado'}</p>
-                        <p style="margin:0.2rem 0;"><strong>⚠️ Alergias:</strong> ${escapeHtml(alergias)}</p>
-                        ${!isVisitant && child.special_needs ? `<p style="margin:0.2rem 0;"><strong>🔹 Necessidades:</strong> ${escapeHtml(child.special_needs)}</p>` : ''}
-                    </div>
-                    <hr style="margin:1rem 0; border-color:var(--border-color);">
-                    <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
-                        ${isVisitant ? `
-                            <div style="flex:1; min-width:140px; text-align:center; background:var(--input-bg); border-radius:var(--radius-md); padding:0.8rem; border:1px solid var(--border-color);">
-                                <div style="width:60px;height:60px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;margin:0 auto 0.3rem;overflow:hidden;">👤</div>
-                                <div><strong>Responsável:</strong> ${escapeHtml(paiNome)}</div>
-                                <div style="font-size:0.85rem; color:var(--text-light);">📞 ${escapeHtml(paiTel) || '-'}</div>
-                                ${temPai ? `<a href="${linkPai}" target="_blank" style="display:inline-block; margin-top:0.5rem; background:#25D366; color:white; border:none; padding:0.4rem 0.8rem; border-radius:var(--radius-sm); font-weight:600; text-decoration:none; font-size:0.8rem;">💬 WhatsApp</a>` : `<div style="margin-top:0.5rem; font-size:0.75rem; color:var(--text-faint);">📱 Sem número</div>`}
-                            </div>
-                        ` : `
-                            <div style="flex:1; min-width:140px; text-align:center; background:var(--input-bg); border-radius:var(--radius-md); padding:0.8rem; border:1px solid var(--border-color);">
-                                <div style="width:60px;height:60px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;margin:0 auto 0.3rem;overflow:hidden;">👨</div>
-                                <div><strong>Pai:</strong> ${escapeHtml(paiNome)}</div>
-                                <div style="font-size:0.85rem; color:var(--text-light);">📞 ${escapeHtml(paiTel) || '-'}</div>
-                                ${temPai ? `<a href="${linkPai}" target="_blank" style="display:inline-block; margin-top:0.5rem; background:#25D366; color:white; border:none; padding:0.4rem 0.8rem; border-radius:var(--radius-sm); font-weight:600; text-decoration:none; font-size:0.8rem;">💬 WhatsApp</a>` : `<div style="margin-top:0.5rem; font-size:0.75rem; color:var(--text-faint);">📱 Sem número</div>`}
-                            </div>
-                            <div style="flex:1; min-width:140px; text-align:center; background:var(--input-bg); border-radius:var(--radius-md); padding:0.8rem; border:1px solid var(--border-color);">
-                                <div style="width:60px;height:60px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;margin:0 auto 0.3rem;overflow:hidden;">👩</div>
-                                <div><strong>Mãe:</strong> ${escapeHtml(maeNome)}</div>
-                                <div style="font-size:0.85rem; color:var(--text-light);">📞 ${escapeHtml(maeTel) || '-'}</div>
-                                ${temMae ? `<a href="${linkMae}" target="_blank" style="display:inline-block; margin-top:0.5rem; background:#25D366; color:white; border:none; padding:0.4rem 0.8rem; border-radius:var(--radius-sm); font-weight:600; text-decoration:none; font-size:0.8rem;">💬 WhatsApp</a>` : `<div style="margin-top:0.5rem; font-size:0.75rem; color:var(--text-faint);">📱 Sem número</div>`}
-                            </div>
-                        `}
-                    </div>
-                    <div style="margin-top:1.5rem; text-align:center;">
-                        <button class="btn-primary" onclick="checkoutManual('${checkinId}')" style="background:var(--danger); justify-content:center; width:100%; border:none; color:white; padding:0.7rem; border-radius:var(--radius-md); font-weight:600; cursor:pointer;">
-                            ⚠️ Check-out Manual (Não recomendado)
-                        </button>
-                    </div>
-                `;
-                document.getElementById('childDetailsContent').innerHTML = html;
-                document.getElementById('childDetailsModal').style.display = 'flex';
+       async function showChildDetails(childId, checkinId) {
+            const { data: child, error } = await supabaseClient
+                .from('kids_children')
+                .select('*, family:family_id(*)')
+                .eq('id', childId)
+                .single();
+            if (error || !child) {
+                showToast('Erro ao carregar detalhes', 'error');
+                return;
             }
+            const family = child.family || {};
+        
+            // Função auxiliar para gerar link do WhatsApp com nome personalizado
+            function gerarLinkWhatsApp(telefone, nomeResponsavel) {
+                if (!telefone) return '#';
+                const numeroLimpo = telefone.replace(/\D/g, '');
+                if (numeroLimpo.length < 10) return '#';
+                const nomeParaMensagem = nomeResponsavel || 'responsável';
+                const mensagem = `Olá *${nomeParaMensagem}!* 👋\n\nA ovelhinha *${child.name}* está precisando do papai ou da mamãe.\n\n⚠️ Solicitamos que o responsável compareça à sala do Domigo Kids assim que possível.\n\nObrigada! 🙏`;
+                return `https://wa.me/55${numeroLimpo}?text=${encodeURIComponent(mensagem)}`;
+            }
+        
+            const linkPai = gerarLinkWhatsApp(family.father_phone, family.father_name);
+            const linkMae = gerarLinkWhatsApp(family.mother_phone, family.mother_name);
+            const temPai = family.father_phone && family.father_phone.replace(/\D/g, '').length >= 10;
+            const temMae = family.mother_phone && family.mother_phone.replace(/\D/g, '').length >= 10;
+        
+            const html = `
+                <button class="modal-close" onclick="closeChildDetailsModal()">&times;</button>
+                <div style="text-align:center;">
+                    ${child.photo_url ? `<img src="${child.photo_url}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;margin-bottom:0.5rem;">` : '<div style="width:100px;height:100px;background:var(--border-color);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:3rem;margin:0 auto 0.5rem;">👶</div>'}
+                    <h3 style="margin:0.2rem 0;">${escapeHtml(child.name)}</h3>
+                    <p style="margin:0.2rem 0;"><strong>📅 Nascimento:</strong> ${child.birth_date ? formatDate(child.birth_date) : 'Não informado'}</p>
+                    <p style="margin:0.2rem 0;"><strong>⚠️ Alergias:</strong> ${escapeHtml(child.allergies) || 'Nenhuma'}</p>
+                    <p style="margin:0.2rem 0;"><strong>🔹 Necessidades:</strong> ${escapeHtml(child.special_needs) || 'Nenhuma'}</p>
+                </div>
+        
+                <hr style="margin:1rem 0; border-color:var(--border-color);">
+        
+                <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+                    <!-- Card do Pai -->
+                    <div style="flex:1; min-width:140px; text-align:center; background:var(--input-bg); border-radius:var(--radius-md); padding:0.8rem; border:1px solid var(--border-color);">
+                        <div style="width:60px;height:60px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;margin:0 auto 0.3rem;overflow:hidden;">
+                            ${family.father_photo_url ? `<img src="${family.father_photo_url}" style="width:100%;height:100%;object-fit:cover;">` : '👨'}
+                        </div>
+                        <div><strong>Pai:</strong> ${escapeHtml(family.father_name) || 'Não informado'}</div>
+                        <div style="font-size:0.85rem; color:var(--text-light);">📞 ${escapeHtml(family.father_phone) || '-'}</div>
+                        ${temPai ? `
+                            <a href="${linkPai}" target="_blank" style="display:inline-block; margin-top:0.5rem; background:#25D366; color:white; border:none; padding:0.4rem 0.8rem; border-radius:var(--radius-sm); font-weight:600; text-decoration:none; font-size:0.8rem; box-shadow:0 2px 8px rgba(37,211,102,0.25); transition:0.2s;">
+                                <i class="fab fa-whatsapp"></i> 💬 Whatsapp
+                            </a>
+                        ` : `<div style="margin-top:0.5rem; font-size:0.75rem; color:var(--text-faint);">📱 Sem número</div>`}
+                    </div>
+        
+                    <!-- Card da Mãe -->
+                    <div style="flex:1; min-width:140px; text-align:center; background:var(--input-bg); border-radius:var(--radius-md); padding:0.8rem; border:1px solid var(--border-color);">
+                        <div style="width:60px;height:60px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;margin:0 auto 0.3rem;overflow:hidden;">
+                            ${family.mother_photo_url ? `<img src="${family.mother_photo_url}" style="width:100%;height:100%;object-fit:cover;">` : '👩'}
+                        </div>
+                        <div><strong>Mãe:</strong> ${escapeHtml(family.mother_name) || 'Não informado'}</div>
+                        <div style="font-size:0.85rem; color:var(--text-light);">📞 ${escapeHtml(family.mother_phone) || '-'}</div>
+                        ${temMae ? `
+                            <a href="${linkMae}" target="_blank" style="display:inline-block; margin-top:0.5rem; background:#25D366; color:white; border:none; padding:0.4rem 0.8rem; border-radius:var(--radius-sm); font-weight:600; text-decoration:none; font-size:0.8rem; box-shadow:0 2px 8px rgba(37,211,102,0.25); transition:0.2s;">
+                                <i class="fab fa-whatsapp"></i> 💬 Whatsapp
+                            </a>
+                        ` : `<div style="margin-top:0.5rem; font-size:0.75rem; color:var(--text-faint);">📱 Sem número</div>`}
+                    </div>
+                </div>
+        
+                <div style="margin-top:1.5rem; text-align:center;">
+                    <button class="btn-primary" onclick="checkoutManual('${checkinId}')" style="background:var(--danger); justify-content:center; width:100%; border:none; color:white; padding:0.7rem; border-radius:var(--radius-md); font-weight:600; cursor:pointer;">
+                        ⚠️ Check-out Manual (Não recomendado)
+                    </button>
+                </div>
+            `;
+        
+            document.getElementById('childDetailsContent').innerHTML = html;
+            document.getElementById('childDetailsModal').style.display = 'flex';
+        }
         
         function closeChildDetailsModal() { document.getElementById('childDetailsModal').style.display = 'none'; }
         
 
-        // ========== LISTA DE PRESENTES (unificada) ==========
-async function loadPresentList() {
-    if (!currentSessionId) return;
-
-    // Buscar check-ins de crianças
-    let query = supabaseClient
-        .from('kids_check_ins')
-        .select('*, child:child_id(id, name, allergies, birth_date, photo_url), visitant:visitant_id(*)')
-        .eq('session_id', currentSessionId)
-        .is('checked_out_at', null);
-
-    if (currentRoomFilter !== 'todos') {
-        query = query.eq('room', currentRoomFilter);
-    }
-    const { data: allCheckins } = await query;
-
-    let checkins = allCheckins;
-    if (currentRoomFilter !== 'todos') {
-        checkins = allCheckins?.filter(c => c.room === currentRoomFilter) || [];
-    }
-
-    // Filtros de sala já aplicados na query
-
-    let html = '';
-
-    if (checkins?.length) {
-        html += `<h4 style="margin-bottom:0.8rem; color:var(--primary);">Crianças e Visitantes Presentes ${currentRoomFilter !== 'todos' ? `(Sala: ${currentRoomFilter})` : ''}</h4>`;
-        for (const c of checkins) {
-            const isVisitant = c.child_id === null && c.visitant_id !== null;
-            const nome = isVisitant ? c.visitant.child_name : c.child.name;
-            const alergias = isVisitant ? (c.visitant.allergies || '') : (c.child.allergies || '');
-            const birthDate = isVisitant ? c.visitant.birth_date : c.child.birth_date;
-            const photoUrl = isVisitant ? null : c.child.photo_url;
-            const badgeNum = c.badge_number;
-
-            let isBirthdayWeek = false;
-            if (birthDate) {
-                const birth = new Date(birthDate);
-                const today = new Date();
-                const weekLater = new Date();
-                weekLater.setDate(today.getDate() + 7);
-                const birthThisYear = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
-                if (birthThisYear >= today && birthThisYear <= weekLater) isBirthdayWeek = true;
+        // ========== LISTA DE PRESENTES ==========
+        async function loadPresentList() {
+            if (!currentSessionId) return;
+            let query = supabaseClient
+                .from('kids_check_ins')
+                .select('*, child:child_id(id, name, allergies, birth_date, photo_url)')
+                .eq('session_id', currentSessionId)
+                .is('checked_out_at', null);
+            if (currentRoomFilter !== 'todos') {
+                query = query.eq('room', currentRoomFilter);
             }
-            const birthdayIcon = isBirthdayWeek ? '🎂 ' : '';
-
-            const borderColor = c.room === 'Kids' ? '#3b82f6' : (c.room === 'Babys' ? '#f59e0b' : (c.room === 'Juvenis' ? '#8b5cf6' : 'var(--success-text)'));
-            const visitantBadge = isVisitant ? '<span class="badge" style="background:#f59e0b; color:white;">Visitante</span> ' : '';
-
-            html += `
-                <div class="present-item" style="border-left-color: ${borderColor}; padding:0.5rem 0.7rem; position:relative;">
-                    <div class="present-info">
-                        <div class="present-name" style="font-size:0.9rem;">
-                            ${birthdayIcon}${visitantBadge}${escapeHtml(nome)}
-                            ${badgeNum ? `<span class="badge">🏷️ ${badgeNum}</span>` : ''}
-                            ${alergias ? '<span class="badge" style="background:#fee2e2; color:#b91c1c;">⚠️</span>' : ''}
+            const { data: allCheckins } = await query;
+            let checkins = allCheckins;
+            if (currentRoomFilter !== 'todos') {
+                checkins = allCheckins?.filter(c => c.room === currentRoomFilter) || [];
+            }
+            const { data: visitants } = await supabaseClient
+                .from('kids_visitants')
+                .select('*')
+                .eq('session_id', currentSessionId);
+            let html = '';
+            /*if (currentRoomFilter !== 'todos') {
+                html += `
+                    <div style="display:flex; justify-content:flex-end; margin-bottom:1rem;">
+                        <button class="btn-secondary" onclick="openRoomModal('${currentRoomFilter}')" style="display:flex; align-items:center; gap:0.4rem;">
+                            <span>🔄</span> Gerenciar crianças nesta sala
+                        </button>
+                    </div>
+                `;
+            }*/
+            if (checkins?.length) {
+                html += `<h4 style="margin-bottom:0.8rem; color:var(--primary);">Crianças nas Salas ${currentRoomFilter !== 'todos' ? `(Sala: ${currentRoomFilter})` : ''}</h4>`;
+                for (const c of checkins) {
+                    let isBirthdayWeek = false;
+                    if (c.child.birth_date) {
+                        const birth = new Date(c.child.birth_date);
+                        const today = new Date();
+                        const weekLater = new Date();
+                        weekLater.setDate(today.getDate() + 7);
+                        const birthThisYear = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
+                        if (birthThisYear >= today && birthThisYear <= weekLater) isBirthdayWeek = true;
+                    }
+                    const birthdayIcon = isBirthdayWeek ? '🎂 ' : '';                    
+                    html += `
+                        <div class="present-item" style="border-left-color: ${c.room === 'Kids' ? '#3b82f6' : (c.room === 'Babys' ? '#f59e0b' : (c.room === 'Juvenis' ? '#8b5cf6' : 'var(--success-text)'))}; padding:0.5rem 0.7rem; position:relative;">
+                            <div class="present-info">
+                                <div class="present-name" style="font-size:0.9rem;">${birthdayIcon}${escapeHtml(c.child.name)} ${c.badge_number ? `<span class="badge">🏷️ ${c.badge_number}</span>` : ''} ${c.child.allergies ? '<span class="badge">⚠️</span>' : ''}</div>
+                                <div class="present-time" style="font-size:0.7rem; color:var(--text-light);">
+                                    Check‑in: ${new Date(c.checked_in_at).toLocaleTimeString()}
+                                    ${c.room !== 'todos' && currentRoomFilter === 'todos' ? ` · 📌 Sala: ${c.room}` : ''}
+                                </div>
+                            </div>
+                            <div class="present-actions" style="position:absolute; top:0.3rem; right:0.5rem; display:flex; gap:0.2rem;">
+                                <button class="btn-icon" onclick="showChildDetails('${c.child_id}', '${c.id}')" style="padding:0.2rem 0.5rem; font-size:0.75rem; border-radius:0.4rem;">👁️</button>
+                                <button class="btn-icon" onclick="reprintLabelFromList('${c.id}')" style="padding:0.2rem 0.5rem; font-size:0.75rem; border-radius:0.4rem;">🖨️</button>
+                            </div>
                         </div>
-                        <div class="present-time" style="font-size:0.7rem; color:var(--text-light);">
-                            Check‑in: ${new Date(c.checked_in_at).toLocaleTimeString()}
-                            ${c.room !== 'todos' && currentRoomFilter === 'todos' ? ` · 📌 Sala: ${c.room}` : ''}
+                    `;
+                }
+            } else if (currentRoomFilter !== 'todos') {
+                html += `<p style="text-align:center;color:var(--text-light);">Nenhuma criança nesta sala. Clique em "Gerenciar" para adicionar.</p>`;
+            }
+            if (currentRoomFilter === 'todos' && visitants?.length) {
+                html += `<h4 style="margin-top:1rem; color:var(--primary);">Visitantes</h4>`;
+                html += visitants.map(v => `
+                    <div class="present-item visitant-item">
+                        <div class="present-info">
+                            <div class="present-name">${escapeHtml(v.child_name)} (resp: ${escapeHtml(v.responsible_name)})</div>
+                            <div class="present-time">Check‑in: ${new Date(v.checked_in_at).toLocaleTimeString()}</div>
+                        </div>
+                        <div class="present-actions">
+                            <button class="btn-icon btn-danger" onclick="removeVisitant('${v.id}')">Finalizar</button>
                         </div>
                     </div>
-                    <div class="present-actions" style="position:absolute; top:0.3rem; right:0.5rem; display:flex; gap:0.2rem;">
-                        <button class="btn-icon" onclick="showChildDetails('${c.child_id || 'vis_' + c.visitant_id}', '${c.id}')" style="padding:0.2rem 0.5rem; font-size:0.75rem; border-radius:0.4rem;">👁️</button>
-                        <button class="btn-icon" onclick="reprintLabelFromList('${c.id}')" style="padding:0.2rem 0.5rem; font-size:0.75rem; border-radius:0.4rem;">🖨️</button>
-                    </div>
-                </div>
-            `;
+                `).join('');
+            }
+            if (!checkins?.length && (!visitants?.length || currentRoomFilter !== 'todos')) {
+                html = '<p style="text-align:center;color:var(--text-light);">Nenhuma criança presente.</p>';
+            }
+            document.getElementById('presentList').innerHTML = html;
         }
-    } else if (currentRoomFilter !== 'todos') {
-        html += `<p style="text-align:center;color:var(--text-light);">Nenhuma criança ou visitante nesta sala.</p>`;
-    }
-
-    if (!checkins?.length) {
-        html = '<p style="text-align:center;color:var(--text-light);">Nenhuma criança ou visitante presente.</p>';
-    }
-
-    document.getElementById('presentList').innerHTML = html;
-}
 
         
         // ========== CHECKOUT MANUAL ==========
@@ -1918,74 +1802,26 @@ async function loadPresentList() {
 
         function closeRoomModal() { document.getElementById('roomModal').style.display = 'none'; pendingRoom = null; }
 
-        
-       // ========== VISITANTE (preparar para check-in) ==========
-        async function prepararVisitante() {
+        // ========== VISITANTE ==========
+        async function registerVisitant() {
             const childName = document.getElementById('visitantName').value.trim();
             const respName = document.getElementById('respName').value.trim();
             const respPhone = document.getElementById('respPhone').value.trim();
-            const birthDate = document.getElementById('visitantBirthDate').value || null;
-            const allergies = document.getElementById('visitantAllergies').value.trim() || null;
-        
-            if (!childName || !respName) {
-                showToast('Preencha nome da criança e responsável.', 'error');
-                return;
-            }
-        
-            // 1. Inserir visitante na tabela kids_visitants
-            const { data: visitant, error: insertError } = await supabaseClient
-                .from('kids_visitants')
-                .insert({
-                    child_name: childName,
-                    responsible_name: respName,
-                    responsible_phone: respPhone || null,
-                    birth_date: birthDate,
-                    allergies: allergies,
-                    session_id: currentSessionId,
-                    checked_in_by: currentStaffId
-                })
-                .select()
-                .single();
-        
-            if (insertError) {
-                showToast('Erro ao registrar visitante: ' + insertError.message, 'error');
-                return;
-            }
-        
-            // 2. Gerar token temporário para o visitante
-            const token = crypto.randomUUID();
-            const expiresAt = new Date();
-            expiresAt.setHours(expiresAt.getHours() + 4); // 4 horas de validade
-        
-            // 3. Inserir token na tabela kids_temporary_tokens (family_id = null, child_id = null)
-            const { error: tokenError } = await supabaseClient
-                .from('kids_temporary_tokens')
-                .insert({
-                    family_id: null,
-                    child_id: null,
-                    token: token,
-                    expires_at: expiresAt.toISOString()
-                });
-        
-            if (tokenError) {
-                showToast('Erro ao gerar token: ' + tokenError.message, 'error');
-                return;
-            }
-        
-            // Guardar dados pendentes para o modal de sala
-            pendingVisitantData = {
-                visitantId: visitant.id,
-                childName: childName,
-                allergies: allergies,
-                birthDate: birthDate,
-                respName: respName,
-                respPhone: respPhone,
-                token: token,
-                tokenExpires: expiresAt
-            };
-        
-            // Abrir modal de seleção de sala com os dados do visitante
-            openSelectRoomModal(childName, allergies, birthDate);
+            if (!childName || !respName) { showToast('Preencha nome da criança e responsável', 'error'); return; }
+            const { error } = await supabaseClient.from('kids_visitants').insert({
+                child_name: childName,
+                responsible_name: respName,
+                responsible_phone: respPhone,
+                session_id: currentSessionId,
+                checked_in_by: currentStaffId
+            });
+            if (error) { showToast(error.message, 'error'); return; }
+            showToast('Visitante registrado', 'success');
+            closeModal();
+            await loadPresentList();
+            document.getElementById('visitantName').value = '';
+            document.getElementById('respName').value = '';
+            document.getElementById('respPhone').value = '';
         }
 
         // ========== SESSÃO ==========
@@ -2024,92 +1860,75 @@ async function loadPresentList() {
             abrirModalRelatorio();
         }
 
-        function openCheckoutConfirmModal(childId, checkinId) {
-    // Buscar o check-in para saber se é criança ou visitante
+        // ========== CHECKOUT COM CONFIRMAÇÃO ==========
+       function openCheckoutConfirmModal(childId, checkinId) {
     supabaseClient
-        .from('kids_check_ins')
-        .select('*, child:child_id(*), visitant:visitant_id(*)')
-        .eq('id', checkinId)
+        .from('kids_children')
+        .select('*, family:family_id(*)')
+        .eq('id', childId)
         .single()
-        .then(({ data: checkin, error }) => {
+        .then(({ data: child, error }) => {
             if (error) {
-                showToast('Erro ao carregar dados do check-in', 'error');
+                showToast('Erro ao carregar dados', 'error');
                 return;
             }
+            const family = child.family || {};
+            const idade = child.birth_date ? `${calcularIdade(child.birth_date)} anos` : 'Não informado';
 
-            let child = checkin.child;
-            let visitant = checkin.visitant;
-            let nome, fotoUrl, alergias, nascimento, paiNome, paiTel, maeNome, maeTel;
-
-            if (child) {
-                // Criança cadastrada
-                nome = child.name;
-                fotoUrl = child.photo_url || null;
-                alergias = child.allergies || 'Nenhuma';
-                nascimento = child.birth_date || null;
-                const family = child.family || {};
-                paiNome = family.father_name || 'Não informado';
-                paiTel = family.father_phone || '';
-                maeNome = family.mother_name || 'Não informado';
-                maeTel = family.mother_phone || '';
-            } else if (visitant) {
-                // Visitante
-                nome = visitant.child_name;
-                fotoUrl = null;
-                alergias = visitant.allergies || 'Nenhuma';
-                nascimento = visitant.birth_date || null;
-                paiNome = visitant.responsible_name || 'Visitante';
-                paiTel = visitant.responsible_phone || '';
-                maeNome = 'Não informado';
-                maeTel = '';
-            } else {
-                showToast('Dados não encontrados', 'error');
-                return;
-            }
-
-            const idade = nascimento ? `${calcularIdade(nascimento)} anos` : 'Não informado';
-
-            // Gerar links WhatsApp
+            // Mesma função usada no "olhinho" (showChildDetails), pra padronizar a mensagem
             function gerarLinkWhatsApp(telefone, nomeResponsavel) {
                 if (!telefone) return '#';
                 const numeroLimpo = telefone.replace(/\D/g, '');
                 if (numeroLimpo.length < 10) return '#';
                 const nomeParaMensagem = nomeResponsavel || 'responsável';
-                const mensagem = `Olá *${nomeParaMensagem}!* 👋\n\nA ovelhinha *${nome}* está precisando do papai ou da mamãe.\n\n⚠️ Solicitamos que o responsável compareça à sala do Domigo Kids assim que possível.\n\nObrigada! 🙏`;
+                const mensagem = `Olá *${nomeParaMensagem}!* 👋\n\nA ovelhinha *${child.name}* está precisando do papai ou da mamãe.\n\n⚠️ Solicitamos que o responsável compareça à sala do Domigo Kids assim que possível.\n\nObrigada! 🙏`;
                 return `https://wa.me/55${numeroLimpo}?text=${encodeURIComponent(mensagem)}`;
             }
 
-            const linkPai = gerarLinkWhatsApp(paiTel, paiNome);
-            const linkMae = gerarLinkWhatsApp(maeTel, maeNome);
-            const temPai = paiTel && paiTel.replace(/\D/g, '').length >= 10;
-            const temMae = maeTel && maeTel.replace(/\D/g, '').length >= 10;
+            const linkPai = gerarLinkWhatsApp(family.father_phone, family.father_name);
+            const linkMae = gerarLinkWhatsApp(family.mother_phone, family.mother_name);
+            const temPai = family.father_phone && family.father_phone.replace(/\D/g, '').length >= 10;
+            const temMae = family.mother_phone && family.mother_phone.replace(/\D/g, '').length >= 10;
 
             const html = `
                 <div style="text-align:center;">
-                    ${fotoUrl ? `<img src="${fotoUrl}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:0.5rem;">` : '<div style="width:80px;height:80px;background:var(--border-color);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;margin:0 auto 0.5rem;">👶</div>'}
-                    <h3 style="margin:0.2rem 0;">${escapeHtml(nome)}</h3>
+                    ${child.photo_url ? `<img src="${child.photo_url}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:0.5rem;">` : '<div style="width:80px;height:80px;background:var(--border-color);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;margin:0 auto 0.5rem;">👶</div>'}
+                    <h3 style="margin:0.2rem 0;">${escapeHtml(child.name)}</h3>
                     <p style="margin:0.2rem 0;"><strong>📅 Idade:</strong> ${idade}</p>
-                    ${alergias && alergias !== 'Nenhuma' ? `<p style="margin:0.2rem 0;"><strong>⚠️ Alergias:</strong> ${escapeHtml(alergias)}</p>` : ''}
+                    ${child.allergies ? `<p style="margin:0.2rem 0;"><strong>⚠️ Alergias:</strong> ${escapeHtml(child.allergies)}</p>` : ''}
+                    ${child.special_needs ? `<p style="margin:0.2rem 0;"><strong>🔹 Necessidades:</strong> ${escapeHtml(child.special_needs)}</p>` : ''}
                 </div>
+
                 <hr style="margin:1rem 0; border-color:var(--border-color);">
+
                 <div style="display:flex; gap:0.7rem; justify-content:center; flex-wrap:wrap;">
-                    ${!child ? `<div style="flex:1; min-width:130px; text-align:center; background:var(--input-bg); border-radius:var(--radius-md); padding:0.7rem; border:1px solid var(--border-color);">
-                        <div style="font-size:0.85rem;"><strong>Responsável:</strong> ${escapeHtml(paiNome)}</div>
-                        <div style="font-size:0.78rem; color:var(--text-light);">📞 ${escapeHtml(paiTel) || '-'}</div>
-                        ${temPai ? `<a href="${linkPai}" target="_blank" style="display:inline-block; margin-top:0.4rem; background:#25D366; color:white; border:none; padding:0.35rem 0.7rem; border-radius:var(--radius-sm); font-weight:600; text-decoration:none; font-size:0.75rem;">💬 WhatsApp</a>` : `<div style="margin-top:0.4rem; font-size:0.7rem; color:var(--text-faint);">📱 Sem número</div>`}
-                    </div>` : `
+                    <!-- Card do Pai -->
                     <div style="flex:1; min-width:130px; text-align:center; background:var(--input-bg); border-radius:var(--radius-md); padding:0.7rem; border:1px solid var(--border-color);">
-                        <div style="width:50px;height:50px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;margin:0 auto 0.3rem;overflow:hidden;">👨</div>
-                        <div style="font-size:0.85rem;"><strong>Pai:</strong> ${escapeHtml(paiNome)}</div>
-                        <div style="font-size:0.78rem; color:var(--text-light);">📞 ${escapeHtml(paiTel) || '-'}</div>
-                        ${temPai ? `<a href="${linkPai}" target="_blank" style="display:inline-block; margin-top:0.4rem; background:#25D366; color:white; border:none; padding:0.35rem 0.7rem; border-radius:var(--radius-sm); font-weight:600; text-decoration:none; font-size:0.75rem;">💬 WhatsApp</a>` : `<div style="margin-top:0.4rem; font-size:0.7rem; color:var(--text-faint);">📱 Sem número</div>`}
+                        <div style="width:50px;height:50px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;margin:0 auto 0.3rem;overflow:hidden;">
+                            ${family.father_photo_url ? `<img src="${family.father_photo_url}" style="width:100%;height:100%;object-fit:cover;">` : '👨'}
+                        </div>
+                        <div style="font-size:0.85rem;"><strong>Pai:</strong> ${escapeHtml(family.father_name) || 'Não informado'}</div>
+                        <div style="font-size:0.78rem; color:var(--text-light);">📞 ${escapeHtml(family.father_phone) || '-'}</div>
+                        ${temPai ? `
+                            <a href="${linkPai}" target="_blank" style="display:inline-block; margin-top:0.4rem; background:#25D366; color:white; border:none; padding:0.35rem 0.7rem; border-radius:var(--radius-sm); font-weight:600; text-decoration:none; font-size:0.75rem; box-shadow:0 2px 8px rgba(37,211,102,0.25);">
+                                💬 WhatsApp
+                            </a>
+                        ` : `<div style="margin-top:0.4rem; font-size:0.7rem; color:var(--text-faint);">📱 Sem número</div>`}
                     </div>
+
+                    <!-- Card da Mãe -->
                     <div style="flex:1; min-width:130px; text-align:center; background:var(--input-bg); border-radius:var(--radius-md); padding:0.7rem; border:1px solid var(--border-color);">
-                        <div style="width:50px;height:50px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;margin:0 auto 0.3rem;overflow:hidden;">👩</div>
-                        <div style="font-size:0.85rem;"><strong>Mãe:</strong> ${escapeHtml(maeNome)}</div>
-                        <div style="font-size:0.78rem; color:var(--text-light);">📞 ${escapeHtml(maeTel) || '-'}</div>
-                        ${temMae ? `<a href="${linkMae}" target="_blank" style="display:inline-block; margin-top:0.4rem; background:#25D366; color:white; border:none; padding:0.35rem 0.7rem; border-radius:var(--radius-sm); font-weight:600; text-decoration:none; font-size:0.75rem;">💬 WhatsApp</a>` : `<div style="margin-top:0.4rem; font-size:0.7rem; color:var(--text-faint);">📱 Sem número</div>`}
-                    </div>`}
+                        <div style="width:50px;height:50px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;margin:0 auto 0.3rem;overflow:hidden;">
+                            ${family.mother_photo_url ? `<img src="${family.mother_photo_url}" style="width:100%;height:100%;object-fit:cover;">` : '👩'}
+                        </div>
+                        <div style="font-size:0.85rem;"><strong>Mãe:</strong> ${escapeHtml(family.mother_name) || 'Não informado'}</div>
+                        <div style="font-size:0.78rem; color:var(--text-light);">📞 ${escapeHtml(family.mother_phone) || '-'}</div>
+                        ${temMae ? `
+                            <a href="${linkMae}" target="_blank" style="display:inline-block; margin-top:0.4rem; background:#25D366; color:white; border:none; padding:0.35rem 0.7rem; border-radius:var(--radius-sm); font-weight:600; text-decoration:none; font-size:0.75rem; box-shadow:0 2px 8px rgba(37,211,102,0.25);">
+                                💬 WhatsApp
+                            </a>
+                        ` : `<div style="margin-top:0.4rem; font-size:0.7rem; color:var(--text-faint);">📱 Sem número</div>`}
+                    </div>
                 </div>
             `;
             document.getElementById('checkoutChildInfo').innerHTML = html;
