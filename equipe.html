@@ -2082,7 +2082,7 @@
                             }).join('')}
                         </tbody>
                     </table>
-                    <div class="espaco-lideres">
+                    <!--<div class="espaco-lideres">
                         <h4>Babys</h4>
                         ${[1,2].map(i => `<div style="margin:4px 0;"><span>Líder ${i}:</span> <span class="linha"></span></div>`).join('')}
                         <h4>Kids</h4>
@@ -2091,6 +2091,26 @@
                          ${[5,6].map(i => `<div style="margin:4px 0;"><span>Líder ${i}:</span> <span class="linha"></span></div>`).join('')}
                          <h4>Auxiliares</h4>
                          ${[1,2,3,4].map(i => `<div style="margin:4px 0;"><span>Auxiliar ${i}:</span> <span class="linha"></span></div>`).join('')}
+                    </div>-->
+                    <div class="espaco-lideres" style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 20px;">
+                        <!-- Babys -->
+                        <div style="grid-column: 1 / -1;"><h4>Babys</h4></div>
+                        <div><span>Líder 1:</span> <span class="linha"></span></div>
+                        <div><span>Líder 2:</span> <span class="linha"></span></div>
+                        <!-- Kids -->
+                        <div style="grid-column: 1 / -1;"><h4>Kids</h4></div>
+                        <div><span>Líder 3:</span> <span class="linha"></span></div>
+                        <div><span>Líder 4:</span> <span class="linha"></span></div>
+                        <!-- Juvenis -->
+                        <div style="grid-column: 1 / -1;"><h4>Juvenis</h4></div>
+                        <div><span>Líder 5:</span> <span class="linha"></span></div>
+                        <div><span>Líder 6:</span> <span class="linha"></span></div>
+                        <!-- Auxiliares -->
+                        <div style="grid-column: 1 / -1;"><h4>Auxiliares</h4></div>
+                        <div><span>Auxiliar 1:</span> <span class="linha"></span></div>
+                        <div><span>Auxiliar 2:</span> <span class="linha"></span></div>
+                        <div><span>Auxiliar 3:</span> <span class="linha"></span></div>
+                        <div><span>Auxiliar 4:</span> <span class="linha"></span></div>
                     </div>
                     <div class="footer">Relatório gerado em ${new Date().toLocaleString('pt-BR')}</div>
                 </div>
