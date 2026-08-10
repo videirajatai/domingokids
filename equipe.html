@@ -978,6 +978,18 @@
                 }
             });
         }
+
+        // ==================== UTILITÁRIO DE FORMATAÇÃO DE DATA ====================
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            // Aceita formato YYYY-MM-DD
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            const [year, month, day] = parts;
+            return `${day}/${month}/${year}`; // DD/MM/YYYY
+        }
+
+        
        async function loadSessions() {
                 // Buscar todas as sessões (para popular o dropdown)
                 const { data: todas, error } = await supabaseClient
@@ -1575,7 +1587,7 @@
                 <div style="text-align:center;">
                     ${child.photo_url ? `<img src="${child.photo_url}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;margin-bottom:0.5rem;">` : '<div style="width:100px;height:100px;background:var(--border-color);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:3rem;margin:0 auto 0.5rem;">👶</div>'}
                     <h3 style="margin:0.2rem 0;">${escapeHtml(child.name)}</h3>
-                    <p style="margin:0.2rem 0;"><strong>📅 Nascimento:</strong> ${child.birth_date ? new Date(child.birth_date).toLocaleDateString() : 'Não informado'}</p>
+                    <p style="margin:0.2rem 0;"><strong>📅 Nascimento:</strong> ${child.birth_date ? formatDate(child.birth_date) : 'Não informado'}</p>
                     <p style="margin:0.2rem 0;"><strong>⚠️ Alergias:</strong> ${escapeHtml(child.allergies) || 'Nenhuma'}</p>
                     <p style="margin:0.2rem 0;"><strong>🔹 Necessidades:</strong> ${escapeHtml(child.special_needs) || 'Nenhuma'}</p>
                 </div>
