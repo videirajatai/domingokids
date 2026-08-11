@@ -748,7 +748,7 @@
             }
 
             currentFamilyId = family.id;
-            alert('Família criada com sucesso!');
+            showToast('Família criada com sucesso!');
             document.getElementById('qrSection').style.display = 'block';
             await loadChildren();
             await loadLastRegister();
@@ -875,7 +875,7 @@
                 .eq('id', currentFamilyId);
             if (error) alert('Erro: ' + error.message);
             else {
-                alert('Dados do pai salvos!');
+                showToast('Dados do pai salvos!');
                 closeEditFatherModal();
                 await loadFamilyData();
             }
@@ -928,7 +928,7 @@
                 .eq('id', currentFamilyId);
             if (error) alert('Erro: ' + error.message);
             else {
-                alert('Dados da mãe salvos!');
+                showToast('Dados da mãe salvos!');
                 closeEditMotherModal();
                 await loadFamilyData();
             }
@@ -954,7 +954,7 @@
                 .eq('id', currentFamilyId);
             if (error) alert('Erro: ' + error.message);
             else {
-                alert('Dados de residência salvos!');
+                showToast('Dados de residência salvos!');
                 closeEditResidenceModal();
                 await loadFamilyData();
             }
@@ -1173,7 +1173,7 @@
             if (!confirm('Tem certeza que deseja excluir esta criança?')) return;
             const { error } = await supabaseClient.from('kids_children').delete().eq('id', childId);
             if (error) alert('Erro ao excluir: ' + error.message);
-            else { alert('Criança removida.'); await loadChildren(); await loadLastRegister(); }
+            else { showToast('Criança removida.'); await loadChildren(); await loadLastRegister(); }
         }
 
         function closeChildModal() { document.getElementById('childModal').style.display = 'none'; }
