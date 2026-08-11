@@ -1290,7 +1290,7 @@
         }
 
         // ========== MODAL SALA ==========
-        function openSelectRoomModal(childName, allergies, birthDate) {
+        /*function openSelectRoomModal(childName, allergies, birthDate) {
             const infoDiv = document.getElementById('roomChildInfo');
             let idadeHtml = '';
             if (birthDate) {
@@ -1303,6 +1303,95 @@
                 ${allergies ? `<div class="badge" style="background:#fee2e2; color:#b91c1c; margin-top:0.3rem;">⚠️ Alergia: ${escapeHtml(allergies)}</div>` : '<div style="color:var(--text-light);">Sem alergias</div>'}
             `;
             document.getElementById('selectRoomModal').style.display = 'flex';
+        }*/
+
+        // ========== MODAL SALA (com foto e dados dos pais) ==========
+        function openSelectRoomModal(childName, allergies, birthDate) {
+            const infoDiv = document.getElementById('roomChildInfo');
+            
+            // Exibir informações básicas imediatamente (enquanto busca os dados completos)
+            let idadeHtml = '';
+            if (birthDate) {
+                const idade = calcularIdade(birthDate);
+                idadeHtml = `<div style="color: var(--text-light); font-size:0.9rem;">📅 Idade: ${idade} anos</div>`;
+            }
+            // Placeholder inicial
+            infoDiv.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 0.5rem;">
+                    <div style="width: 60px; height: 60px; border-radius: 50%; background: var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 2rem;">👶</div>
+                    <div style="text-align: left;">
+                        <div style="font-size: 1.2rem; font-weight: 700;">${escapeHtml(childName)}</div>
+                        ${idadeHtml}
+                    </div>
+                </div>
+                ${allergies ? `<div style="margin-bottom: 0.3rem;"><span class="badge" style="background:#fee2e2; color:#b91c1c;">⚠️ Alergia: ${escapeHtml(allergies)}</span></div>` : ''}
+                <div style="font-size: 0.8rem; color: var(--text-light); text-align: center; padding: 0.5rem 0;">Carregando dados dos pais...</div>
+            `;
+            document.getElementById('selectRoomModal').style.display = 'flex';
+        
+            // Buscar dados completos da criança e família (assíncrono)
+            if (pendingCheckinData && pendingCheckinData.childId) {
+                supabaseClient
+                    .from('kids_children')
+                    .select('*, family:family_id(*)')
+                    .eq('id', pendingCheckinData.childId)
+                    .single()
+                    .then(({ data: childData, error }) => {
+                        if (error) {
+                            console.error('Erro ao buscar dados da criança:', error);
+                            // Fallback: manter informações básicas
+                            infoDiv.innerHTML = `
+                                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 0.5rem;">
+                                    <div style="width: 60px; height: 60px; border-radius: 50%; background: var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 2rem;">👶</div>
+                                    <div style="text-align: left;">
+                                        <div style="font-size: 1.2rem; font-weight: 700;">${escapeHtml(childName)}</div>
+                                        ${idadeHtml}
+                                    </div>
+                                </div>
+                                ${allergies ? `<div style="margin-bottom: 0.3rem;"><span class="badge" style="background:#fee2e2; color:#b91c1c;">⚠️ Alergia: ${escapeHtml(allergies)}</span></div>` : ''}
+                                <div style="font-size: 0.8rem; color: var(--text-light); text-align: center; padding: 0.5rem 0;">Dados dos pais não disponíveis</div>
+                            `;
+                            return;
+                        }
+                        const family = childData.family || {};
+                        const photoUrl = childData.photo_url || null;
+                        const fatherName = family.father_name || 'Não informado';
+                        const fatherPhone = family.father_phone || 'Não informado';
+                        const motherName = family.mother_name || 'Não informado';
+                        const motherPhone = family.mother_phone || 'Não informado';
+        
+                        // Atualizar com dados completos
+                        infoDiv.innerHTML = `
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 0.5rem;">
+                                ${photoUrl ? `<img src="${photoUrl}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color);">` : '<div style="width: 60px; height: 60px; border-radius: 50%; background: var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 2rem;">👶</div>'}
+                                <div style="text-align: left;">
+                                    <div style="font-size: 1.2rem; font-weight: 700;">${escapeHtml(childName)}</div>
+                                    ${idadeHtml}
+                                </div>
+                            </div>
+                            ${allergies ? `<div style="margin-bottom: 0.5rem;"><span class="badge" style="background:#fee2e2; color:#b91c1c;">⚠️ Alergia: ${escapeHtml(allergies)}</span></div>` : ''}
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; font-size: 0.8rem; background: var(--input-bg); padding: 8px 10px; border-radius: 0.6rem; border: 1px solid var(--border-color); margin-top: 0.2rem;">
+                                <div><strong>👨 Pai:</strong> ${escapeHtml(fatherName)}</div>
+                                <div>📞 ${escapeHtml(fatherPhone)}</div>
+                                <div><strong>👩 Mãe:</strong> ${escapeHtml(motherName)}</div>
+                                <div>📞 ${escapeHtml(motherPhone)}</div>
+                            </div>
+                        `;
+                    });
+            } else {
+                // Se pendingCheckinData não existir (fallback)
+                infoDiv.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 0.5rem;">
+                        <div style="width: 60px; height: 60px; border-radius: 50%; background: var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 2rem;">👶</div>
+                        <div style="text-align: left;">
+                            <div style="font-size: 1.2rem; font-weight: 700;">${escapeHtml(childName)}</div>
+                            ${idadeHtml}
+                        </div>
+                    </div>
+                    ${allergies ? `<div style="margin-bottom: 0.3rem;"><span class="badge" style="background:#fee2e2; color:#b91c1c;">⚠️ Alergia: ${escapeHtml(allergies)}</span></div>` : ''}
+                    <div style="font-size: 0.8rem; color: var(--text-light); text-align: center; padding: 0.5rem 0;">Dados dos pais não disponíveis</div>
+                `;
+            }
         }
 
         function closeSelectRoomModal() {
