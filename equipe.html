@@ -774,9 +774,14 @@
             <button class="modal-close" onclick="closeModal()">&times;</button>
             <div class="modal-title">📝 Visitante</div>
             <input type="text" id="visitantName" placeholder="Nome da criança">
-            <input type="text" id="respName" placeholder="Responsável">
+            <label style="display:block; font-size:0.75rem; font-weight:600; color:var(--text-light); margin:0.6rem 0 0.25rem;">Data de nascimento</label>
+            <input type="date" id="visitantBirthDate">
+            <label style="display:block; font-size:0.75rem; font-weight:600; color:var(--text-light); margin:0.6rem 0 0.25rem;">Alergia</label>
+            <input type="text" id="visitantAllergies" placeholder="Ex: Leite, ovo... (deixe em branco se não houver)">
+            <label style="display:block; font-size:0.75rem; font-weight:600; color:var(--text-light); margin:0.6rem 0 0.25rem;">Responsável</label>
+            <input type="text" id="respName" placeholder="Nome do responsável">
             <input type="tel" id="respPhone" placeholder="Telefone (opcional)">
-            <button class="btn-primary" onclick="registerVisitant()" style="width:100%; justify-content:center;">Registrar e fazer check-in</button>
+            <button class="btn-primary" onclick="registerVisitant()" style="width:100%; justify-content:center; margin-top:0.8rem;">Continuar e selecionar sala</button>
         </div>
     </div>
 
@@ -818,8 +823,8 @@
 
             <div style="display: flex; flex-direction: column; gap: 0.7rem;">
                 <!--<button class="room-option" data-room="todos" style="background: var(--room-todos); color: white; border: none; padding: 0.75rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;"> Todos</button>-->
-                <button class="room-option" data-room="Babys" style="background: var(--room-babys); color: white; border: none; padding: 0.75rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">🍼 Babys</button>
-                <button class="room-option" data-room="Kids" style="background: var(--room-kids); color: white; border: none; padding: 0.75rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">🧸 Kids</button>
+                <button class="room-option" data-room="Kids" style="background: var(--room-kids); color: white; border: none; padding: 0.75rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">🍼 Babys</button>
+                <button class="room-option" data-room="Babys" style="background: var(--room-babys); color: white; border: none; padding: 0.75rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">🧸 Kids</button>
                 <button class="room-option" data-room="Juvenis" style="background: var(--room-juvenis); color: white; border: none; padding: 0.75rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">⚡ Juvenis</button>
             </div>
         </div>
@@ -1009,7 +1014,7 @@
                 if (todas && todas.length > 0) {
                     todas.forEach(s => {
                         const dataFormatada = new Date(s.session_date).toLocaleDateString('pt-BR');
-                        const label = `${s.name} ${s.is_active ? '🟢' : ''}`;
+                        const label = `${s.name} (${dataFormatada}) ${s.is_active ? '🟢' : ''}`;
                         const option = document.createElement('option');
                         option.value = s.id;
                         option.textContent = label;
@@ -1290,7 +1295,7 @@
         }
 
         // ========== MODAL SALA ==========
-        /*function openSelectRoomModal(childName, allergies, birthDate) {
+        function openSelectRoomModal(childName, allergies, birthDate) {
             const infoDiv = document.getElementById('roomChildInfo');
             let idadeHtml = '';
             if (birthDate) {
@@ -1303,95 +1308,6 @@
                 ${allergies ? `<div class="badge" style="background:#fee2e2; color:#b91c1c; margin-top:0.3rem;">⚠️ Alergia: ${escapeHtml(allergies)}</div>` : '<div style="color:var(--text-light);">Sem alergias</div>'}
             `;
             document.getElementById('selectRoomModal').style.display = 'flex';
-        }*/
-
-        // ========== MODAL SALA (com foto e dados dos pais) ==========
-        function openSelectRoomModal(childName, allergies, birthDate) {
-            const infoDiv = document.getElementById('roomChildInfo');
-            
-            // Exibir informações básicas imediatamente (enquanto busca os dados completos)
-            let idadeHtml = '';
-            if (birthDate) {
-                const idade = calcularIdade(birthDate);
-                idadeHtml = `<div style="color: var(--text-light); font-size:0.9rem;">📅 Idade: ${idade} anos</div>`;
-            }
-            // Placeholder inicial
-            infoDiv.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 0.5rem;">
-                    <div style="width: 60px; height: 60px; border-radius: 50%; background: var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 2rem;">👶</div>
-                    <div style="text-align: left;">
-                        <div style="font-size: 1.2rem; font-weight: 700;">${escapeHtml(childName)}</div>
-                        ${idadeHtml}
-                    </div>
-                </div>
-                ${allergies ? `<div style="margin-bottom: 0.3rem;"><span class="badge" style="background:#fee2e2; color:#b91c1c;">⚠️ Alergia: ${escapeHtml(allergies)}</span></div>` : ''}
-                <div style="font-size: 0.8rem; color: var(--text-light); text-align: center; padding: 0.5rem 0;">Carregando dados dos pais...</div>
-            `;
-            document.getElementById('selectRoomModal').style.display = 'flex';
-        
-            // Buscar dados completos da criança e família (assíncrono)
-            if (pendingCheckinData && pendingCheckinData.childId) {
-                supabaseClient
-                    .from('kids_children')
-                    .select('*, family:family_id(*)')
-                    .eq('id', pendingCheckinData.childId)
-                    .single()
-                    .then(({ data: childData, error }) => {
-                        if (error) {
-                            console.error('Erro ao buscar dados da criança:', error);
-                            // Fallback: manter informações básicas
-                            infoDiv.innerHTML = `
-                                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 0.5rem;">
-                                    <div style="width: 60px; height: 60px; border-radius: 50%; background: var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 2rem;">👶</div>
-                                    <div style="text-align: left;">
-                                        <div style="font-size: 1.2rem; font-weight: 700;">${escapeHtml(childName)}</div>
-                                        ${idadeHtml}
-                                    </div>
-                                </div>
-                                ${allergies ? `<div style="margin-bottom: 0.3rem;"><span class="badge" style="background:#fee2e2; color:#b91c1c;">⚠️ Alergia: ${escapeHtml(allergies)}</span></div>` : ''}
-                                <div style="font-size: 0.8rem; color: var(--text-light); text-align: center; padding: 0.5rem 0;">Dados dos pais não disponíveis</div>
-                            `;
-                            return;
-                        }
-                        const family = childData.family || {};
-                        const photoUrl = childData.photo_url || null;
-                        const fatherName = family.father_name || 'Não informado';
-                        const fatherPhone = family.father_phone || 'Não informado';
-                        const motherName = family.mother_name || 'Não informado';
-                        const motherPhone = family.mother_phone || 'Não informado';
-        
-                        // Atualizar com dados completos
-                        infoDiv.innerHTML = `
-                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 0.5rem;">
-                                ${photoUrl ? `<img src="${photoUrl}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color);">` : '<div style="width: 60px; height: 60px; border-radius: 50%; background: var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 2rem;">👶</div>'}
-                                <div style="text-align: left;">
-                                    <div style="font-size: 1.2rem; font-weight: 700;">${escapeHtml(childName)}</div>
-                                    ${idadeHtml}
-                                </div>
-                            </div>
-                            ${allergies ? `<div style="margin-bottom: 0.5rem;"><span class="badge" style="background:#fee2e2; color:#b91c1c;">⚠️ Alergia: ${escapeHtml(allergies)}</span></div>` : ''}
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; font-size: 0.8rem; background: var(--input-bg); padding: 8px 10px; border-radius: 0.6rem; border: 1px solid var(--border-color); margin-top: 0.2rem;">
-                                <div><strong>👨 Pai:</strong> ${escapeHtml(fatherName)}</div>
-                                <div>📞 ${escapeHtml(fatherPhone)}</div>
-                                <div><strong>👩 Mãe:</strong> ${escapeHtml(motherName)}</div>
-                                <div>📞 ${escapeHtml(motherPhone)}</div>
-                            </div>
-                        `;
-                    });
-            } else {
-                // Se pendingCheckinData não existir (fallback)
-                infoDiv.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 0.5rem;">
-                        <div style="width: 60px; height: 60px; border-radius: 50%; background: var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 2rem;">👶</div>
-                        <div style="text-align: left;">
-                            <div style="font-size: 1.2rem; font-weight: 700;">${escapeHtml(childName)}</div>
-                            ${idadeHtml}
-                        </div>
-                    </div>
-                    ${allergies ? `<div style="margin-bottom: 0.3rem;"><span class="badge" style="background:#fee2e2; color:#b91c1c;">⚠️ Alergia: ${escapeHtml(allergies)}</span></div>` : ''}
-                    <div style="font-size: 0.8rem; color: var(--text-light); text-align: center; padding: 0.5rem 0;">Dados dos pais não disponíveis</div>
-                `;
-            }
         }
 
         function closeSelectRoomModal() {
@@ -1439,9 +1355,13 @@
                     const idadeNum = calcularIdade(birthDate);
                     idade = `${idadeNum} anos`;
                 }
-                const fatherPhone = family.father_phone || 'Não informado';
-                const motherPhone = family.mother_phone || 'Não informado';
-                printLabel(tokenValue, childName, allergies, idade, fatherPhone, motherPhone, newCheckin.id);
+                const isVisitor = !!childData.is_visitor;
+                const fatherPhone = isVisitor ? (childData.visitor_responsible_phone || 'Não informado') : (family.father_phone || 'Não informado');
+                const motherPhone = isVisitor ? '' : (family.mother_phone || 'Não informado');
+                printLabel(tokenValue, childName, allergies, idade, fatherPhone, motherPhone, newCheckin.id, {
+                    isVisitor,
+                    respName: childData.visitor_responsible_name || ''
+                });
             }
             closeSelectRoomModal();
         }
@@ -1552,7 +1472,7 @@
     window.location.href = 'rawbt:' + etiquetaBase64;
 }*/
 
-        async function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPhone, checkinId) {
+        async function printLabel(qrToken, childName, allergies, idade, fatherPhone, motherPhone, checkinId, opts = {}) {
             const LABEL_WIDTH = 384; // 384 original 
             const LABEL_HEIGHT = 200; //ogirinal é 216 //184 FICOU exaamente do tamanho da etiqueta // usando 176 pra testar  (176 / 184 / 192 / 200 / 208 /)
         
@@ -1590,8 +1510,14 @@
                         <div style="font-size:24px;font-weight:bold;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(childName)}</div>
                         ${idade ? `<div style="font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Idade: ${escapeHtml(idade)}</div>` : ''}
                         ${allergies ? `<div style="font-size:17px;font-weight:bold;color:#b91c1c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">⚠️ ${escapeHtml(allergies)}</div>` : ''}
+                        ${opts.isVisitor ? `
+                        <div style="font-size:17px;font-weight:bold;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">🏷️ Visitante</div>
+                        <div style="font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Resp: ${escapeHtml(opts.respName || '')}</div>
+                        <div style="font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Tel: ${escapeHtml(fatherPhone)}</div>
+                        ` : `
                         <div style="font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Pai: ${escapeHtml(fatherPhone)}</div>
                         <div style="font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Mãe: ${escapeHtml(motherPhone)}</div>
+                        `}
                         <!--<div style="font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><br>Domingo Kids</div>-->
                         <!--<div style="font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><br>Igreja Videira - Jataí</div>-->
                     </div>
@@ -1631,14 +1557,18 @@
             }
             let idade = '';
             if (child.birth_date) idade = `${calcularIdade(child.birth_date)} anos`;
+            const isVisitor = !!child.is_visitor;
+            const fatherPhone = isVisitor ? (child.visitor_responsible_phone || 'Não informado') : (family.father_phone || 'Não informado');
+            const motherPhone = isVisitor ? '' : (family.mother_phone || 'Não informado');
             await printLabel(
                 checkin.token.token,
                 child.name || 'Criança',
                 child.allergies || '',
                 idade,
-                family.father_phone || 'Não informado',
-                family.mother_phone || 'Não informado',
-                checkin.id
+                fatherPhone,
+                motherPhone,
+                checkin.id,
+                { isVisitor, respName: child.visitor_responsible_name || '' }
             );
             showToast('2ª via enviada para impressão', 'success');
         }
@@ -1655,6 +1585,7 @@
                 return;
             }
             const family = child.family || {};
+            const isVisitor = !!child.is_visitor;
         
             // Função auxiliar para gerar link do WhatsApp com nome personalizado
             function gerarLinkWhatsApp(telefone, nomeResponsavel) {
@@ -1665,53 +1596,78 @@
                 const mensagem = `Olá *${nomeParaMensagem}!* 👋\n\nA ovelhinha *${child.name}* está precisando do papai ou da mamãe.\n\n⚠️ Solicitamos que o responsável compareça à sala do Domigo Kids assim que possível.\n\nObrigada! 🙏`;
                 return `https://wa.me/55${numeroLimpo}?text=${encodeURIComponent(mensagem)}`;
             }
+
+            let contactsHtml = '';
+            if (isVisitor) {
+                const respName = child.visitor_responsible_name || 'Não informado';
+                const respPhone = child.visitor_responsible_phone || '';
+                const linkResp = gerarLinkWhatsApp(respPhone, respName);
+                const temResp = respPhone && respPhone.replace(/\D/g, '').length >= 10;
+                contactsHtml = `
+                    <div style="display:flex; justify-content:center;">
+                        <div style="flex:1; max-width:220px; text-align:center; background:var(--input-bg); border-radius:var(--radius-md); padding:0.8rem; border:1px solid var(--border-color);">
+                            <div style="width:60px;height:60px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;margin:0 auto 0.3rem;">🧑</div>
+                            <div><strong>Responsável:</strong> ${escapeHtml(respName)}</div>
+                            <div style="font-size:0.85rem; color:var(--text-light);">📞 ${escapeHtml(respPhone) || '-'}</div>
+                            ${temResp ? `
+                                <a href="${linkResp}" target="_blank" style="display:inline-block; margin-top:0.5rem; background:#25D366; color:white; border:none; padding:0.4rem 0.8rem; border-radius:var(--radius-sm); font-weight:600; text-decoration:none; font-size:0.8rem; box-shadow:0 2px 8px rgba(37,211,102,0.25); transition:0.2s;">
+                                    <i class="fab fa-whatsapp"></i> 💬 Whatsapp
+                                </a>
+                            ` : `<div style="margin-top:0.5rem; font-size:0.75rem; color:var(--text-faint);">📱 Sem número</div>`}
+                        </div>
+                    </div>
+                `;
+            } else {
+                const linkPai = gerarLinkWhatsApp(family.father_phone, family.father_name);
+                const linkMae = gerarLinkWhatsApp(family.mother_phone, family.mother_name);
+                const temPai = family.father_phone && family.father_phone.replace(/\D/g, '').length >= 10;
+                const temMae = family.mother_phone && family.mother_phone.replace(/\D/g, '').length >= 10;
+                contactsHtml = `
+                    <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+                        <!-- Card do Pai -->
+                        <div style="flex:1; min-width:140px; text-align:center; background:var(--input-bg); border-radius:var(--radius-md); padding:0.8rem; border:1px solid var(--border-color);">
+                            <div style="width:60px;height:60px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;margin:0 auto 0.3rem;overflow:hidden;">
+                                ${family.father_photo_url ? `<img src="${family.father_photo_url}" style="width:100%;height:100%;object-fit:cover;">` : '👨'}
+                            </div>
+                            <div><strong>Pai:</strong> ${escapeHtml(family.father_name) || 'Não informado'}</div>
+                            <div style="font-size:0.85rem; color:var(--text-light);">📞 ${escapeHtml(family.father_phone) || '-'}</div>
+                            ${temPai ? `
+                                <a href="${linkPai}" target="_blank" style="display:inline-block; margin-top:0.5rem; background:#25D366; color:white; border:none; padding:0.4rem 0.8rem; border-radius:var(--radius-sm); font-weight:600; text-decoration:none; font-size:0.8rem; box-shadow:0 2px 8px rgba(37,211,102,0.25); transition:0.2s;">
+                                    <i class="fab fa-whatsapp"></i> 💬 Whatsapp
+                                </a>
+                            ` : `<div style="margin-top:0.5rem; font-size:0.75rem; color:var(--text-faint);">📱 Sem número</div>`}
+                        </div>
         
-            const linkPai = gerarLinkWhatsApp(family.father_phone, family.father_name);
-            const linkMae = gerarLinkWhatsApp(family.mother_phone, family.mother_name);
-            const temPai = family.father_phone && family.father_phone.replace(/\D/g, '').length >= 10;
-            const temMae = family.mother_phone && family.mother_phone.replace(/\D/g, '').length >= 10;
+                        <!-- Card da Mãe -->
+                        <div style="flex:1; min-width:140px; text-align:center; background:var(--input-bg); border-radius:var(--radius-md); padding:0.8rem; border:1px solid var(--border-color);">
+                            <div style="width:60px;height:60px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;margin:0 auto 0.3rem;overflow:hidden;">
+                                ${family.mother_photo_url ? `<img src="${family.mother_photo_url}" style="width:100%;height:100%;object-fit:cover;">` : '👩'}
+                            </div>
+                            <div><strong>Mãe:</strong> ${escapeHtml(family.mother_name) || 'Não informado'}</div>
+                            <div style="font-size:0.85rem; color:var(--text-light);">📞 ${escapeHtml(family.mother_phone) || '-'}</div>
+                            ${temMae ? `
+                                <a href="${linkMae}" target="_blank" style="display:inline-block; margin-top:0.5rem; background:#25D366; color:white; border:none; padding:0.4rem 0.8rem; border-radius:var(--radius-sm); font-weight:600; text-decoration:none; font-size:0.8rem; box-shadow:0 2px 8px rgba(37,211,102,0.25); transition:0.2s;">
+                                    <i class="fab fa-whatsapp"></i> 💬 Whatsapp
+                                </a>
+                            ` : `<div style="margin-top:0.5rem; font-size:0.75rem; color:var(--text-faint);">📱 Sem número</div>`}
+                        </div>
+                    </div>
+                `;
+            }
         
             const html = `
                 <button class="modal-close" onclick="closeChildDetailsModal()">&times;</button>
                 <div style="text-align:center;">
                     ${child.photo_url ? `<img src="${child.photo_url}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;margin-bottom:0.5rem;">` : '<div style="width:100px;height:100px;background:var(--border-color);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:3rem;margin:0 auto 0.5rem;">👶</div>'}
-                    <h3 style="margin:0.2rem 0;">${escapeHtml(child.name)}</h3>
+                    <h3 style="margin:0.2rem 0;">${escapeHtml(child.name)} ${isVisitor ? `<span class="badge" style="background:var(--accent); color:#fff;">visitante</span>` : ''}</h3>
                     <p style="margin:0.2rem 0;"><strong>📅 Nascimento:</strong> ${child.birth_date ? formatDate(child.birth_date) : 'Não informado'}</p>
                     <p style="margin:0.2rem 0;"><strong>⚠️ Alergias:</strong> ${escapeHtml(child.allergies) || 'Nenhuma'}</p>
-                    <p style="margin:0.2rem 0;"><strong>🔹 Necessidades:</strong> ${escapeHtml(child.special_needs) || 'Nenhuma'}</p>
+                    ${!isVisitor ? `<p style="margin:0.2rem 0;"><strong>🔹 Necessidades:</strong> ${escapeHtml(child.special_needs) || 'Nenhuma'}</p>` : ''}
                 </div>
         
                 <hr style="margin:1rem 0; border-color:var(--border-color);">
         
-                <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
-                    <!-- Card do Pai -->
-                    <div style="flex:1; min-width:140px; text-align:center; background:var(--input-bg); border-radius:var(--radius-md); padding:0.8rem; border:1px solid var(--border-color);">
-                        <div style="width:60px;height:60px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;margin:0 auto 0.3rem;overflow:hidden;">
-                            ${family.father_photo_url ? `<img src="${family.father_photo_url}" style="width:100%;height:100%;object-fit:cover;">` : '👨'}
-                        </div>
-                        <div><strong>Pai:</strong> ${escapeHtml(family.father_name) || 'Não informado'}</div>
-                        <div style="font-size:0.85rem; color:var(--text-light);">📞 ${escapeHtml(family.father_phone) || '-'}</div>
-                        ${temPai ? `
-                            <a href="${linkPai}" target="_blank" style="display:inline-block; margin-top:0.5rem; background:#25D366; color:white; border:none; padding:0.4rem 0.8rem; border-radius:var(--radius-sm); font-weight:600; text-decoration:none; font-size:0.8rem; box-shadow:0 2px 8px rgba(37,211,102,0.25); transition:0.2s;">
-                                <i class="fab fa-whatsapp"></i> 💬 Whatsapp
-                            </a>
-                        ` : `<div style="margin-top:0.5rem; font-size:0.75rem; color:var(--text-faint);">📱 Sem número</div>`}
-                    </div>
-        
-                    <!-- Card da Mãe -->
-                    <div style="flex:1; min-width:140px; text-align:center; background:var(--input-bg); border-radius:var(--radius-md); padding:0.8rem; border:1px solid var(--border-color);">
-                        <div style="width:60px;height:60px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;margin:0 auto 0.3rem;overflow:hidden;">
-                            ${family.mother_photo_url ? `<img src="${family.mother_photo_url}" style="width:100%;height:100%;object-fit:cover;">` : '👩'}
-                        </div>
-                        <div><strong>Mãe:</strong> ${escapeHtml(family.mother_name) || 'Não informado'}</div>
-                        <div style="font-size:0.85rem; color:var(--text-light);">📞 ${escapeHtml(family.mother_phone) || '-'}</div>
-                        ${temMae ? `
-                            <a href="${linkMae}" target="_blank" style="display:inline-block; margin-top:0.5rem; background:#25D366; color:white; border:none; padding:0.4rem 0.8rem; border-radius:var(--radius-sm); font-weight:600; text-decoration:none; font-size:0.8rem; box-shadow:0 2px 8px rgba(37,211,102,0.25); transition:0.2s;">
-                                <i class="fab fa-whatsapp"></i> 💬 Whatsapp
-                            </a>
-                        ` : `<div style="margin-top:0.5rem; font-size:0.75rem; color:var(--text-faint);">📱 Sem número</div>`}
-                    </div>
-                </div>
+                ${contactsHtml}
         
                 <div style="margin-top:1.5rem; text-align:center;">
                     <button class="btn-primary" onclick="checkoutManual('${checkinId}')" style="background:var(--danger); justify-content:center; width:100%; border:none; color:white; padding:0.7rem; border-radius:var(--radius-md); font-weight:600; cursor:pointer;">
@@ -1732,7 +1688,7 @@
             if (!currentSessionId) return;
             let query = supabaseClient
                 .from('kids_check_ins')
-                .select('*, child:child_id(id, name, allergies, birth_date, photo_url)')
+                .select('*, child:child_id(id, name, allergies, birth_date, photo_url, is_visitor)')
                 .eq('session_id', currentSessionId)
                 .is('checked_out_at', null);
             if (currentRoomFilter !== 'todos') {
@@ -1743,10 +1699,6 @@
             if (currentRoomFilter !== 'todos') {
                 checkins = allCheckins?.filter(c => c.room === currentRoomFilter) || [];
             }
-            const { data: visitants } = await supabaseClient
-                .from('kids_visitants')
-                .select('*')
-                .eq('session_id', currentSessionId);
             let html = '';
             /*if (currentRoomFilter !== 'todos') {
                 html += `
@@ -1758,7 +1710,7 @@
                 `;
             }*/
             if (checkins?.length) {
-                html += `<h4 style="margin-bottom:0.8rem; color:var(--primary);">Crianças nas Salas ${currentRoomFilter !== 'todos' ? `(Sala: ${currentRoomFilter})` : ''}</h4>`;
+                html += `<h4 style="margin-bottom:0.8rem; color:var(--primary);">Presentes ${currentRoomFilter !== 'todos' ? `(Sala: ${currentRoomFilter})` : ''}</h4>`;
                 for (const c of checkins) {
                     let isBirthdayWeek = false;
                     if (c.child.birth_date) {
@@ -1769,11 +1721,12 @@
                         const birthThisYear = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
                         if (birthThisYear >= today && birthThisYear <= weekLater) isBirthdayWeek = true;
                     }
-                    const birthdayIcon = isBirthdayWeek ? '🎂 ' : '';                    
+                    const birthdayIcon = isBirthdayWeek ? '🎂 ' : '';
+                    const isVisitor = !!c.child.is_visitor;
                     html += `
-                        <div class="present-item" style="border-left-color: ${c.room === 'Kids' ? '#3b82f6' : (c.room === 'Babys' ? '#f59e0b' : (c.room === 'Juvenis' ? '#8b5cf6' : 'var(--success-text)'))}; padding:0.5rem 0.7rem; position:relative;">
+                        <div class="present-item ${isVisitor ? 'visitant-item' : ''}" style="border-left-color: ${isVisitor ? 'var(--accent)' : (c.room === 'Kids' ? '#3b82f6' : (c.room === 'Babys' ? '#f59e0b' : (c.room === 'Juvenis' ? '#8b5cf6' : 'var(--success-text)')))}; padding:0.5rem 0.7rem; position:relative;">
                             <div class="present-info">
-                                <div class="present-name" style="font-size:0.9rem;">${birthdayIcon}${escapeHtml(c.child.name)} ${c.badge_number ? `<span class="badge">🏷️ ${c.badge_number}</span>` : ''} ${c.child.allergies ? '<span class="badge">⚠️</span>' : ''}</div>
+                                <div class="present-name" style="font-size:0.9rem;">${birthdayIcon}${escapeHtml(c.child.name)} ${isVisitor ? `<span class="badge" style="background:var(--accent); color:#fff;">visitante</span>` : ''} ${c.badge_number ? `<span class="badge">🏷️ ${c.badge_number}</span>` : ''} ${c.child.allergies ? '<span class="badge">⚠️</span>' : ''}</div>
                                 <div class="present-time" style="font-size:0.7rem; color:var(--text-light);">
                                     Check‑in: ${new Date(c.checked_in_at).toLocaleTimeString()}
                                     ${c.room !== 'todos' && currentRoomFilter === 'todos' ? ` · 📌 Sala: ${c.room}` : ''}
@@ -1788,22 +1741,7 @@
                 }
             } else if (currentRoomFilter !== 'todos') {
                 html += `<p style="text-align:center;color:var(--text-light);">Nenhuma criança nesta sala. Clique em "Gerenciar" para adicionar.</p>`;
-            }
-            if (currentRoomFilter === 'todos' && visitants?.length) {
-                html += `<h4 style="margin-top:1rem; color:var(--primary);">Visitantes</h4>`;
-                html += visitants.map(v => `
-                    <div class="present-item visitant-item">
-                        <div class="present-info">
-                            <div class="present-name">${escapeHtml(v.child_name)} (resp: ${escapeHtml(v.responsible_name)})</div>
-                            <div class="present-time">Check‑in: ${new Date(v.checked_in_at).toLocaleTimeString()}</div>
-                        </div>
-                        <div class="present-actions">
-                            <button class="btn-icon btn-danger" onclick="removeVisitant('${v.id}')">Finalizar</button>
-                        </div>
-                    </div>
-                `).join('');
-            }
-            if (!checkins?.length && (!visitants?.length || currentRoomFilter !== 'todos')) {
+            } else {
                 html = '<p style="text-align:center;color:var(--text-light);">Nenhuma criança presente.</p>';
             }
             document.getElementById('presentList').innerHTML = html;
@@ -1817,12 +1755,6 @@
             if (token) await supabaseClient.from('kids_temporary_tokens').update({ expires_at: new Date().toISOString() }).eq('id', token.id);
             await loadPresentList();
             showToast('Check‑out manual realizado', 'success');
-        }
-
-        async function removeVisitant(id) {
-            await supabaseClient.from('kids_visitants').delete().eq('id', id);
-            await loadPresentList();
-            showToast('Visitante removido', 'success');
         }
 
         // ========== ROOM MODAL ==========
@@ -1894,23 +1826,56 @@
         // ========== VISITANTE ==========
         async function registerVisitant() {
             const childName = document.getElementById('visitantName').value.trim();
+            const birthDate = document.getElementById('visitantBirthDate').value || null;
+            const allergies = document.getElementById('visitantAllergies').value.trim();
             const respName = document.getElementById('respName').value.trim();
             const respPhone = document.getElementById('respPhone').value.trim();
             if (!childName || !respName) { showToast('Preencha nome da criança e responsável', 'error'); return; }
-            const { error } = await supabaseClient.from('kids_visitants').insert({
-                child_name: childName,
-                responsible_name: respName,
-                responsible_phone: respPhone,
-                session_id: currentSessionId,
-                checked_in_by: currentStaffId
-            });
-            if (error) { showToast(error.message, 'error'); return; }
-            showToast('Visitante registrado', 'success');
-            closeModal();
-            await loadPresentList();
+
+            // 1) Cria um registro de criança "visitante" (mesma tabela das crianças normais,
+            //    só que marcado com is_visitor = true e sem família vinculada)
+            const { data: child, error: childError } = await supabaseClient
+                .from('kids_children')
+                .insert({
+                    name: childName,
+                    birth_date: birthDate,
+                    allergies: allergies || null,
+                    is_visitor: true,
+                    visitor_responsible_name: respName,
+                    visitor_responsible_phone: respPhone || null
+                })
+                .select()
+                .single();
+            if (childError || !child) { showToast('Erro ao registrar visitante: ' + (childError?.message || ''), 'error'); return; }
+
+            // 2) Gera um token temporário pra esse visitante, igual ao QR que os pais geram no painel
+            const tokenValue = crypto.randomUUID();
+            const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(); // válido por 12h
+            const { data: tokenRow, error: tokenError } = await supabaseClient
+                .from('kids_temporary_tokens')
+                .insert({ token: tokenValue, child_id: child.id, expires_at: expiresAt })
+                .select()
+                .single();
+            if (tokenError || !tokenRow) { showToast('Erro ao gerar QR do visitante', 'error'); return; }
+
+            // Limpa e fecha o modal de visitante
             document.getElementById('visitantName').value = '';
+            document.getElementById('visitantBirthDate').value = '';
+            document.getElementById('visitantAllergies').value = '';
             document.getElementById('respName').value = '';
             document.getElementById('respPhone').value = '';
+            closeModal();
+
+            // 3) Abre o MESMO modal de seleção de sala e segue a MESMA rotina do check-in por QR
+            pendingCheckinData = {
+                tokenId: tokenRow.id,
+                childId: child.id,
+                childName: childName,
+                allergies: allergies,
+                birthDate: birthDate,
+                tokenValue: tokenValue
+            };
+            openSelectRoomModal(childName, allergies, birthDate);
         }
 
         // ========== SESSÃO ==========
@@ -2123,7 +2088,7 @@
             // Buscar check-ins da sessão
             let query = supabaseClient
                 .from('kids_check_ins')
-                .select('*, child:child_id(id, name, birth_date, allergies)')
+                .select('*, child:child_id(id, name, birth_date, allergies, is_visitor)')
                 .eq('session_id', sessaoId);
             if (salaFiltro !== 'todos') {
                 query = query.eq('room', salaFiltro);
@@ -2144,7 +2109,7 @@
                     <div class="header">
                         <img src="logo.png" alt="Logo">
                         <h1>Relatório de Presenças</h1>
-                        <p>${sessao?.name || 'Sessão'}</p>
+                        <p>${sessao?.name || 'Sessão'} - ${new Date(sessao?.session_date).toLocaleDateString('pt-BR')}</p>
                     </div>
                     <div class="stats-grid">
                         <div class="stat-card"><div class="stat-number">${totalGeral}</div><div class="stat-label">Total de crianças</div></div>
@@ -2161,7 +2126,7 @@
                                 const checkin = new Date(c.checked_in_at).toLocaleString('pt-BR');
                                 const checkout = c.checked_out_at ? new Date(c.checked_out_at).toLocaleString('pt-BR') : 'Ainda presente';
                                 return `<tr>
-                                    <td>${escapeHtml(c.child.name)}</td>
+                                    <td>${escapeHtml(c.child.name)}${c.child.is_visitor ? ' <span style="font-size:0.75em;color:#b9824f;">(visitante)</span>' : ''}</td>
                                     <td>${idade}</td>
                                     <td>${escapeHtml(alergias)}</td>
                                     <td>${c.room || 'Não definida'}</td>
@@ -2172,20 +2137,15 @@
                         </tbody>
                     </table>
                     <div class="espaco-lideres">
-                        <h4 style="font-size: 0.7rem;"> Babys </h4>
-                        ${[1,2].map(i => `<div style="font-size: 11px; margin:3px 0;"><span>Líder ${i}:</span> <span class="linha"></span><span> Auxiliar: _________________________ </span></div>`).join('')}
-                        <h4 style="font-size: 0.7rem;"> Kids</h4>
-                         ${[3,4].map(i => `<div style="font-size: 11px; margin:3px 0;"><span>Líder ${i}:</span> <span class="linha"></span><span> Auxiliar: ________________________ </span></div>`).join('')}
-                         <h4 style="font-size: 0.7rem;"> Juvenis</h4>
-                         ${[5,6].map(i => `<div style="font-size: 11px; margin:3px 0;"><span>Líder ${i}:</span> <span class="linha"></span><span> Auxiliar: ________________________ </span></div>`).join('')}
-                         <!--<h4>Auxiliares</h4>
-                         ${[1,2,3,4].map(i => `<div style="font-size: 11px; margin:4px 0;"><span>Auxiliar ${i}:</span> <span class="linha"></span></div>`).join('')}-->
-                    </div>                
+                        <h4>Líderes e Auxiliares</h4>
+                        ${[1,2,3,4,5,6].map(i => `<div style="margin:4px 0;"><span>Líder ${i}:</span> <span class="linha"></span></div>`).join('')}
+                        ${[1,2].map(i => `<div style="margin:4px 0;"><span>Auxiliar ${i}:</span> <span class="linha"></span></div>`).join('')}
+                    </div>
                     <div class="footer">Relatório gerado em ${new Date().toLocaleString('pt-BR')}</div>
                 </div>
             `;
         
-            gerarPDFComHtml(html, `Relatorio #${sessao?.name || 'sessao'}`);
+            gerarPDFComHtml(html, `relatorio_${sessao?.name || 'sessao'}`);
         }
         
         // ---------- RELATÓRIO POR MÊS ----------
@@ -2203,13 +2163,15 @@
             // Buscar check-ins do mês
             let query = supabaseClient
                 .from('kids_check_ins')
-                .select('*, child:child_id(id, name, birth_date, allergies)')
+                .select('*, child:child_id(id, name, birth_date, allergies, is_visitor)')
                 .gte('checked_in_at', dataInicio.toISOString())
                 .lte('checked_in_at', dataFim.toISOString());
             if (salaFiltro !== 'todos') {
                 query = query.eq('room', salaFiltro);
             }
-            const { data: checkins } = await query;
+            const { data: allCheckinsMes } = await query;
+            // Visitantes não entram no relatório de frequência mensal
+            const checkins = allCheckinsMes?.filter(c => !c.child.is_visitor) || [];
         
             // Agrupar por criança
             const freqMap = {};
@@ -2287,13 +2249,15 @@
             // Buscar check-ins do ano
             let query = supabaseClient
                 .from('kids_check_ins')
-                .select('*, child:child_id(id, name, birth_date, allergies)')
+                .select('*, child:child_id(id, name, birth_date, allergies, is_visitor)')
                 .gte('checked_in_at', `${ano}-01-01`)
                 .lte('checked_in_at', `${ano}-12-31`);
             if (salaFiltro !== 'todos') {
                 query = query.eq('room', salaFiltro);
             }
-            const { data: checkins } = await query;
+            const { data: allCheckinsAno } = await query;
+            // Visitantes não entram no relatório de faltas
+            const checkins = allCheckinsAno?.filter(c => !c.child.is_visitor) || [];
         
             // Agrupar por criança
             const freqMap = {};
