@@ -1348,7 +1348,7 @@
                 const temPai = extra.fatherName || extra.fatherPhone;
                 const temMae = extra.motherName || extra.motherPhone;
                 contatosHtml = `
-                    <div style="margin-top:0.6rem; padding-top:0.6rem; border-top:1px dashed var(--border-color); font-size:0.8rem; color:var(--text-light); text-align:left;">
+                    <div style="margin-top:0.6rem; padding-top:0.6rem; border-top:1px dashed var(--border-color); font-size:0.8rem; color:var(--text-light); text-align:center;">
                         <div>👨 Pai: ${temPai ? `${escapeHtml(extra.fatherName) || 'Não informado'} ${extra.fatherPhone ? `· 📞 ${escapeHtml(extra.fatherPhone)}` : '· <span style="color:var(--danger);">sem telefone</span>'}` : `<span style="color:var(--danger);">Não cadastrado</span>`}</div>
                         <div>👩 Mãe: ${temMae ? `${escapeHtml(extra.motherName) || 'Não informado'} ${extra.motherPhone ? `· 📞 ${escapeHtml(extra.motherPhone)}` : '· <span style="color:var(--danger);">sem telefone</span>'}` : `<span style="color:var(--danger);">Não cadastrada</span>`}</div>
                     </div>
