@@ -281,44 +281,43 @@
         }
 
         // ==================== REDEFINIR SENHA ====================
-        async function redefinirSenha() {
+       async function redefinirSenha() {
+            if (!recoverySessionValida) {
+                exibirErro('Sessão de recuperação inválida. Solicite um novo link.');
+                return;
+            }
+        
             const novaSenha = document.getElementById('nova-senha-input').value.trim();
             const confirmarSenha = document.getElementById('confirma-senha-input').value.trim();
             const btn = document.getElementById('btn-redefinir');
-
+        
             limparMensagens();
-
-            // Validações
+        
             if (!novaSenha || !confirmarSenha) {
                 exibirErro('Preencha ambos os campos.');
                 return;
             }
-
             if (novaSenha !== confirmarSenha) {
                 exibirErro('As senhas não coincidem.');
                 return;
             }
-
             if (novaSenha.length < 6) {
                 exibirErro('A senha deve ter pelo menos 6 dígitos.');
                 return;
             }
-
             if (!/^\d+$/.test(novaSenha)) {
                 exibirErro('A senha deve conter apenas números.');
                 return;
             }
-
+        
             btn.disabled = true;
             btn.innerText = 'Redefinindo...';
-
+        
             try {
-                // O token de recuperação está no hash da URL (já autentica o usuário)
-                // O Supabase Auth já gerencia a sessão temporária. Basta atualizar a senha.
                 const { data, error } = await supabaseClient.auth.updateUser({
                     password: novaSenha
                 });
-
+        
                 if (error) {
                     if (error.message.includes('invalid token')) {
                         exibirErro('O link de redefinição expirou ou é inválido. Solicite um novo.');
@@ -329,15 +328,19 @@
                     btn.innerText = 'Redefinir Senha';
                     return;
                 }
-
+        
+                // Invalida a sessão de recuperação IMEDIATAMENTE após o uso,
+                // pra garantir que não dá pra reutilizá-la nem "voltar" pra essa tela
+                recoverySessionValida = false;
+                await supabaseClient.auth.signOut();
+        
                 exibirSucesso('Senha redefinida com sucesso! Redirecionando para o login...');
                 btn.innerText = 'Concluído';
-
-                // Redirecionar para o login após 2 segundos
+        
                 setTimeout(() => {
                     window.location.href = 'index.html?t=' + Date.now();
                 }, 2500);
-
+        
             } catch (err) {
                 console.error(err);
                 exibirErro('Erro inesperado. Tente novamente.');
@@ -345,26 +348,32 @@
                 btn.innerText = 'Redefinir Senha';
             }
         }
-
-        // ==================== INICIALIZAÇÃO ====================
-        (async function init() {
-            // Verificar se o token de recuperação está presente na URL
-            // O Supabase envia o token via fragmento da URL (hash)
-            // Se não houver token, redirecionar para index
-            const hash = window.location.hash;
-            if (!hash || !hash.includes('access_token')) {
-                // Tenta verificar se já está autenticado via sessão (caso o token já tenha sido processado)
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (!session) {
-                    // Sem token e sem sessão, redireciona para login
-                    window.location.href = 'index.html?t=' + Date.now();
-                    return;
+       
+       // ==================== INICIALIZAÇÃO ====================
+        let recoverySessionValida = false;
+        
+        (function init() {
+            // Trava a tela até confirmarmos que é uma sessão de RECUPERAÇÃO (não login normal)
+            document.getElementById('btn-redefinir').disabled = true;
+        
+            const { data: authListener } = supabaseClient.auth.onAuthStateChange((event, session) => {
+                if (event === 'PASSWORD_RECOVERY') {
+                    // Só aqui confirmamos que o usuário veio de um link de recuperação válido
+                    recoverySessionValida = true;
+                    document.getElementById('btn-redefinir').disabled = false;
                 }
-            }
-
-            // Se houver token, a sessão já foi estabelecida pelo Supabase
-            // Apenas mostramos a página de redefinição.
-            console.log('Token de recuperação detectado. Aguardando nova senha.');
+            });
+        
+            // Se depois de alguns segundos o evento não disparou, não é uma sessão de recuperação válida
+            setTimeout(() => {
+                if (!recoverySessionValida) {
+                    exibirErro('Link inválido ou expirado. Solicite uma nova redefinição de senha.');
+                    document.getElementById('btn-redefinir').disabled = true;
+                    setTimeout(() => {
+                        window.location.href = 'index.html?t=' + Date.now();
+                    }, 2500);
+                }
+            }, 3000);
         })();
     </script>
 
