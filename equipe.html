@@ -2108,7 +2108,7 @@
                 data.forEach(s => {
                     const opt = document.createElement('option');
                     opt.value = s.id;
-                    opt.textContent = `${s.name} (${new Date(s.session_date).toLocaleDateString('pt-BR')})`;
+                    opt.textContent = `${s.name}`;
                     select.appendChild(opt);
                 });
                 // Selecionar a sessão atual se existir
