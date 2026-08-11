@@ -513,7 +513,7 @@
         <!-- Último registro -->
         <div class="card">
             <div class="card-header-with-button">                
-                <h3>Último registro <button class="btn-refresh" onclick="refreshPresentList()" title="Recarregar">🔄</button></h3>                
+                <h3>Último registro <button class="btn-refresh" onclick="refresh()" title="Recarregar">🔄</button></h3>                
                 <button class="btn-outline-small" onclick="openHistoryModal()">Ver todos</button>
             </div>
             <div id="lastRegisterInfo" class="last-register">Carregando...</div>
@@ -1224,6 +1224,8 @@
         }
         function closeConfigModal() { document.getElementById('configModal').style.display = 'none'; }
 
+        
+
         // ==================== UTILITÁRIOS ====================
         function escapeHtml(str) {
             if (!str) return '';
@@ -1235,6 +1237,13 @@
             });
         }
 
+
+        function refresh() {
+        loadUserAndFamily();
+        showToast('Página Atualiazda', 'success');        
+        }
+
+        
         async function logout() {
             await supabaseClient.auth.signOut();
             window.location.href = 'index.html';
