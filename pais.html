@@ -1166,7 +1166,7 @@
             if (childId) result = await supabaseClient.from('kids_children').update(childData).eq('id', childId);
             else result = await supabaseClient.from('kids_children').insert([childData]);
             if (result.error) alert('Erro ao salvar: ' + result.error.message);
-            else { alert(childId ? 'Criança atualizada!' : 'Criança adicionada!'); closeChildModal(); await loadChildren(); }
+            else { showToast(childId ? 'Criança atualizada!' : 'Criança adicionada!'); closeChildModal(); await loadChildren(); }
         }
 
         async function deleteChild(childId) {
