@@ -795,48 +795,48 @@
             }
         }
 
+      
         // ==================== LOGIN ====================
         async function verificarLogin() {
             const entrada = document.getElementById('usuario-input').value.trim();
             const senhaDigitada = document.getElementById('senha-input').value.trim();
             const erro = document.getElementById('mensagem-erro');
             const btn = document.getElementById('btn-entrar');
-
+        
             if (!entrada || !senhaDigitada) {
                 exibirErro('mensagem-erro', 'Preencha o usuário/e-mail e a senha.');
                 return;
             }
-
+        
             btn.innerText = "Autenticando...";
             btn.disabled = true;
             erro.style.display = 'none';
-
+        
             try {
                 let emailParaLogin = entrada;
-
+        
                 if (!entrada.includes('@')) {
-                    const { data: profileData, error: profileErr } = await supabaseClient
-                        .from('kids_profiles')
-                        .select('email')
-                        .ilike('username', entrada)
-                        .maybeSingle();
-
-                    if (profileErr || !profileData || !profileData.email) {
+                    // Busca o e-mail associado ao username via RPC
+                    // (com RLS ativa, o usuário anônimo não pode ler kids_profiles diretamente)
+                    const { data: emailEncontrado, error: profileErr } = await supabaseClient
+                        .rpc('get_email_por_username', { p_username: entrada });
+        
+                    if (profileErr || !emailEncontrado) {
                         exibirErro('mensagem-erro', 'Usuário não encontrado.');
                         document.getElementById('senha-input').value = "";
                         btn.innerText = "Entrar";
                         btn.disabled = false;
                         return;
                     }
-
-                    emailParaLogin = profileData.email;
+        
+                    emailParaLogin = emailEncontrado;
                 }
-
+        
                 const { data: loginData, error: loginError } = await supabaseClient.auth.signInWithPassword({
                     email: emailParaLogin,
                     password: senhaDigitada
                 });
-
+        
                 if (loginError) {
                     exibirErro('mensagem-erro', 'Usuário/e-mail ou senha incorretos.');
                     document.getElementById('senha-input').value = "";
@@ -844,15 +844,15 @@
                     btn.disabled = false;
                     return;
                 }
-
+        
                 const userId = loginData.user.id;
-
+        
                 const { data: profile, error: profileError } = await supabaseClient
                     .from('kids_profiles')
                     .select('role')
                     .eq('id', userId)
                     .maybeSingle();
-
+        
                 if (profileError || !profile) {
                     const { error: insertError } = await supabaseClient
                         .from('kids_profiles')
@@ -867,10 +867,10 @@
                         return;
                     }
                 }
-
+        
                 // ===== LÓGICA DE REDIRECIONAMENTO =====
-               const role = profile?.role || 'parent';
-
+                const role = profile?.role || 'parent';
+        
                 if (role === 'admin') {
                     entrarNoPainel(loginData.user.user_metadata?.full_name || 'Admin', 'admin');
                 } else if (role === 'staff') {
@@ -888,15 +888,14 @@
                     // Fallback: redirecionar para pais
                     entrarNoPainel(loginData.user.user_metadata?.full_name || 'Pai', 'pais');
                 }
-    
-                } catch (err) {
-                    console.error('Erro no login:', err);
-                    exibirErro('mensagem-erro', 'Erro inesperado. Tente novamente.');
-                    btn.innerText = "Entrar";
-                    btn.disabled = false;
-                }
+        
+            } catch (err) {
+                console.error('Erro no login:', err);
+                exibirErro('mensagem-erro', 'Erro inesperado. Tente novamente.');
+                btn.innerText = "Entrar";
+                btn.disabled = false;
             }
-
+        }
         // ==================== ESCOLHER PAPEL (modal) ====================
         function escolherPapel(role) {
             const url = role === 'staff' ? 'equipe.html' : 'pais.html';
@@ -971,9 +970,10 @@
         function fecharModalCadastro() {
             document.getElementById('modal-cadastro').style.display = 'none';
         }
+
         
-        // ==================== CADASTRAR NOVO USUÁRIO (MODAL) ====================
-       async function cadastrarNovoUsuario() {
+      // ==================== CADASTRAR NOVO USUÁRIO (MODAL) ====================
+        async function cadastrarNovoUsuario() {
             const username = document.getElementById('cadastro-username').value.trim().toLowerCase();
             const email = document.getElementById('cadastro-email').value.trim();
             const senha = document.getElementById('cadastro-senha').value.trim();
@@ -1018,26 +1018,25 @@
             }
         
             // Verificar se username ou email já existem
+            // (via RPC, pois com RLS ativa o usuário anônimo não pode ler kids_profiles diretamente)
             btn.disabled = true;
             btn.innerText = 'Verificando...';
         
             try {
-                const { data: existente, error: buscaError } = await supabaseClient
-                    .from('kids_profiles')
-                    .select('username, email')
-                    .or(`username.eq.${username},email.eq.${email}`)
-                    .maybeSingle();
+                const { data: check, error: buscaError } = await supabaseClient
+                    .rpc('check_cadastro_disponivel', { p_username: username, p_email: email });
         
                 if (buscaError) throw buscaError;
         
-                if (existente) {
-                    if (existente.username === username) {
-                        exibirMsgCadastro(`O nome de usuário "${username}" já está em uso.`, 'error');
-                    } else if (existente.email === email) {
-                        exibirMsgCadastro('Este e-mail já está cadastrado.', 'error');
-                    } else {
-                        exibirMsgCadastro('Usuário ou e-mail já cadastrado.', 'error');
-                    }
+                if (check.username_ocupado) {
+                    exibirMsgCadastro(`O nome de usuário "${username}" já está em uso.`, 'error');
+                    btn.disabled = false;
+                    btn.innerText = 'Criar conta';
+                    return;
+                }
+        
+                if (check.email_ocupado) {
+                    exibirMsgCadastro('Este e-mail já está cadastrado.', 'error');
                     btn.disabled = false;
                     btn.innerText = 'Criar conta';
                     return;
@@ -1087,7 +1086,7 @@
                 btn.innerText = 'Criar conta';
             }
         }
-        
+                
         // ==================== EXIBIR MENSAGEM NO MODAL ====================
         function exibirMsgCadastro(mensagem, tipo = 'error') {
             const msg = document.getElementById('mensagem-cadastro');
