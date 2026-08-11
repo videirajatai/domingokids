@@ -1014,7 +1014,7 @@
                 if (todas && todas.length > 0) {
                     todas.forEach(s => {
                         const dataFormatada = new Date(s.session_date).toLocaleDateString('pt-BR');
-                        const label = `${s.name} (${dataFormatada}) ${s.is_active ? '🟢' : ''}`;
+                        const label = `${s.name} ${s.is_active ? '🟢' : ''}`;
                         const option = document.createElement('option');
                         option.value = s.id;
                         option.textContent = label;
@@ -2146,7 +2146,7 @@
                     <div class="header">
                         <img src="logo.png" alt="Logo">
                         <h1>Relatório de Presenças</h1>
-                        <p>${sessao?.name || 'Sessão'} - ${new Date(sessao?.session_date).toLocaleDateString('pt-BR')}</p>
+                        <p>${sessao?.name || 'Sessão'}</p>
                     </div>
                     <div class="stats-grid">
                         <div class="stat-card"><div class="stat-number">${totalGeral}</div><div class="stat-label">Total de crianças</div></div>
@@ -2174,10 +2174,15 @@
                         </tbody>
                     </table>
                     <div class="espaco-lideres">
-                        <h4>Líderes e Auxiliares</h4>
-                        ${[1,2,3,4,5,6].map(i => `<div style="margin:4px 0;"><span>Líder ${i}:</span> <span class="linha"></span></div>`).join('')}
-                        ${[1,2].map(i => `<div style="margin:4px 0;"><span>Auxiliar ${i}:</span> <span class="linha"></span></div>`).join('')}
-                    </div>
+                        <h4 style="font-size: 0.7rem;"> Babys </h4>
+                        ${[1,2].map(i => `<div style="font-size: 11px; margin:3px 0;"><span>Líder ${i}:</span> <span class="linha"></span><span> Auxiliar: _____________________________ </span></div>`).join('')}
+                        <h4 style="font-size: 0.7rem;"> Kids</h4>
+                         ${[3,4].map(i => `<div style="font-size: 11px; margin:3px 0;"><span>Líder ${i}:</span> <span class="linha"></span><span> Auxiliar: ____________________________ </span></div>`).join('')}
+                         <h4 style="font-size: 0.7rem;"> Juvenis</h4>
+                         ${[5,6].map(i => `<div style="font-size: 11px; margin:3px 0;"><span>Líder ${i}:</span> <span class="linha"></span><span> Auxiliar: ____________________________ </span></div>`).join('')}
+                         <!--<h4>Auxiliares</h4>
+                         ${[1,2,3,4].map(i => `<div style="font-size: 11px; margin:4px 0;"><span>Auxiliar ${i}:</span> <span class="linha"></span></div>`).join('')}-->
+                    </div>     
                     <div class="footer">Relatório gerado em ${new Date().toLocaleString('pt-BR')}</div>
                 </div>
             `;
