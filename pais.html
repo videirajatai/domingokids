@@ -725,28 +725,15 @@
         async function createFamily() {
             const familyName = prompt('Digite um nome para sua família (ex: Família Souza):');
             if (!familyName) return;
-
+        
             const { data: family, error } = await supabaseClient
-                .from('kids_families')
-                .insert({ family_name: familyName })
-                .select()
-                .single();
-
+                .rpc('create_family', { p_family_name: familyName });
+        
             if (error) {
                 alert('Erro ao criar família: ' + error.message);
                 return;
             }
-
-            const { error: updateError } = await supabaseClient
-                .from('kids_profiles')
-                .update({ family_id: family.id })
-                .eq('id', currentUser.id);
-
-            if (updateError) {
-                alert('Erro ao vincular família: ' + updateError.message);
-                return;
-            }
-
+        
             currentFamilyId = family.id;
             showToast('Família criada com sucesso!');
             document.getElementById('qrSection').style.display = 'block';
