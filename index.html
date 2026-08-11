@@ -973,7 +973,7 @@
         }
         
         // ==================== CADASTRAR NOVO USUÁRIO (MODAL) ====================
-        async function cadastrarNovoUsuario() {
+       async function cadastrarNovoUsuario() {
             const username = document.getElementById('cadastro-username').value.trim().toLowerCase();
             const email = document.getElementById('cadastro-email').value.trim();
             const senha = document.getElementById('cadastro-senha').value.trim();
@@ -1017,7 +1017,7 @@
                 return;
             }
         
-            // Verificar se username já existe
+            // Verificar se username ou email já existem
             btn.disabled = true;
             btn.innerText = 'Verificando...';
         
@@ -1044,6 +1044,10 @@
                 }
         
                 // Criar usuário no Auth
+                // A trigger "on_auth_user_created" (função handle_new_user) já se encarrega
+                // de criar a linha correspondente em public.kids_profiles automaticamente,
+                // lendo username, full_name e role a partir destes metadados.
+                // NÃO fazer insert manual aqui — evita erro 23505 (duplicate key).
                 btn.innerText = 'Criando conta...';
                 const { data: authData, error: signUpError } = await supabaseClient.auth.signUp({
                     email: email,
@@ -1052,7 +1056,7 @@
                         data: {
                             full_name: username,
                             role: 'parent',
-                            username: username // passado via meta dados
+                            username: username
                         }
                     }
                 });
@@ -1068,32 +1072,7 @@
                     return;
                 }
         
-                const userId = authData.user.id;
-        
-                // O trigger criará o perfil, mas caso não tenha sido criado, inserimos manualmente
-                // Aguardamos um momento para o trigger ser executado
-                await new Promise(resolve => setTimeout(resolve, 1500));
-        
-                // Verifica se o perfil foi criado, se não, insere
-                const { data: perfilExistente } = await supabaseClient
-                    .from('kids_profiles')
-                    .select('id')
-                    .eq('id', userId)
-                    .maybeSingle();
-        
-                if (!perfilExistente) {
-                    const { error: insertError } = await supabaseClient
-                        .from('kids_profiles')
-                        .insert({
-                            id: userId,
-                            email: email,
-                            username: username,
-                            role: 'parent',
-                            full_name: username
-                        });
-                    if (insertError) throw insertError;
-                }
-        
+                // Sucesso — o perfil já foi criado pela trigger no banco
                 exibirMsgCadastro('Conta criada com sucesso! Redirecionando...', 'success');
                 btn.innerText = 'Concluído';
         
