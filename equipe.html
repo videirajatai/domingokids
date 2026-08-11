@@ -847,13 +847,14 @@
 
     <!-- ===== MODAL DE RELATÓRIOS ===== -->
     <div id="reportModal" class="modal">
-        <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-content" style="max-width: 800px;"> <!-- Original 700px -->
             <button class="modal-close" onclick="fecharModalRelatorio()">&times;</button>
             <div class="modal-title">📊 Relatórios</div>
     
             <!-- Abas dos tipos de relatório -->
             <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem;">
                 <button class="tab-relatorio active" data-tipo="sessao" onclick="trocarAbaRelatorio('sessao')">📅 Por Sessão</button>
+                <button class="tab-relatorio" data-tipo="crianca" onclick="trocarAbaRelatorio('crianca')">👶 Por Criança</button>
                 <button class="tab-relatorio" data-tipo="mes" onclick="trocarAbaRelatorio('mes')">📆 Por Mês</button>
                 <button class="tab-relatorio" data-tipo="faltas" onclick="trocarAbaRelatorio('faltas')">📉 Faltas</button>
             </div>
@@ -916,6 +917,27 @@
                     </div>
                 </div>
                 <button class="btn-primary" onclick="gerarPDF('faltas')" style="width:100%; justify-content:center;">📄 Gerar PDF</button>
+            </div>
+
+            <!-- Conteúdo da aba Por Criança -->
+            <div id="aba-crianca" class="aba-relatorio" style="display:none;">
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <label style="display: block; font-weight: 600; font-size: 0.8rem;">Criança *</label>
+                        <select id="relCriancaSelect" style="width:100%; padding:0.5rem; border-radius:0.5rem; border:1px solid var(--border-color);">
+                            <option value="">Carregando crianças...</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="display: block; font-weight: 600; font-size: 0.8rem;">Data Início</label>
+                        <input type="date" id="relCriancaDataInicio" style="width:100%; padding:0.5rem; border-radius:0.5rem; border:1px solid var(--border-color);">
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="display: block; font-weight: 600; font-size: 0.8rem;">Data Fim</label>
+                        <input type="date" id="relCriancaDataFim" style="width:100%; padding:0.5rem; border-radius:0.5rem; border:1px solid var(--border-color);">
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="gerarPDF('crianca')" style="width:100%; justify-content:center;">📄 Gerar PDF</button>
             </div>
     
             <div style="margin-top: 1rem; text-align: center;">
@@ -2053,6 +2075,7 @@
         function abrirModalRelatorio() {
             // Carregar sessões para o select
             carregarSessoesSelect();
+            carregarCriancasSelect();
             // Definir mês atual no input
             const hoje = new Date();
             document.getElementById('relMesInput').value = hoje.getFullYear() + '-' + String(hoje.getMonth()+1).padStart(2,'0');
@@ -2103,6 +2126,8 @@
                 await gerarPDFMes();
             } else if (tipo === 'faltas') {
                 await gerarPDFFaltas();
+            } else if (tipo === 'crianca') {
+                await gerarPDFCrianca();
             }
         }
         
@@ -2185,7 +2210,7 @@
                 </div>
             `;
         
-            gerarPDFComHtml(html, `relatorio_${sessao?.name || 'sessao'}`);
+            gerarPDFComHtml(html, `DK_${sessao?.name || 'sessao'}`);
         }
         
         // ---------- RELATÓRIO POR MÊS ----------
@@ -2261,7 +2286,7 @@
                 </div>
             `;
         
-            gerarPDFComHtml(html, `relatorio_mes_${mesAno}`);
+            gerarPDFComHtml(html, `DK_Mes_${mesAno}`);
         }
         
         // ---------- RELATÓRIO DE FALTAS ----------
@@ -2353,7 +2378,96 @@
                 </div>
             `;
         
-            gerarPDFComHtml(html, `relatorio_faltas_${ano}`);
+            gerarPDFComHtml(html, `DK_Faltas_${ano}`);
+        }
+
+        async function carregarCriancasSelect() {
+            const select = document.getElementById('relCriancaSelect');
+            select.innerHTML = '<option value="">Carregando...</option>';
+            const { data, error } = await supabaseClient
+                .from('kids_children')
+                .select('id, name')
+                .order('name');
+            if (error) {
+                select.innerHTML = '<option value="">Erro ao carregar</option>';
+                return;
+            }
+            select.innerHTML = '<option value="">Selecione uma criança</option>';
+            data.forEach(c => {
+                select.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
+            });
+        }
+
+        async function gerarPDFCrianca() {
+            const childId = document.getElementById('relCriancaSelect').value;
+            if (!childId) {
+                showToast('Selecione uma criança.', 'error');
+                return;
+            }
+            const dataInicio = document.getElementById('relCriancaDataInicio').value;
+            const dataFim = document.getElementById('relCriancaDataFim').value;
+        
+            // Buscar dados da criança
+            const { data: child, error: childError } = await supabaseClient
+                .from('kids_children')
+                .select('*, family:family_id(*)')
+                .eq('id', childId)
+                .single();
+            if (childError || !child) {
+                showToast('Erro ao buscar criança.', 'error');
+                return;
+            }
+        
+            // Buscar check-ins da criança
+            let query = supabaseClient
+                .from('kids_check_ins')
+                .select('*, session:session_id(name, session_date)')
+                .eq('child_id', childId)
+                .order('checked_in_at', { ascending: false });
+            if (dataInicio) {
+                query = query.gte('checked_in_at', `${dataInicio}T00:00:00`);
+            }
+            if (dataFim) {
+                query = query.lte('checked_in_at', `${dataFim}T23:59:59`);
+            }
+            const { data: checkins, error: checkError } = await query;
+        
+            const totalRegistros = checkins?.length || 0;
+            const presentes = checkins?.filter(c => !c.checked_out_at).length || 0;
+        
+            const family = child.family || {};
+            const html = `
+                <div class="report-pdf" id="reportContent">
+                    <div class="header">
+                        <img src="logo.png" alt="Logo">
+                        <h1>Relatório Individual</h1>
+                        <p>${escapeHtml(child.name)} ${child.birth_date ? `- ${formatDate(child.birth_date)}` : ''}</p>
+                        ${family.father_name || family.mother_name ? `<p style="font-size:0.8rem;">Responsáveis: ${family.father_name || ''} ${family.mother_name ? `& ${family.mother_name}` : ''}</p>` : ''}
+                        ${dataInicio && dataFim ? `<p>Período: ${new Date(dataInicio).toLocaleDateString('pt-BR')} a ${new Date(dataFim).toLocaleDateString('pt-BR')}</p>` : '<p>Todos os registros</p>'}
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card"><div class="stat-number">${totalRegistros}</div><div class="stat-label">Total de check-ins</div></div>
+                        <div class="stat-card"><div class="stat-number">${presentes}</div><div class="stat-label">Ainda presente</div></div>
+                        <div class="stat-card"><div class="stat-number">${totalRegistros - presentes}</div><div class="stat-label">Finalizados</div></div>
+                    </div>
+                    <table>
+                        <thead><tr><th>Data/Hora</th><th>Sessão</th><th>Check-in</th><th>Check-out</th><th>Sala</th></tr></thead>
+                        <tbody>
+                            ${(checkins || []).map(c => `
+                                <tr>
+                                    <td>${new Date(c.checked_in_at).toLocaleDateString('pt-BR')}</td>
+                                    <td>${c.session?.name || 'Sessão'}</td>
+                                    <td>${new Date(c.checked_in_at).toLocaleString('pt-BR')}</td>
+                                    <td>${c.checked_out_at ? new Date(c.checked_out_at).toLocaleString('pt-BR') : 'Ainda presente'}</td>
+                                    <td>${c.room || 'Não definida'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    <div class="footer">Relatório gerado em ${new Date().toLocaleString('pt-BR')}</div>
+                </div>
+            `;
+            gerarPDFComHtml(html, `DK_${child.name}`);
         }
         
         // ---------- FUNÇÃO AUXILIAR PARA GERAR PDF ----------
