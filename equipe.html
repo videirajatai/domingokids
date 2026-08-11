@@ -1243,7 +1243,7 @@
         async function processToken(token) {
             const { data: tokenData, error: tokenError } = await supabaseClient
                 .from('kids_temporary_tokens')
-                .select('*, child:child_id(id, name, allergies, birth_date)')
+                .select('*, child:child_id(id, name, allergies, birth_date, photo_url, family:family_id(father_name, father_phone, mother_name, mother_phone))')
                 .eq('token', token)
                 .single();
             if (tokenError || !tokenData) {
@@ -1272,6 +1272,8 @@
                 return;
             }
             const birthDate = tokenData.child?.birth_date || null;
+            const photoUrl = tokenData.child?.photo_url || null;
+            const family = tokenData.child?.family || {};
             pendingCheckinData = {
                 tokenId: tokenData.id,
                 childId: childId,
@@ -1280,7 +1282,13 @@
                 birthDate: birthDate,
                 tokenValue: token
             };
-            openSelectRoomModal(childName, allergies, birthDate);
+            openSelectRoomModal(childName, allergies, birthDate, {
+                photoUrl,
+                fatherName: family.father_name,
+                fatherPhone: family.father_phone,
+                motherName: family.mother_name,
+                motherPhone: family.mother_phone
+            });
         }
 
         // ========== CALCULAR IDADE ==========
@@ -1295,17 +1303,42 @@
         }
 
         // ========== MODAL SALA ==========
-        function openSelectRoomModal(childName, allergies, birthDate) {
+        function openSelectRoomModal(childName, allergies, birthDate, extra = {}) {
             const infoDiv = document.getElementById('roomChildInfo');
             let idadeHtml = '';
             if (birthDate) {
                 const idade = calcularIdade(birthDate);
                 idadeHtml = `<div style="color: var(--text-light); font-size:0.9rem;">📅 Idade: ${idade} anos</div>`;
             }
+
+            const fotoHtml = extra.photoUrl
+                ? `<img src="${extra.photoUrl}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;margin:0 auto 0.5rem;display:block;border:2px solid var(--border-color);">`
+                : `<div style="width:72px;height:72px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 0.5rem;">👶</div>`;
+
+            let contatosHtml = '';
+            if (extra.isVisitor) {
+                contatosHtml = `
+                    <div style="margin-top:0.6rem; padding-top:0.6rem; border-top:1px dashed var(--border-color); font-size:0.8rem; color:var(--text-light); text-align:left;">
+                        <div>🧑 Resp: ${escapeHtml(extra.respName) || 'Não informado'} ${extra.respPhone ? `· 📞 ${escapeHtml(extra.respPhone)}` : ''}</div>
+                    </div>
+                `;
+            } else {
+                const temPai = extra.fatherName || extra.fatherPhone;
+                const temMae = extra.motherName || extra.motherPhone;
+                contatosHtml = `
+                    <div style="margin-top:0.6rem; padding-top:0.6rem; border-top:1px dashed var(--border-color); font-size:0.8rem; color:var(--text-light); text-align:left;">
+                        <div>👨 Pai: ${temPai ? `${escapeHtml(extra.fatherName) || 'Não informado'} ${extra.fatherPhone ? `· 📞 ${escapeHtml(extra.fatherPhone)}` : '· <span style="color:var(--danger);">sem telefone</span>'}` : `<span style="color:var(--danger);">Não cadastrado</span>`}</div>
+                        <div>👩 Mãe: ${temMae ? `${escapeHtml(extra.motherName) || 'Não informado'} ${extra.motherPhone ? `· 📞 ${escapeHtml(extra.motherPhone)}` : '· <span style="color:var(--danger);">sem telefone</span>'}` : `<span style="color:var(--danger);">Não cadastrada</span>`}</div>
+                    </div>
+                `;
+            }
+
             infoDiv.innerHTML = `
+                ${fotoHtml}
                 <div style="font-size:1.2rem; font-weight:700; margin-bottom:0.3rem;">${escapeHtml(childName)}</div>
                 ${idadeHtml}
                 ${allergies ? `<div class="badge" style="background:#fee2e2; color:#b91c1c; margin-top:0.3rem;">⚠️ Alergia: ${escapeHtml(allergies)}</div>` : '<div style="color:var(--text-light);">Sem alergias</div>'}
+                ${contatosHtml}
             `;
             document.getElementById('selectRoomModal').style.display = 'flex';
         }
@@ -1875,7 +1908,11 @@
                 birthDate: birthDate,
                 tokenValue: tokenValue
             };
-            openSelectRoomModal(childName, allergies, birthDate);
+            openSelectRoomModal(childName, allergies, birthDate, {
+                isVisitor: true,
+                respName: respName,
+                respPhone: respPhone
+            });
         }
 
         // ========== SESSÃO ==========
