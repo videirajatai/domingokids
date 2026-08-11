@@ -1044,7 +1044,7 @@
                 }
         
                 // Criar usuário no Auth
-                btn.innerText = 'Criando conta...';
+               /* btn.innerText = 'Criando conta...';
                 const { data: authData, error: signUpError } = await supabaseClient.auth.signUp({
                     email: email,
                     password: senha,
@@ -1066,13 +1066,14 @@
                     btn.disabled = false;
                     btn.innerText = 'Criar conta';
                     return;
-                }
+                }*/
         
                 const userId = authData.user.id;
         
                 // O trigger criará o perfil, mas caso não tenha sido criado, inserimos manualmente
                 // Aguardamos um momento para o trigger ser executado
                 await new Promise(resolve => setTimeout(resolve, 1500));
+                
         
                 // Verifica se o perfil foi criado, se não, insere
                 const { data: perfilExistente } = await supabaseClient
