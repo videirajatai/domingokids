@@ -2499,7 +2499,7 @@
 
         // ========== UTILITÁRIOS ==========
         function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : (m === '<' ? '&lt;' : '&gt;')); }
-        async function logout() { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; }
+        async function logout() { await supabaseClient.auth.signOut(); window.location.href = 'index.html?t=' + Date.now()'; }
 
         // ========== AUTOMATIZAR SESSÃO DO DOMINGO ==========
         function getProximoDomingo() {
