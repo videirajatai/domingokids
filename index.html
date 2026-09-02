@@ -482,10 +482,12 @@
                     </div>
 
                     <button id="btn-entrar" onclick="verificarLogin()">Entrar</button>
+                    <button id="btn-biometria" class="btn-secondary" onclick="loginComBiometria()" style="display: none; margin-top: 12px;">Entrar com digital / Face ID</button>
                     <p id="mensagem-erro" class="mensagem-erro">⚠️ Usuário ou senha incorretos.</p>
 
                     <button class="btn-link" onclick="mudarTela('bloco-recuperar')">Esqueci minha senha</button>
-                    <button class="btn-link" onclick="abrirModalCadastro()" style="margin-top: 8px;">Ainda não tenho conta</button>                    
+                    <button class="btn-link" onclick="abrirModalCadastro()" style="margin-top: 8px;">Ainda não tenho conta</button>
+                    <button id="btn-remover-bio" class="btn-link" onclick="desativarBiometria()" style="display: none;">Não usar mais digital neste aparelho</button> 
                 </div>
             </div>
 
@@ -504,6 +506,15 @@
                 <p id="mensagem-erro-rec" class="mensagem-erro"></p>
 
                 <button class="btn-secondary" onclick="mudarTela('bloco-login')" style="margin-top: 12px; padding: 10px; font-size: 0.9rem;">Voltar para o Login</button>
+            </div>
+
+            <div id="bloco-biometria" class="bloco">
+                <img src="logo.png" style="width: 70px; border-radius: 50%; margin-bottom: 10px;" alt="Logo Kids">
+                <h2>Usar digital ou Face ID?</h2>
+                <p class="subtitulo" style="margin-bottom: 1.5rem;">No próximo acesso neste aparelho, entre sem digitar a senha.</p>
+                <button id="btn-ativar-bio" onclick="ativarBiometria()">Ativar agora</button>
+                <p id="mensagem-erro-bio" class="mensagem-erro"></p>
+                <button class="btn-secondary" onclick="pularBiometria()" style="margin-top: 12px; padding: 10px; font-size: 0.9rem;">Agora não</button>
             </div>
 
         </div>
@@ -586,9 +597,18 @@
 
     <!-- ===== SCRIPTS ===== -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/biometria.js"></script>
     <script>
         // ==================== CONFIGURAÇÃO ====================
-        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+        const supabaseClient = supabase.createClient(SB_URL, SB_KEY, {
+            auth: {
+                persistSession: true,
+                storage: localStorage,
+                autoRefreshToken: true
+            }
+        });
+
+        let loginPendente = null;
 
         // ==================== FUNÇÕES AUXILIARES ====================
         function mudarTela(idBloco) {
@@ -868,26 +888,27 @@
                     }
                 }
         
-                // ===== LÓGICA DE REDIRECIONAMENTO =====
                 const role = profile?.role || 'parent';
-        
-                if (role === 'admin') {
-                    entrarNoPainel(loginData.user.user_metadata?.full_name || 'Admin', 'admin');
-                } else if (role === 'staff') {
-                    entrarNoPainel(loginData.user.user_metadata?.full_name || 'Equipe', 'equipe');
-                } else if (role === 'parent') {
-                    entrarNoPainel(loginData.user.user_metadata?.full_name || 'Pai', 'pais');
-                } else if (role === 'both') {
-                    // Mostrar modal de escolha
-                    const nome = loginData.user.user_metadata?.full_name || 'usuário';
-                    document.getElementById('nome-usuario-escolha').innerText = nome;
-                    document.getElementById('modal-escolha').style.display = 'flex';
+                const nome = loginData.user.user_metadata?.full_name
+                    || (role === 'admin' ? 'Admin' : role === 'staff' ? 'Equipe' : 'Pai');
+
+                const podeBio = await Biometria.plataformaDisponivel();
+                if (podeBio && !Biometria.cadastradaPara(emailParaLogin)) {
+                    loginPendente = {
+                        nome: nome,
+                        email: emailParaLogin,
+                        userId: userId,
+                        role: role
+                    };
+                    mudarTela('bloco-biometria');
                     btn.innerText = "Entrar";
                     btn.disabled = false;
-                } else {
-                    // Fallback: redirecionar para pais
-                    entrarNoPainel(loginData.user.user_metadata?.full_name || 'Pai', 'pais');
+                    return;
                 }
+
+                seguirAposLogin(nome, role);
+                btn.innerText = "Entrar";
+                btn.disabled = false;
         
             } catch (err) {
                 console.error('Erro no login:', err);
@@ -896,6 +917,118 @@
                 btn.disabled = false;
             }
         }
+
+        function seguirAposLogin(nome, role) {
+            if (role === 'admin') {
+                entrarNoPainel(nome || 'Admin', 'admin');
+            } else if (role === 'staff') {
+                entrarNoPainel(nome || 'Equipe', 'equipe');
+            } else if (role === 'parent') {
+                entrarNoPainel(nome || 'Pai', 'pais');
+            } else if (role === 'both') {
+                document.getElementById('nome-usuario-escolha').innerText = nome || 'usuário';
+                document.getElementById('modal-escolha').style.display = 'flex';
+            } else {
+                entrarNoPainel(nome || 'Pai', 'pais');
+            }
+        }
+
+        async function ativarBiometria() {
+            const erro = document.getElementById('mensagem-erro-bio');
+            const btn = document.getElementById('btn-ativar-bio');
+            if (!loginPendente) {
+                mudarTela('bloco-login');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Aguardando o aparelho...";
+            erro.style.display = 'none';
+
+            try {
+                await Biometria.registrar({
+                    userId: loginPendente.userId,
+                    email: loginPendente.email,
+                    nome: loginPendente.nome
+                });
+                const pendente = loginPendente;
+                loginPendente = null;
+                seguirAposLogin(pendente.nome, pendente.role);
+            } catch (e) {
+                erro.innerText = e.name === 'NotAllowedError'
+                    ? "Registro cancelado. Você pode tentar de novo ou pular."
+                    : ("Não foi possível ativar: " + (e.message || e));
+                erro.style.display = 'block';
+                btn.disabled = false;
+                btn.innerText = "Ativar agora";
+            }
+        }
+
+        function pularBiometria() {
+            if (!loginPendente) {
+                mudarTela('bloco-login');
+                return;
+            }
+            const pendente = loginPendente;
+            loginPendente = null;
+            seguirAposLogin(pendente.nome, pendente.role);
+        }
+
+        async function loginComBiometria() {
+            const erro = document.getElementById('mensagem-erro');
+            const btn = document.getElementById('btn-biometria');
+            erro.style.display = 'none';
+            btn.disabled = true;
+            btn.innerText = "Aguardando o aparelho...";
+
+            try {
+                const cadastro = await Biometria.autenticar();
+                const { data: { user } } = await supabaseClient.auth.getUser();
+
+                if (!user || (user.email || '').toLowerCase() !== (cadastro.email || '').toLowerCase()) {
+                    Biometria.removerCadastro();
+                    throw new Error("Sessão expirada. Entre com usuário e senha e ative a digital de novo.");
+                }
+
+                const { data: profile, error: profileError } = await supabaseClient
+                    .from('kids_profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .maybeSingle();
+
+                const role = (!profileError && profile && profile.role) ? profile.role : 'parent';
+                const nome = user.user_metadata?.full_name
+                    || (role === 'admin' ? 'Admin' : role === 'staff' ? 'Equipe' : 'Pai');
+
+                seguirAposLogin(nome, role);
+            } catch (e) {
+                exibirErro('mensagem-erro', e.name === 'NotAllowedError'
+                    ? "Leitura cancelada. Tente de novo ou entre com a senha."
+                    : (e.message || "Falha na biometria."));
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Entrar com digital / Face ID";
+            }
+        }
+
+        function desativarBiometria() {
+            Biometria.removerCadastro();
+            atualizarBotoesBiometria();
+        }
+
+        async function atualizarBotoesBiometria() {
+            const btnBio = document.getElementById('btn-biometria');
+            const btnRemover = document.getElementById('btn-remover-bio');
+            const ok = await Biometria.plataformaDisponivel();
+            const tem = Biometria.temCadastro();
+            btnBio.style.display = (ok && tem) ? 'block' : 'none';
+            btnRemover.style.display = tem ? 'block' : 'none';
+        }
+
+        atualizarBotoesBiometria().then(function () {
+            if (Biometria.temCadastro()) loginComBiometria();
+        });
+
         // ==================== ESCOLHER PAPEL (modal) ====================
         function escolherPapel(role) {
             const url = role === 'staff' ? 'equipe.html' : 'pais.html';
