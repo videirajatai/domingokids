@@ -986,8 +986,7 @@
                 const { data: { user } } = await supabaseClient.auth.getUser();
 
                 if (!user || (user.email || '').toLowerCase() !== (cadastro.email || '').toLowerCase()) {
-                    Biometria.removerCadastro();
-                    throw new Error("Sessão expirada. Entre com usuário e senha e ative a digital de novo.");
+                    throw new Error("Sessão expirada. Entre com usuário e senha. A digital continua cadastrada neste aparelho.");
                 }
 
                 const { data: profile, error: profileError } = await supabaseClient
