@@ -482,12 +482,12 @@
                     </div>
 
                     <button id="btn-entrar" onclick="verificarLogin()">Entrar</button>
-                    <button id="btn-biometria" class="btn-secondary" onclick="loginComBiometria()" style="display: none; margin-top: 12px;">Entrar com digital / Face ID</button>
+                    <button id="btn-biometria" class="btn-secondary" onclick="loginComBiometria()" style="display: none; margin-top: 12px;">Entrar com Biometria</button>
                     <p id="mensagem-erro" class="mensagem-erro">⚠️ Usuário ou senha incorretos.</p>
 
                     <button class="btn-link" onclick="mudarTela('bloco-recuperar')">Esqueci minha senha</button>
                     <button class="btn-link" onclick="abrirModalCadastro()" style="margin-top: 8px;">Ainda não tenho conta</button>
-                    <button id="btn-remover-bio" class="btn-link" onclick="desativarBiometria()" style="display: none;">Não usar mais digital neste aparelho</button> 
+                    <!--<button id="btn-remover-bio" class="btn-link" onclick="desativarBiometria()" style="display: none;">Não usar mais digital neste aparelho</button>-->
                 </div>
             </div>
 
@@ -942,7 +942,7 @@
             }
 
             btn.disabled = true;
-            btn.innerText = "Aguardando o aparelho...";
+            btn.innerText = "Validando Segurança...";
             erro.style.display = 'none';
 
             try {
@@ -979,7 +979,7 @@
             const btn = document.getElementById('btn-biometria');
             erro.style.display = 'none';
             btn.disabled = true;
-            btn.innerText = "Aguardando o aparelho...";
+            btn.innerText = "Validando Segurança...";
 
             try {
                 const cadastro = await Biometria.autenticar();
