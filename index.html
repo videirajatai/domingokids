@@ -1115,8 +1115,9 @@
                     redirectTo: urlDestino,
                 });
                 if (error) throw error;
-        
-                exibirSucesso('E-mail de recuperação enviado! Verifique sua caixa de entrada.');
+                
+                showToast('E-mail de recuperação enviado! Verifique sua caixa de entrada');
+                //exibirSucesso('E-mail de recuperação enviado! Verifique sua caixa de entrada.');
                 document.getElementById('rec-email').value = "";
                 mudarTela('bloco-login');
             } catch (e) {
