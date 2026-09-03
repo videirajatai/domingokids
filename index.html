@@ -682,6 +682,13 @@
 
         let loginPendente = null;
 
+        function ehCelular() {
+            const ua = navigator.userAgent || '';
+            if (/Android|iPhone|iPad|iPod/i.test(ua)) return true;
+            if (navigator.maxTouchPoints > 1 && /Macintosh/i.test(ua)) return true;
+            return false;
+        }
+
         // ==================== FUNÇÕES AUXILIARES ====================
         function mudarTela(idBloco) {
             document.querySelectorAll('.bloco').forEach(b => b.classList.remove('ativo'));
@@ -964,7 +971,7 @@
                 const nome = loginData.user.user_metadata?.full_name
                     || (role === 'admin' ? 'Admin' : role === 'staff' ? 'Equipe' : 'Pai');
 
-                const podeBio = await Biometria.plataformaDisponivel();
+                const podeBio = ehCelular() && await Biometria.plataformaDisponivel();
                 if (podeBio && !Biometria.cadastradaPara(emailParaLogin)) {
                     loginPendente = {
                         nome: nome,
@@ -1090,14 +1097,14 @@
         async function atualizarBotoesBiometria() {
             const btnBio = document.getElementById('btn-biometria');
             const btnRemover = document.getElementById('btn-remover-bio');
-            const ok = await Biometria.plataformaDisponivel();
+            const ok = ehCelular() && await Biometria.plataformaDisponivel();
             const tem = Biometria.temCadastro();
-            btnBio.style.display = (ok && tem) ? 'block' : 'none';
-            btnRemover.style.display = tem ? 'block' : 'none';
+            if (btnBio) btnBio.style.display = (ok && tem) ? 'block' : 'none';
+            if (btnRemover) btnRemover.style.display = (ok && tem) ? 'block' : 'none';
         }
 
         atualizarBotoesBiometria().then(function () {
-            if (Biometria.temCadastro()) loginComBiometria();
+            if (ehCelular() && Biometria.temCadastro()) loginComBiometria();
         });
 
         // ==================== ESCOLHER PAPEL (modal) ====================
