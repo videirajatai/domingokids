@@ -299,9 +299,6 @@
             transition: 0.2s;
         }
         .modal-close:hover { color: #333; }
-        .hidden-section { display: none !important; }
-        .loader { border: 3px solid #e2e8f0; border-top: 3px solid #059669; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
-          @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         /* Para o modal de termos ter prioridade */
         #modal-termos {
@@ -447,12 +444,6 @@
     </style>
 </head>
 <body>
-     <main class="flex-1 md:ml-64 p-4 md:p-6 overflow-y-auto h-screen no-print bg-slate-100">
-         <div id="loading" class="hidden fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
-             <div class="bg-white p-6 rounded-xl flex flex-col items-center shadow-lg"><div class="loader mb-4"></div><span class="font-bold text-slate-700">Processando...</span></div>
-          </div>
-         <div id="toast" class="hidden fixed top-5 right-5 px-6 py-3 rounded-lg shadow-xl text-white font-medium z-50 bg-slate-800 transition-opacity duration-300"></div>
-    </main>
 
     <script>
         // Desregistra Service Workers antigos e limpa caches (se houver)
