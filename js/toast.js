@@ -1,10 +1,30 @@
-         function showLoading(show) { 
-              document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
+/**
+ * Exibe um toast flutuante no canto superior direito.
+ * @param {string} mensagem - Texto a ser exibido.
+ * @param {string} [tipo=''] - Classe extra: 'success', 'error' ou 'info'.
+ * @param {number} [duracao=3000] - Tempo em ms até sumir.
+ */
+function showToast(mensagem, tipo = '', duracao = 3000) {
+    // Cria o container se não existir
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
 
-          function showToast(msg, isError) { 
-              const t=document.getElementById('toast'); 
-              t.textContent=msg; 
-              t.className=`fixed top-5 right-5 px-6 py-3 rounded-lg shadow-xl text-white font-medium z-50 ${isError?'bg-red-600':'bg-slate-800'}`; 
-              t.style.display='block'; 
-              setTimeout(()=>t.style.display='none',3000); 
-          }
+    // Cria o elemento do toast
+    const toast = document.createElement('div');
+    toast.className = `toast ${tipo}`;
+    toast.textContent = mensagem;
+
+    // Adiciona ao container
+    container.appendChild(toast);
+
+    // Remove após a duração + tempo da animação de saída
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.remove();
+        }
+    }, duracao + 400); // 400ms = duração do fadeOut
+}
