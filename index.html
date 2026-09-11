@@ -3,26 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kids Checkin • Login</title>
+    <title>Domingo Kids | Igreja Videira de Jataí</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">    
 
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    <meta name="description" content="Check-in das crianças da Igreja Videira de Jataí. Domingo Kids.">
 
-    <link rel="icon" type="image/png" href="logo.png">
-    <link rel="shortcut icon" type="image/png" href="logo.png">
-    <link rel="apple-touch-icon" href="logo4-branco.png">
+    <link rel="icon" type="image/png" href="icons/icon-192.png">
+    <link rel="shortcut icon" type="image/png" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-180.png">
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="application-name" content="Domingo Kids">
     <meta name="apple-mobile-web-app-title" content="Domingo Kids">
-    <meta name="theme-color" content="#fcf7f5"> 
+    <meta name="theme-color" content="#8b5a6a">
     <link rel="manifest" href="manifest.json">
 
-    <script src="config.js"></script>
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Domingo Kids">
+    <meta property="og:title" content="Domingo Kids | Igreja Videira de Jataí">
+    <meta property="og:description" content="Check-in das crianças da Igreja Videira de Jataí.">
+    <meta property="og:url" content="https://videirajatai.com.br/domingokids/">
+    <meta property="og:image" content="https://videirajatai.com.br/domingokids/og-cover.png">
+    <meta property="og:image:secure_url" content="https://videirajatai.com.br/domingokids/og-cover.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Domingo Kids - Igreja Videira de Jataí">
+    <meta property="og:locale" content="pt_BR">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Domingo Kids | Igreja Videira de Jataí">
+    <meta name="twitter:description" content="Check-in das crianças da Igreja Videira de Jataí.">
+    <meta name="twitter:image" content="https://videirajatai.com.br/domingokids/og-cover.png">
+
+    <script src="config.js?v=4"></script>
     <script src="js/toast.js"></script>
   
     <style>
@@ -419,6 +438,15 @@
             background: #c4906a;
         }
 
+        #modal-escolha .btn-admin {
+            background: #3a2a20;
+            color: white;
+        }
+
+        #modal-escolha .btn-admin:hover {
+            background: #52402f;
+        }
+
         @media (max-width: 480px) {
             .card-login {
                 padding: 1.5rem 1.2rem;
@@ -516,21 +544,7 @@
 </head>
 <body>
 
-    <script>
-        // Desregistra Service Workers antigos e limpa caches (se houver)
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                for (let registration of registrations) {
-                    registration.unregister();
-                }
-            });
-        }
-        if ('caches' in window) {
-            caches.keys().then(function(names) {
-                for (let name of names) caches.delete(name);
-            });
-        }
-    </script>
+
 
     <!-- ===== TELA DE LOGIN ===== -->
     <div id="tela-login">
@@ -598,13 +612,14 @@
         <p id="splash-texto">Autenticando e carregando...</p>
     </div>
 
-    <!-- ===== MODAL DE ESCOLHA (parent / staff) ===== -->
+    <!-- ===== MODAL DE ESCOLHA (parent / staff / admin) ===== -->
     <div id="modal-escolha">
         <div class="modal-box">
             <h3>Olá, <span id="nome-usuario-escolha">usuário</span>!</h3>
             <p>Como você deseja acessar hoje?</p>
             <button class="btn-escolha btn-pai" onclick="escolherPapel('parent')">👨‍👩‍👧 Acessar como Pai</button>
             <button class="btn-escolha btn-equipe" onclick="escolherPapel('staff')">👥 Acessar como Equipe</button>
+            <button class="btn-escolha btn-admin" id="btn-escolha-admin" style="display:none;" onclick="escolherPapel('admin')">🛡️ Acessar como Admin</button>
         </div>
     </div>
 
@@ -669,7 +684,7 @@
 
     <!-- ===== SCRIPTS ===== -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/biometria.js"></script>
+    <script src="js/biometria.js?v=2"></script>
     <script>
         // ==================== CONFIGURAÇÃO ====================
         const supabaseClient = supabase.createClient(SB_URL, SB_KEY, {
@@ -920,6 +935,14 @@
                     const { data: emailEncontrado, error: profileErr } = await supabaseClient
                         .rpc('get_email_por_username', { p_username: entrada });
         
+                    if (profileErr && /rate_limited/i.test(profileErr.message || '')) {
+                        exibirErro('mensagem-erro', 'Muitas tentativas. Aguarde alguns minutos e tente novamente.');
+                        document.getElementById('senha-input').value = "";
+                        btn.innerText = "Entrar";
+                        btn.disabled = false;
+                        return;
+                    }
+
                     if (profileErr || !emailEncontrado) {
                         exibirErro('mensagem-erro', 'Usuário não encontrado.');
                         document.getElementById('senha-input').value = "";
@@ -945,6 +968,9 @@
                 }
         
                 const userId = loginData.user.id;
+                if (typeof Biometria !== 'undefined' && typeof Biometria.limparSessao === 'function') {
+                    Biometria.limparSessao();
+                }
         
                 const { data: profile, error: profileError } = await supabaseClient
                     .from('kids_profiles')
@@ -971,8 +997,12 @@
                 const nome = loginData.user.user_metadata?.full_name
                     || (role === 'admin' ? 'Admin' : role === 'staff' ? 'Equipe' : 'Pai');
 
-                const podeBio = ehCelular() && await Biometria.plataformaDisponivel();
-                if (podeBio && !Biometria.cadastradaPara(emailParaLogin)) {
+                let podeBio = false;
+                if (ehCelular() && typeof Biometria !== 'undefined'
+                    && typeof Biometria.plataformaDisponivel === 'function') {
+                    try { podeBio = await Biometria.plataformaDisponivel(); } catch (e) { podeBio = false; }
+                }
+                if (podeBio && typeof Biometria.cadastradaPara === 'function' && !Biometria.cadastradaPara(emailParaLogin)) {
                     loginPendente = {
                         nome: nome,
                         email: emailParaLogin,
@@ -991,7 +1021,8 @@
         
             } catch (err) {
                 console.error('Erro no login:', err);
-                exibirErro('mensagem-erro', 'Erro inesperado. Tente novamente.');
+                const detalhe = (err && err.message) ? err.message : String(err);
+                exibirErro('mensagem-erro', 'Erro inesperado: ' + detalhe);
                 btn.innerText = "Entrar";
                 btn.disabled = false;
             }
@@ -999,17 +1030,22 @@
 
         function seguirAposLogin(nome, role) {
             if (role === 'admin') {
-                entrarNoPainel(nome || 'Admin', 'admin');
+                abrirModalEscolha(nome, true);
             } else if (role === 'staff') {
                 entrarNoPainel(nome || 'Equipe', 'equipe');
             } else if (role === 'parent') {
                 entrarNoPainel(nome || 'Pai', 'pais');
             } else if (role === 'both') {
-                document.getElementById('nome-usuario-escolha').innerText = nome || 'usuário';
-                document.getElementById('modal-escolha').style.display = 'flex';
+                abrirModalEscolha(nome, false);
             } else {
                 entrarNoPainel(nome || 'Pai', 'pais');
             }
+        }
+
+        function abrirModalEscolha(nome, mostrarAdmin) {
+            document.getElementById('nome-usuario-escolha').innerText = nome || 'usuário';
+            document.getElementById('btn-escolha-admin').style.display = mostrarAdmin ? 'block' : 'none';
+            document.getElementById('modal-escolha').style.display = 'flex';
         }
 
         async function ativarBiometria() {
@@ -1056,15 +1092,42 @@
         async function loginComBiometria() {
             const erro = document.getElementById('mensagem-erro');
             const btn = document.getElementById('btn-biometria');
+            if (typeof Biometria === 'undefined' || typeof Biometria.autenticar !== 'function') {
+                exibirErro('mensagem-erro', "Recurso de biometria indisponível. Entre com usuário e senha.");
+                return;
+            }
             erro.style.display = 'none';
             btn.disabled = true;
             btn.innerText = "Validando Segurança...";
 
             try {
                 const cadastro = await Biometria.autenticar();
-                const { data: { user } } = await supabaseClient.auth.getUser();
+                const emailCadastro = (cadastro.email || '').toLowerCase();
 
-                if (!user || (user.email || '').toLowerCase() !== (cadastro.email || '').toLowerCase()) {
+                let user = (await supabaseClient.auth.getUser()).data.user;
+
+                // Sessão foi encerrada (logout): restaura os tokens guardados
+                // após validar a digital, para o login rápido funcionar.
+                if (!user) {
+                    const backup = (typeof Biometria.lerSessao === 'function') ? Biometria.lerSessao() : null;
+                    if (backup && backup.access_token && backup.refresh_token
+                        && (backup.email || '').toLowerCase() === emailCadastro) {
+                        const { error: setErr } = await supabaseClient.auth.setSession({
+                            access_token: backup.access_token,
+                            refresh_token: backup.refresh_token
+                        });
+                        if (!setErr) {
+                            user = (await supabaseClient.auth.getUser()).data.user;
+                            if (typeof Biometria.limparSessao === 'function') Biometria.limparSessao();
+                        } else if (typeof Biometria.limparSessao === 'function') {
+                            // Backup inválido/expirado: descarta para não repetir
+                            // o prompt de digital a cada abertura.
+                            Biometria.limparSessao();
+                        }
+                    }
+                }
+
+                if (!user || (user.email || '').toLowerCase() !== emailCadastro) {
                     throw new Error("Sessão expirada. Entre com usuário e senha. A digital continua cadastrada neste aparelho.");
                 }
 
@@ -1090,26 +1153,44 @@
         }
 
         function desativarBiometria() {
-            Biometria.removerCadastro();
+            if (typeof Biometria !== 'undefined' && typeof Biometria.removerCadastro === 'function') {
+                Biometria.removerCadastro();
+            }
             atualizarBotoesBiometria();
         }
 
         async function atualizarBotoesBiometria() {
             const btnBio = document.getElementById('btn-biometria');
             const btnRemover = document.getElementById('btn-remover-bio');
-            const ok = ehCelular() && await Biometria.plataformaDisponivel();
-            const tem = Biometria.temCadastro();
+            let ok = false;
+            let tem = false;
+            if (typeof Biometria !== 'undefined') {
+                try { ok = ehCelular() && await Biometria.plataformaDisponivel(); } catch (e) { ok = false; }
+                try { tem = Biometria.temCadastro(); } catch (e) { tem = false; }
+            }
             if (btnBio) btnBio.style.display = (ok && tem) ? 'block' : 'none';
             if (btnRemover) btnRemover.style.display = (ok && tem) ? 'block' : 'none';
         }
 
         atualizarBotoesBiometria().then(function () {
-            if (ehCelular() && Biometria.temCadastro()) loginComBiometria();
-        });
+            // Após um logout explícito, não reentra sozinho com a biometria.
+            // No próximo acesso (sem o parâmetro), o login rápido volta a agir.
+            const acabouDeSair = new URLSearchParams(window.location.search).has('logout');
+            if (acabouDeSair) return;
+            if (!ehCelular() || typeof Biometria === 'undefined' || !Biometria.temCadastro()) return;
+            // Só tenta o login rápido se houver sessão salva ou backup do logout,
+            // para não abrir a digital enquanto o usuário digita a senha.
+            supabaseClient.auth.getSession().then(function (r) {
+                const temSessao = !!(r && r.data && r.data.session);
+                const temBackup = !!localStorage.getItem('dk_sessao_bio');
+                if (temSessao || temBackup) loginComBiometria();
+            }).catch(function () {});
+        }).catch(function (e) { console.warn('Biometria indisponível:', e); });
 
         // ==================== ESCOLHER PAPEL (modal) ====================
         function escolherPapel(role) {
-            const url = role === 'staff' ? 'equipe.html' : 'pais.html';
+            const destinos = { parent: 'pais.html', staff: 'equipe.html', admin: 'admin.html' };
+            const url = destinos[role] || 'pais.html';
             document.getElementById('modal-escolha').style.display = 'none';
             entrarNoPainel('', url);
         }
@@ -1147,7 +1228,7 @@
             erro.style.display = 'none';
         
             try {
-                const urlDestino = window.location.origin + "/domingokids/novasenha.html";
+                const urlDestino = new URL('novasenha.html', window.location.href).href;
                 const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
                     redirectTo: urlDestino,
                 });
@@ -1238,7 +1319,15 @@
                 const { data: check, error: buscaError } = await supabaseClient
                     .rpc('check_cadastro_disponivel', { p_username: username, p_email: email });
         
-                if (buscaError) throw buscaError;
+                if (buscaError) {
+                    if (/rate_limited/i.test(buscaError.message || '')) {
+                        exibirMsgCadastro('Muitas tentativas. Aguarde alguns minutos e tente novamente.', 'error');
+                        btn.disabled = false;
+                        btn.innerText = 'Criar conta';
+                        return;
+                    }
+                    throw buscaError;
+                }
         
                 if (check.username_ocupado) {
                     exibirMsgCadastro(`O nome de usuário "${username}" já está em uso.`, 'error');
@@ -1336,6 +1425,7 @@
             }
         })();*/
     </script>
+    <script src="js/pwa.js?v=3"></script>
 
 </body>
 </html>

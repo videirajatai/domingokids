@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Kids Checkin | Equipe</title>
+    <title>Domingo Kids | Equipe</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -11,19 +11,43 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 
-     <link rel="icon" type="image/png" href="logo.png">
-    <link rel="shortcut icon" type="image/png" href="logo.png">
-    <link rel="apple-touch-icon" href="logo.png">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+     <link rel="icon" type="image/png" href="icons/icon-192.png">
+    <link rel="shortcut icon" type="image/png" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-180.png">
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Kids Checkin">
-    <meta name="apple-mobile-web-app-title" content="Kids Checkin">
-    <meta name="theme-color" content="#fcf7f5"> 
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="application-name" content="Domingo Kids">
+    <meta name="apple-mobile-web-app-title" content="Domingo Kids">
+    <meta name="theme-color" content="#8b5a6a">
     <link rel="manifest" href="manifest.json">
+    <meta name="description" content="Painel da equipe do Domingo Kids. Check-in e check-out das crianças.">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Domingo Kids">
+    <meta property="og:title" content="Domingo Kids | Equipe">
+    <meta property="og:description" content="Painel da equipe do Domingo Kids. Check-in e check-out das crianças.">
+    <meta property="og:url" content="https://videirajatai.com.br/domingokids/equipe.html">
+    <meta property="og:image" content="https://videirajatai.com.br/domingokids/og-cover.png">
+    <meta property="og:image:secure_url" content="https://videirajatai.com.br/domingokids/og-cover.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Domingo Kids - Igreja Videira de Jataí">
+    <meta property="og:locale" content="pt_BR">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Domingo Kids | Equipe">
+    <meta name="twitter:description" content="Painel da equipe do Domingo Kids. Check-in e check-out das crianças.">
+    <meta name="twitter:image" content="https://videirajatai.com.br/domingokids/og-cover.png">
 
     
-    <script src="config.js"></script>
+    <script src="config.js?v=4"></script>
+    <script src="js/push.js"></script>
 
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -973,7 +997,9 @@
             if (existingToast) existingToast.remove();
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
-            toast.innerHTML = `<span>${message}</span>`;
+            const span = document.createElement('span');
+            span.textContent = message == null ? '' : String(message);
+            toast.appendChild(span);
             document.body.appendChild(toast);
             toast.offsetHeight;
             toast.classList.add('show');
@@ -987,7 +1013,18 @@
         async function init() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = 'index.html'; return; }
+            const { data: perfil } = await supabaseClient
+                .from('kids_profiles')
+                .select('role')
+                .eq('id', user.id)
+                .maybeSingle();
+            const papel = perfil && perfil.role ? perfil.role : 'parent';
+            if (!['staff', 'admin', 'both'].includes(papel)) {
+                window.location.href = 'pais.html?t=' + Date.now();
+                return;
+            }
             currentStaffId = user.id;
+            registrarPush();
             await loadSessions();
             await loadCameras();
             setupRoomFilter();
@@ -1018,57 +1055,61 @@
         }
         
        async function loadSessions() {
-                // Buscar todas as sessões (para popular o dropdown)
-                const { data: todas, error } = await supabaseClient
-                    .from('kids_sessions')
-                    .select('id, name, session_date, is_active')
-                    .order('session_date', { ascending: false });
-            
-                if (error) {
-                    console.error('Erro ao carregar sessões:', error);
-                    document.getElementById('sessionSelect').innerHTML = '<option>Erro ao carregar</option>';
-                    return;
+            const select = document.getElementById('sessionSelect');
+
+            // So gerencia a sessao do domingo no proprio domingo, para nao
+            // criar/ativar a sessao da proxima semana nem desativar a atual
+            // durante a semana.
+            let sessionId = null;
+            if (diaSemanaSP() === 0) {
+                try {
+                    sessionId = await getOrCreateSundaySession();
+                } catch (e) {
+                    console.error('Erro ao preparar sessão do domingo:', e);
                 }
-            
-                // Popular o dropdown
-                const select = document.getElementById('sessionSelect');
-                select.innerHTML = '';
-                if (todas && todas.length > 0) {
-                    todas.forEach(s => {
-                        const dataFormatada = new Date(s.session_date).toLocaleDateString('pt-BR');
-                        const label = `${s.name} ${s.is_active ? '🟢' : ''}`;
-                        const option = document.createElement('option');
-                        option.value = s.id;
-                        option.textContent = label;
-                        if (s.is_active) option.selected = true;
-                        select.appendChild(option);
-                    });
-                } else {
-                    select.innerHTML = '<option value="">Nenhuma sessão</option>';
-                }
-            
-                // === AUTOMÁTICO: garantir sessão do domingo ===
-                const sessionId = await getOrCreateSundaySession();
-                if (sessionId) {
-                    // Se a sessão do domingo não estiver selecionada, seleciona
-                    if (select.value !== sessionId) {
-                        select.value = sessionId;
-                    }
-                    currentSessionId = sessionId;
-                } else {
-                    // Fallback: usar a primeira sessão da lista
-                    if (todas && todas.length > 0) {
-                        currentSessionId = todas[0].id;
-                        select.value = currentSessionId;
-                    } else {
-                        currentSessionId = null;
-                        showToast('Nenhuma sessão disponível. Crie uma manualmente.', 'error');
-                    }
-                }
-            
-                // Carregar lista de presentes após definir a sessão
-                await loadPresentList();
             }
+
+            const { data: todas, error } = await supabaseClient
+                .from('kids_sessions')
+                .select('id, name, session_date, is_active')
+                .order('session_date', { ascending: false });
+
+            if (error) {
+                console.error('Erro ao carregar sessões:', error);
+                select.innerHTML = '<option>Erro ao carregar</option>';
+                return;
+            }
+
+            // Popular o dropdown
+            select.innerHTML = '';
+            if (todas && todas.length > 0) {
+                todas.forEach(s => {
+                    const label = `${s.name} ${s.is_active ? '🟢' : ''}`;
+                    const option = document.createElement('option');
+                    option.value = s.id;
+                    option.textContent = label;
+                    if (s.id === sessionId || (!sessionId && s.is_active)) option.selected = true;
+                    select.appendChild(option);
+                });
+            } else {
+                select.innerHTML = '<option value="">Nenhuma sessão</option>';
+            }
+
+            if (sessionId) {
+                currentSessionId = sessionId;
+                select.value = sessionId;
+            } else if (todas && todas.length > 0) {
+                const escolhida = todas.find(s => s.is_active) || todas[0];
+                currentSessionId = escolhida.id;
+                select.value = currentSessionId;
+            } else {
+                currentSessionId = null;
+                showToast('Nenhuma sessão disponível. Crie uma manualmente.', 'error');
+            }
+
+            // Carregar lista de presentes após definir a sessão
+            await loadPresentList();
+        }
 
         async function changeSession() {
             currentSessionId = document.getElementById('sessionSelect').value;
@@ -1122,7 +1163,7 @@
                     select.value = savedCameraId;
                 }
             } catch (e) {
-                console.log('Não foi possível listar câmeras', e);
+                console.warn('Não foi possível listar câmeras', e);
             }
         }*/
 
@@ -1146,7 +1187,7 @@
                     select.value = savedCameraId;
                 }
             } catch (e) {
-                console.log('Não foi possível listar câmeras', e);
+                console.warn('Não foi possível listar câmeras', e);
             }
         }*/
 
@@ -1170,7 +1211,7 @@
                     }
                 }
             } catch (e) {
-                console.log('Não foi possível listar câmeras', e);
+                console.warn('Não foi possível listar câmeras', e);
             }
         }
 
@@ -1245,7 +1286,7 @@
 
         function stopScanner() {
             if (html5QrCode && scannerActive) {
-                html5QrCode.stop();
+                html5QrCode.stop().catch(function () {});
                 scannerActive = false;
                 document.getElementById('startScannerBtn').style.display = 'inline-block';
                 document.getElementById('stopScannerBtn').style.display = 'none';
@@ -1259,7 +1300,7 @@
             await processToken(decodedText);
         }
 
-        function onScanError(err) { console.log(err); }
+        function onScanError(err) { /* erro de leitura do frame é esperado; silencioso */ }
 
         // ========== PROCESSAR TOKEN (check‑in / checkout) – MESMO CÓDIGO ==========
         async function processToken(token) {
@@ -1290,7 +1331,7 @@
                 .maybeSingle();
             if (activeCheckin) {
                 openCheckoutConfirmModal(childId, activeCheckin.id);
-                document.getElementById('scanResult').innerHTML = `🔔 Escaneado: ${childName}`;
+                document.getElementById('scanResult').innerHTML = `🔔 Escaneado: ${escapeHtml(childName)}`;
                 return;
             }
             const birthDate = tokenData.child?.birth_date || null;
@@ -1316,12 +1357,28 @@
         // ========== CALCULAR IDADE ==========
         function calcularIdade(birthDateStr) {
             if (!birthDateStr) return 0;
-            const birth = new Date(birthDateStr);
-            const today = new Date();
-            let age = today.getFullYear() - birth.getFullYear();
-            const m = today.getMonth() - birth.getMonth();
-            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+            const parts = String(birthDateStr).split('-').map(Number);
+            if (parts.length !== 3 || parts.some(isNaN)) return 0;
+            const [by, bm, bd] = parts;
+            const hoje = partesSP();
+            let age = hoje.ano - by;
+            const m = hoje.mes - bm;
+            if (m < 0 || (m === 0 && hoje.dia < bd)) age--;
             return age;
+        }
+
+        // Janela de aniversario: hoje ate +6 dias (mesma regra do servidor)
+        function estaNaJanelaAniversario(birthDateStr) {
+            if (!birthDateStr) return false;
+            const parts = String(birthDateStr).split('-').map(Number);
+            if (parts.length !== 3 || parts.some(isNaN)) return false;
+            const bm = parts[1], bd = parts[2];
+            const p = partesSP();
+            for (let d = 0; d <= 6; d++) {
+                const dia = new Date(Date.UTC(p.ano, p.mes - 1, p.dia + d, 12));
+                if (dia.getUTCMonth() + 1 === bm && dia.getUTCDate() === bd) return true;
+            }
+            return false;
         }
 
         // ========== MODAL SALA ==========
@@ -1334,7 +1391,7 @@
             }
 
             const fotoHtml = extra.photoUrl
-                ? `<img src="${extra.photoUrl}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;margin:0 auto 0.5rem;display:block;border:2px solid var(--border-color);">`
+                ? `<img src="${safeUrl(extra.photoUrl)}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;margin:0 auto 0.5rem;display:block;border:2px solid var(--border-color);">`
                 : `<div style="width:72px;height:72px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 0.5rem;">👶</div>`;
 
             let contatosHtml = '';
@@ -1374,6 +1431,12 @@
         async function confirmCheckinWithRoom(room) {
             if (!pendingCheckinData) return;
             const { tokenId, childId, childName, allergies, tokenValue, birthDate } = pendingCheckinData;
+            pendingCheckinData = null;
+            if (!currentSessionId) {
+                showToast('Sessão não carregada. Recarregue a página.', 'error');
+                closeSelectRoomModal();
+                return;
+            }
             const badgeNumber = null;
             const { data: childData, error: childError } = await supabaseClient
                 .from('kids_children')
@@ -1382,6 +1445,7 @@
                 .single();
             if (childError || !childData) {
                 showToast('Erro ao buscar dados da criança', 'error');
+                closeSelectRoomModal();
                 return;
             }
             const family = childData.family || {};
@@ -1402,7 +1466,7 @@
                 document.getElementById('scanResult').innerHTML = '❌ Erro no check‑in.';
             } else {
                 const roomDisplay = room === 'todos' ? 'Todos' : room;
-                document.getElementById('scanResult').innerHTML = `✅ Check‑in: ${childName} (${roomDisplay})`;
+                document.getElementById('scanResult').innerHTML = `✅ Check‑in: ${escapeHtml(childName)} (${escapeHtml(roomDisplay)})`;
                 showToast(`Check‑in: ${childName} - Sala ${roomDisplay}`, 'success');
                 await loadPresentList();
                 let idade = '';
@@ -1410,13 +1474,29 @@
                     const idadeNum = calcularIdade(birthDate);
                     idade = `${idadeNum} anos`;
                 }
+                await enviarPush({
+                    event: 'checkin',
+                    checkinId: newCheckin.id,
+                    childId: childId,
+                    childName: childName,
+                    room: room
+                });
+                if (estaNaJanelaAniversario(birthDate)) {
+                    await enviarPush({
+                        event: 'aniversario_checkin',
+                        childId: childId,
+                        childName: childName
+                    });
+                }
                 const isVisitor = !!childData.is_visitor;
                 const fatherPhone = isVisitor ? (childData.visitor_responsible_phone || 'Não informado') : (family.father_phone || 'Não informado');
                 const motherPhone = isVisitor ? '' : (family.mother_phone || 'Não informado');
-                printLabel(tokenValue, childName, allergies, idade, fatherPhone, motherPhone, newCheckin.id, {
-                    isVisitor,
-                    respName: childData.visitor_responsible_name || ''
-                });
+                try {
+                    await printLabel(tokenValue, childName, allergies, idade, fatherPhone, motherPhone, newCheckin.id, {
+                        isVisitor,
+                        respName: childData.visitor_responsible_name || ''
+                    });
+                } catch (e) {}
             }
             closeSelectRoomModal();
         }
@@ -1682,7 +1762,7 @@
                         <!-- Card do Pai -->
                         <div style="flex:1; min-width:140px; text-align:center; background:var(--input-bg); border-radius:var(--radius-md); padding:0.8rem; border:1px solid var(--border-color);">
                             <div style="width:60px;height:60px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;margin:0 auto 0.3rem;overflow:hidden;">
-                                ${family.father_photo_url ? `<img src="${family.father_photo_url}" style="width:100%;height:100%;object-fit:cover;">` : '👨'}
+                                ${family.father_photo_url ? `<img src="${safeUrl(family.father_photo_url)}" style="width:100%;height:100%;object-fit:cover;">` : '👨'}
                             </div>
                             <div><strong>Pai:</strong> ${escapeHtml(family.father_name) || 'Não informado'}</div>
                             <div style="font-size:0.85rem; color:var(--text-light);">📞 ${escapeHtml(family.father_phone) || '-'}</div>
@@ -1696,7 +1776,7 @@
                         <!-- Card da Mãe -->
                         <div style="flex:1; min-width:140px; text-align:center; background:var(--input-bg); border-radius:var(--radius-md); padding:0.8rem; border:1px solid var(--border-color);">
                             <div style="width:60px;height:60px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;margin:0 auto 0.3rem;overflow:hidden;">
-                                ${family.mother_photo_url ? `<img src="${family.mother_photo_url}" style="width:100%;height:100%;object-fit:cover;">` : '👩'}
+                                ${family.mother_photo_url ? `<img src="${safeUrl(family.mother_photo_url)}" style="width:100%;height:100%;object-fit:cover;">` : '👩'}
                             </div>
                             <div><strong>Mãe:</strong> ${escapeHtml(family.mother_name) || 'Não informado'}</div>
                             <div style="font-size:0.85rem; color:var(--text-light);">📞 ${escapeHtml(family.mother_phone) || '-'}</div>
@@ -1713,7 +1793,7 @@
             const html = `
                 <button class="modal-close" onclick="closeChildDetailsModal()">&times;</button>
                 <div style="text-align:center;">
-                    ${child.photo_url ? `<img src="${child.photo_url}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;margin-bottom:0.5rem;">` : '<div style="width:100px;height:100px;background:var(--border-color);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:3rem;margin:0 auto 0.5rem;">👶</div>'}
+                    ${child.photo_url ? `<img src="${safeUrl(child.photo_url)}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;margin-bottom:0.5rem;">` : '<div style="width:100px;height:100px;background:var(--border-color);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:3rem;margin:0 auto 0.5rem;">👶</div>'}
                     <h3 style="margin:0.2rem 0;">${escapeHtml(child.name)} ${isVisitor ? `<span class="badge" style="background:var(--accent); color:#fff;">visitante</span>` : ''}</h3>
                     <p style="margin:0.2rem 0;"><strong>📅 Nascimento:</strong> ${child.birth_date ? formatDate(child.birth_date) : 'Não informado'}</p>
                     <p style="margin:0.2rem 0;"><strong>⚠️ Alergias:</strong> ${escapeHtml(child.allergies) || 'Nenhuma'}</p>
@@ -1767,24 +1847,16 @@
             if (checkins?.length) {
                 html += `<h4 style="margin-bottom:0.8rem; color:var(--primary);">Presentes ${currentRoomFilter !== 'todos' ? `(Sala: ${currentRoomFilter})` : ''}</h4>`;
                 for (const c of checkins) {
-                    let isBirthdayWeek = false;
-                    if (c.child.birth_date) {
-                        const birth = new Date(c.child.birth_date);
-                        const today = new Date();
-                        const weekLater = new Date();
-                        weekLater.setDate(today.getDate() + 7);
-                        const birthThisYear = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
-                        if (birthThisYear >= today && birthThisYear <= weekLater) isBirthdayWeek = true;
-                    }
+                    const isBirthdayWeek = c.child.birth_date ? estaNaJanelaAniversario(c.child.birth_date) : false;
                     const birthdayIcon = isBirthdayWeek ? '🎂 ' : '';
                     const isVisitor = !!c.child.is_visitor;
                     html += `
                         <div class="present-item ${isVisitor ? 'visitant-item' : ''}" style="border-left-color: ${isVisitor ? 'var(--accent)' : (c.room === 'Kids' ? '#3b82f6' : (c.room === 'Babys' ? '#f59e0b' : (c.room === 'Juvenis' ? '#8b5cf6' : 'var(--success-text)')))}; padding:0.5rem 0.7rem; position:relative;">
                             <div class="present-info">
-                                <div class="present-name" style="font-size:0.9rem;">${birthdayIcon}${escapeHtml(c.child.name)} ${isVisitor ? `<span class="badge" style="background:var(--accent); color:#fff;">visitante</span>` : ''} ${c.badge_number ? `<span class="badge">🏷️ ${c.badge_number}</span>` : ''} ${c.child.allergies ? '<span class="badge">⚠️</span>' : ''}</div>
+                                <div class="present-name" style="font-size:0.9rem;">${birthdayIcon}${escapeHtml(c.child.name)} ${isVisitor ? `<span class="badge" style="background:var(--accent); color:#fff;">visitante</span>` : ''} ${c.badge_number ? `<span class="badge">🏷️ ${escapeHtml(c.badge_number)}</span>` : ''} ${c.child.allergies ? '<span class="badge">⚠️</span>' : ''}</div>
                                 <div class="present-time" style="font-size:0.7rem; color:var(--text-light);">
-                                    Check‑in: ${new Date(c.checked_in_at).toLocaleTimeString()}
-                                    ${c.room !== 'todos' && currentRoomFilter === 'todos' ? ` · 📌 Sala: ${c.room}` : ''}
+                                    Check‑in: ${formatarDataSP(c.checked_in_at, { hour: '2-digit', minute: '2-digit' })}
+                                    ${c.room !== 'todos' && currentRoomFilter === 'todos' ? ` · 📌 Sala: ${escapeHtml(c.room)}` : ''}
                                 </div>
                             </div>
                             <div class="present-actions" style="position:absolute; top:0.3rem; right:0.5rem; display:flex; gap:0.2rem;">
@@ -1805,9 +1877,14 @@
         
         // ========== CHECKOUT MANUAL ==========
         async function checkoutManual(checkinId) {
-            await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', checkinId);
-            const { data: token } = await supabaseClient.from('kids_temporary_tokens').select('id').eq('checkin_id', checkinId).single();
+            const { error } = await supabaseClient
+                .from('kids_check_ins')
+                .update({ checked_out_at: new Date().toISOString() })
+                .eq('id', checkinId);
+            if (error) { showToast('Erro no check-out: ' + error.message, 'error'); return; }
+            const { data: token } = await supabaseClient.from('kids_temporary_tokens').select('id').eq('checkin_id', checkinId).maybeSingle();
             if (token) await supabaseClient.from('kids_temporary_tokens').update({ expires_at: new Date().toISOString() }).eq('id', token.id);
+            await enviarPush({ event: 'checkout', checkinId: checkinId });
             await loadPresentList();
             showToast('Check‑out manual realizado', 'success');
         }
@@ -1839,11 +1916,11 @@
                 birth_date: c.child.birth_date,
                 currentRoom: roomMap.get(c.id) || 'todos'
             }));
-            document.getElementById('roomModalTitle').innerHTML = `Mover para sala: ${roomName}`;
+            document.getElementById('roomModalTitle').innerHTML = `Mover para sala: ${escapeHtml(roomName)}`;
             const container = document.getElementById('roomChildrenList');
             container.innerHTML = childrenForRoom.map(child => `
                 <div class="room-item">
-                    ${child.photo ? `<img src="${child.photo}" onerror="this.src='https://via.placeholder.com/40'">` : '<div style="width:45px;height:45px;background:var(--border-color);border-radius:50%;display:flex;align-items:center;justify-content:center;">👶</div>'}
+                    ${child.photo ? `<img src="${safeUrl(child.photo)}" onerror="this.src='https://via.placeholder.com/40'">` : '<div style="width:45px;height:45px;background:var(--border-color);border-radius:50%;display:flex;align-items:center;justify-content:center;">👶</div>'}
                     <label style="flex:1;">
                         <input type="checkbox" class="room-checkbox" data-checkin-id="${child.checkinId}" ${child.currentRoom === pendingRoom ? 'checked' : ''}>
                         ${escapeHtml(child.name)} ${child.birth_date ? `(${calcularIdade(child.birth_date)} anos)` : ''}
@@ -2005,7 +2082,7 @@
 
             const html = `
                 <div style="text-align:center;">
-                    ${child.photo_url ? `<img src="${child.photo_url}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:0.5rem;">` : '<div style="width:80px;height:80px;background:var(--border-color);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;margin:0 auto 0.5rem;">👶</div>'}
+                    ${child.photo_url ? `<img src="${safeUrl(child.photo_url)}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:0.5rem;">` : '<div style="width:80px;height:80px;background:var(--border-color);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;margin:0 auto 0.5rem;">👶</div>'}
                     <h3 style="margin:0.2rem 0;">${escapeHtml(child.name)}</h3>
                     <p style="margin:0.2rem 0;"><strong>📅 Idade:</strong> ${idade}</p>
                     ${child.allergies ? `<p style="margin:0.2rem 0;"><strong>⚠️ Alergias:</strong> ${escapeHtml(child.allergies)}</p>` : ''}
@@ -2018,7 +2095,7 @@
                     <!-- Card do Pai -->
                     <div style="flex:1; min-width:130px; text-align:center; background:var(--input-bg); border-radius:var(--radius-md); padding:0.7rem; border:1px solid var(--border-color);">
                         <div style="width:50px;height:50px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;margin:0 auto 0.3rem;overflow:hidden;">
-                            ${family.father_photo_url ? `<img src="${family.father_photo_url}" style="width:100%;height:100%;object-fit:cover;">` : '👨'}
+                            ${family.father_photo_url ? `<img src="${safeUrl(family.father_photo_url)}" style="width:100%;height:100%;object-fit:cover;">` : '👨'}
                         </div>
                         <div style="font-size:0.85rem;"><strong>Pai:</strong> ${escapeHtml(family.father_name) || 'Não informado'}</div>
                         <div style="font-size:0.78rem; color:var(--text-light);">📞 ${escapeHtml(family.father_phone) || '-'}</div>
@@ -2032,7 +2109,7 @@
                     <!-- Card da Mãe -->
                     <div style="flex:1; min-width:130px; text-align:center; background:var(--input-bg); border-radius:var(--radius-md); padding:0.7rem; border:1px solid var(--border-color);">
                         <div style="width:50px;height:50px;border-radius:50%;background:var(--border-color);display:flex;align-items:center;justify-content:center;margin:0 auto 0.3rem;overflow:hidden;">
-                            ${family.mother_photo_url ? `<img src="${family.mother_photo_url}" style="width:100%;height:100%;object-fit:cover;">` : '👩'}
+                            ${family.mother_photo_url ? `<img src="${safeUrl(family.mother_photo_url)}" style="width:100%;height:100%;object-fit:cover;">` : '👩'}
                         </div>
                         <div style="font-size:0.85rem;"><strong>Mãe:</strong> ${escapeHtml(family.mother_name) || 'Não informado'}</div>
                         <div style="font-size:0.78rem; color:var(--text-light);">📞 ${escapeHtml(family.mother_phone) || '-'}</div>
@@ -2058,9 +2135,15 @@
         async function confirmCheckout() {
             if (!pendingCheckoutData) return;
             const { checkinId } = pendingCheckoutData;
-            await supabaseClient.from('kids_check_ins').update({ checked_out_at: new Date().toISOString() }).eq('id', checkinId);
-            const { data: token } = await supabaseClient.from('kids_temporary_tokens').select('id').eq('checkin_id', checkinId).single();
+            pendingCheckoutData = null;
+            const { error } = await supabaseClient
+                .from('kids_check_ins')
+                .update({ checked_out_at: new Date().toISOString() })
+                .eq('id', checkinId);
+            if (error) { showToast('Erro no check-out: ' + error.message, 'error'); return; }
+            const { data: token } = await supabaseClient.from('kids_temporary_tokens').select('id').eq('checkin_id', checkinId).maybeSingle();
             if (token) await supabaseClient.from('kids_temporary_tokens').update({ expires_at: new Date().toISOString() }).eq('id', token.id);
+            await enviarPush({ event: 'checkout', checkinId: checkinId });
             showToast('Check‑out realizado com sucesso!', 'success');
             document.getElementById('scanResult').innerHTML = `✅ Check‑out confirmado!`;
             closeCheckoutConfirmModal();
@@ -2077,9 +2160,9 @@
             carregarSessoesSelect();
             carregarCriancasSelect();
             // Definir mês atual no input
-            const hoje = new Date();
-            document.getElementById('relMesInput').value = hoje.getFullYear() + '-' + String(hoje.getMonth()+1).padStart(2,'0');
-            document.getElementById('relAnoInput').value = hoje.getFullYear();
+            const hoje = partesSP();
+            document.getElementById('relMesInput').value = hoje.ano + '-' + String(hoje.mes).padStart(2,'0');
+            document.getElementById('relAnoInput').value = hoje.ano;
             document.getElementById('reportModal').style.display = 'flex';
         }
         
@@ -2171,12 +2254,12 @@
                     <div class="header">
                         <img src="logo.png" alt="Logo">
                         <h1>Relatório de Presenças</h1>
-                        <p>${sessao?.name || 'Sessão'}</p>
+                        <p>${escapeHtml(sessao?.name || 'Sessão')}</p>
                     </div>
                     <div class="stats-grid">
                         <div class="stat-card"><div class="stat-number">${totalGeral}</div><div class="stat-label">Total de crianças</div></div>
                         ${Object.entries(totaisPorSala).map(([sala, qtd]) => `
-                            <div class="stat-card"><div class="stat-number">${qtd}</div><div class="stat-label">Sala ${sala}</div></div>
+                            <div class="stat-card"><div class="stat-number">${qtd}</div><div class="stat-label">Sala ${escapeHtml(sala)}</div></div>
                         `).join('')}
                     </div>
                     <table>
@@ -2185,13 +2268,13 @@
                             ${(checkins || []).map(c => {
                                 const idade = c.child.birth_date ? `${calcularIdade(c.child.birth_date)} anos` : '';
                                 const alergias = c.child.allergies || 'Nenhuma';
-                                const checkin = new Date(c.checked_in_at).toLocaleString('pt-BR');
-                                const checkout = c.checked_out_at ? new Date(c.checked_out_at).toLocaleString('pt-BR') : 'Ainda presente';
+                                const checkin = formatarDataSP(c.checked_in_at);
+                                const checkout = c.checked_out_at ? formatarDataSP(c.checked_out_at) : 'Ainda presente';
                                 return `<tr>
                                     <td>${escapeHtml(c.child.name)}${c.child.is_visitor ? ' <span style="font-size:0.75em;color:#b9824f;">(visitante)</span>' : ''}</td>
                                     <td>${idade}</td>
                                     <td>${escapeHtml(alergias)}</td>
-                                    <td>${c.room || 'Não definida'}</td>
+                                    <td>${escapeHtml(c.room || 'Não definida')}</td>
                                     <td>${checkin}</td>
                                     <td>${checkout}</td>
                                 </tr>`;
@@ -2206,11 +2289,11 @@
                          <h4 style="font-size: 0.7rem;"> Juvenis</h4>
                          ${[3].map(i => `<div style="font-size: 11px; margin:3px 0;"><span>Líder 1: _____________________________ Líder 2: _____________________________ Auxiliar: _____________________________ </span></div>`).join('')}
                     </div>     
-                    <div class="footer">Relatório gerado em ${new Date().toLocaleString('pt-BR')}</div>
+                    <div class="footer">Relatório gerado em ${formatarDataSP(new Date())}</div>
                 </div>
             `;
         
-            gerarPDFComHtml(html, `DK_${sessao?.name || 'sessao'}`);
+            gerarPDFComHtml(html, `DK_${escapeHtml(sessao?.name || 'sessao')}`);
         }
         
         // ---------- RELATÓRIO POR MÊS ----------
@@ -2222,15 +2305,15 @@
                 return;
             }
             const [ano, mes] = mesAno.split('-').map(Number);
-            const dataInicio = new Date(ano, mes-1, 1);
-            const dataFim = new Date(ano, mes, 0); // último dia do mês
+            const dataInicio = meiaNoiteSP(ano, mes, 1);
+            const dataFim = meiaNoiteSP(mes === 12 ? ano + 1 : ano, mes === 12 ? 1 : mes + 1, 1);
         
             // Buscar check-ins do mês
             let query = supabaseClient
                 .from('kids_check_ins')
                 .select('*, child:child_id(id, name, birth_date, allergies, is_visitor)')
                 .gte('checked_in_at', dataInicio.toISOString())
-                .lte('checked_in_at', dataFim.toISOString());
+                .lt('checked_in_at', dataFim.toISOString());
             if (salaFiltro !== 'todos') {
                 query = query.eq('room', salaFiltro);
             }
@@ -2263,7 +2346,7 @@
                     <div class="header">
                         <img src="logo.png" alt="Logo">
                         <h1>Relatório Mensal</h1>
-                        <p>${new Date(ano, mes-1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })} - ${salaFiltro === 'todos' ? 'Todas as salas' : `Sala ${salaFiltro}`}</p>
+                        <p>${formatarDataSP(`${ano}-${String(mes).padStart(2,'0')}-01`, { month: 'long', year: 'numeric' })} - ${salaFiltro === 'todos' ? 'Todas as salas' : `Sala ${salaFiltro}`}</p>
                     </div>
                     <div class="stats-grid">
                         <div class="stat-card"><div class="stat-number">${totalCriancas}</div><div class="stat-label">Total de crianças</div></div>
@@ -2282,7 +2365,7 @@
                             `).join('')}
                         </tbody>
                     </table>
-                    <div class="footer">Relatório gerado em ${new Date().toLocaleString('pt-BR')}</div>
+                    <div class="footer">Relatório gerado em ${formatarDataSP(new Date())}</div>
                 </div>
             `;
         
@@ -2316,7 +2399,7 @@
                 .from('kids_check_ins')
                 .select('*, child:child_id(id, name, birth_date, allergies, is_visitor)')
                 .gte('checked_in_at', `${ano}-01-01`)
-                .lte('checked_in_at', `${ano}-12-31`);
+                .lt('checked_in_at', `${ano + 1}-01-01`);
             if (salaFiltro !== 'todos') {
                 query = query.eq('room', salaFiltro);
             }
@@ -2374,7 +2457,7 @@
                             `).join('')}
                         </tbody>
                     </table>
-                    <div class="footer">Relatório gerado em ${new Date().toLocaleString('pt-BR')}</div>
+                    <div class="footer">Relatório gerado em ${formatarDataSP(new Date())}</div>
                 </div>
             `;
         
@@ -2442,8 +2525,8 @@
                         <img src="logo.png" alt="Logo">
                         <h1>Relatório Individual</h1>
                         <p>${escapeHtml(child.name)} ${child.birth_date ? `- ${formatDate(child.birth_date)}` : ''}</p>
-                        ${family.father_name || family.mother_name ? `<p style="font-size:0.8rem;">Responsáveis: ${family.father_name || ''} ${family.mother_name ? `& ${family.mother_name}` : ''}</p>` : ''}
-                        ${dataInicio && dataFim ? `<p>Período: ${new Date(dataInicio).toLocaleDateString('pt-BR')} a ${new Date(dataFim).toLocaleDateString('pt-BR')}</p>` : '<p>Todos os registros</p>'}
+                        ${family.father_name || family.mother_name ? `<p style="font-size:0.8rem;">Responsáveis: ${escapeHtml(family.father_name) || ''} ${family.mother_name ? `& ${escapeHtml(family.mother_name)}` : ''}</p>` : ''}
+                        ${dataInicio && dataFim ? `<p>Período: ${formatarDataSP(dataInicio)} a ${formatarDataSP(dataFim)}</p>` : '<p>Todos os registros</p>'}
                     </div>
                     <div class="stats-grid">
                         <div class="stat-card"><div class="stat-number">${totalRegistros}</div><div class="stat-label">Total de check-ins</div></div>
@@ -2455,16 +2538,16 @@
                         <tbody>
                             ${(checkins || []).map(c => `
                                 <tr>
-                                    <td>${new Date(c.checked_in_at).toLocaleDateString('pt-BR')}</td>
-                                    <td>${c.session?.name || 'Sessão'}</td>
-                                    <td>${new Date(c.checked_in_at).toLocaleString('pt-BR')}</td>
-                                    <td>${c.checked_out_at ? new Date(c.checked_out_at).toLocaleString('pt-BR') : 'Ainda presente'}</td>
-                                    <td>${c.room || 'Não definida'}</td>
+                                    <td>${formatarDataSP(c.checked_in_at, { day: '2-digit', month: '2-digit', year: 'numeric' })}</td>
+                                    <td>${escapeHtml(c.session?.name || 'Sessão')}</td>
+                                    <td>${formatarDataSP(c.checked_in_at)}</td>
+                                    <td>${c.checked_out_at ? formatarDataSP(c.checked_out_at) : 'Ainda presente'}</td>
+                                    <td>${escapeHtml(c.room || 'Não definida')}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
                     </table>
-                    <div class="footer">Relatório gerado em ${new Date().toLocaleString('pt-BR')}</div>
+                    <div class="footer">Relatório gerado em ${formatarDataSP(new Date())}</div>
                 </div>
             `;
             gerarPDFComHtml(html, `DK_${child.name}`);
@@ -2498,55 +2581,76 @@
         
 
         // ========== UTILITÁRIOS ==========
-        function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : (m === '<' ? '&lt;' : '&gt;')); }
-        async function logout() { window.location.href = "index.html?t=" + Date.now(); }
+        function escapeHtml(str) {
+            return String(str == null ? '' : str).replace(/[&<>"']/g, function (m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+            });
+        }
+        function safeUrl(url) {
+            try {
+                const u = new URL(String(url), window.location.href);
+                if (u.protocol === 'http:' || u.protocol === 'https:') return escapeHtml(u.href);
+            } catch (e) {}
+            return '';
+        }
+        async function logout() { await encerrarSessao('index.html'); }
 
         // ========== AUTOMATIZAR SESSÃO DO DOMINGO ==========
         function getProximoDomingo() {
-            const hoje = new Date();
-            const dia = hoje.getDay(); // 0 = domingo
+            const dia = diaSemanaSP(); // 0 = domingo
             const diff = dia === 0 ? 0 : 7 - dia;
-            const proximoDomingo = new Date(hoje);
-            proximoDomingo.setDate(hoje.getDate() + diff);
-            // Ajustar para meia-noite (para comparar apenas a data)
-            proximoDomingo.setHours(0, 0, 0, 0);
-            return proximoDomingo;
+            const p = partesSP();
+            const d = new Date(Date.UTC(p.ano, p.mes - 1, p.dia + diff, 12));
+            return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
         }
         
         async function getOrCreateSundaySession() {
-            const dataDomingo = getProximoDomingo();
-            const dataString = dataDomingo.toISOString().split('T')[0]; // YYYY-MM-DD
-        
-            // 1) Verificar se já existe uma sessão ativa para este domingo
+            const dataString = getProximoDomingo(); // YYYY-MM-DD (horario de Sao Paulo)
+
+            // 1) Verificar se ja existe alguma sessao para este domingo
             const { data: existente, error: buscaError } = await supabaseClient
                 .from('kids_sessions')
                 .select('id, name, is_active')
                 .eq('session_date', dataString)
-                .eq('is_active', true)
+                .order('created_at', { ascending: false })
+                .limit(1)
                 .maybeSingle();
-        
+
             if (buscaError) {
-                console.error('Erro ao buscar sessão do domingo:', buscaError);
+                console.error('Erro ao buscar sessao do domingo:', buscaError);
                 return null;
             }
-        
+
             if (existente) {
-                // Já existe – usar essa
+                // Ja existe: garante que esteja ativa, sem criar duplicata
+                if (!existente.is_active) {
+                    await supabaseClient
+                        .from('kids_sessions')
+                        .update({ is_active: false })
+                        .eq('is_active', true)
+                        .neq('id', existente.id);
+                    const { error: ativarError } = await supabaseClient
+                        .from('kids_sessions')
+                        .update({ is_active: true })
+                        .eq('id', existente.id);
+                    if (ativarError) {
+                        console.error('Erro ao ativar sessao do domingo:', ativarError);
+                    }
+                }
                 return existente.id;
             }
-        
-            // 2) Não existe → criar nova sessão
-            // Desativar todas as outras sessões ativas (para não ter duas ativas)
+
+            // 2) Nao existe -> desativar as outras e criar a nova
             const { error: desativarError } = await supabaseClient
                 .from('kids_sessions')
                 .update({ is_active: false })
                 .eq('is_active', true);
-        
+
             if (desativarError) {
-                console.error('Erro ao desativar sessões antigas:', desativarError);
+                console.error('Erro ao desativar sessoes antigas:', desativarError);
             }
-        
-            // Criar a nova sessão
+
+            // Criar a nova sessao
             const nomeSessao = `Culto Kids - ${dataString.split('-').reverse().join('/')}`;
             const { data: nova, error: criarError } = await supabaseClient
                 .from('kids_sessions')
@@ -2558,17 +2662,18 @@
                 })
                 .select()
                 .single();
-        
+
             if (criarError) {
-                console.error('Erro ao criar sessão do domingo:', criarError);
+                console.error('Erro ao criar sessao do domingo:', criarError);
                 return null;
             }
-        
+
             return nova.id;
         }
 
-        init();
+        init().catch(function (e) { console.error('Falha ao iniciar a equipe:', e); });
     </script>
+    <script src="js/pwa.js?v=3"></script>
 
 </body>
 </html>
