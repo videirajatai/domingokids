@@ -702,6 +702,7 @@
         let currentFamilyId = null;
         let currentUser = null;
         let currentFamilyData = {};
+        let familyReady = false;
 
         // ==================== INICIALIZAÇÃO ====================
         async function loadUserAndFamily() {
@@ -725,6 +726,8 @@
             }
 
             registrarPush();
+
+            familyReady = true;
 
             if (profile?.family_id) {
                 currentFamilyId = profile.family_id;
@@ -1086,6 +1089,14 @@
         }
 
         function openAddChildModal() {
+            if (!familyReady) {
+                showToast('Aguarde o carregamento dos dados...', 'info');
+                return;
+            }
+            if (!currentFamilyId) {
+                showToast('Crie uma família antes de cadastrar uma criança.', 'error');
+                return;
+            }
             document.getElementById('modalTitle').innerText = 'Adicionar Criança';
             document.getElementById('childId').value = '';
             document.getElementById('childName').value = '';
