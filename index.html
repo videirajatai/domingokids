@@ -42,6 +42,7 @@
     <meta name="twitter:image" content="https://videirajatai.com.br/domingokids/og-cover.png">
 
     <script src="config.js?v=4"></script>
+    <script src="js/modal-lock.js?v=1"></script>
     <script src="js/toast.js"></script>
   
     <style>
@@ -686,6 +687,16 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/biometria.js?v=2"></script>
     <script>
+        // ==================== CONVITE DE FAMILIA (?convite=XXXXXX) ====================
+        // Guarda o codigo para resgatar depois do login/cadastro em pais.html.
+        try {
+            const conviteUrl = new URLSearchParams(window.location.search).get('convite');
+            const conviteLimpo = (conviteUrl || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if (conviteLimpo.length === 6) {
+                sessionStorage.setItem('dk_convite', conviteLimpo);
+            }
+        } catch (e) { /* ignora */ }
+
         // ==================== CONFIGURAÇÃO ====================
         const supabaseClient = supabase.createClient(SB_URL, SB_KEY, {
             auth: {
