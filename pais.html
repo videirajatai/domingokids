@@ -82,6 +82,7 @@
             gap: 0.5rem;
         }
         .btn-header {
+            position: relative;
             background: rgba(255,255,255,0.2);
             border: none;
             color: white;
@@ -95,6 +96,26 @@
         .btn-header:hover {
             background: rgba(255,255,255,0.3);
         }
+
+        /* Balaozinho de cadastro incompleto (nome/telefone) */
+        .badge-pendente {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: #ef4444;
+            color: #ffffff;
+            font-size: 0.68rem;
+            font-weight: 700;
+            line-height: 1;
+            padding: 0.3rem 0.6rem;
+            border-radius: 999px;
+            white-space: nowrap;
+            box-shadow: 0 2px 6px rgba(239,68,68,0.45);
+            border: none;
+            cursor: pointer;
+            vertical-align: middle;
+        }
+        .badge-pendente:hover { background: #dc2626; }
 
         .container {
             max-width: 700px;
@@ -340,6 +361,22 @@
             resize: vertical;
             min-height: 60px;
         }
+        .campo-check {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            margin: 0.5rem 0 0.2rem;
+            font-weight: 600;
+            color: #334155;
+        }
+        .campo-check input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            transform: scale(1.3);
+            accent-color: #3b82f6;
+            cursor: pointer;
+        }
         .btn-primary {
             background: #3b82f6;
             color: white;
@@ -501,7 +538,8 @@
     <div class="header">
         <div class="header-buttons">
             <!--<button class="btn-header" onclick="openHistoryModal()">📜 Histórico</button>-->
-            <button class="btn-header" onclick="openConfigModal()">⚙️</button>
+            <button type="button" id="configPendenteBadge" class="badge-pendente" style="display:none;" onclick="openConfigModal()">Complete o cadastro</button>
+            <button class="btn-header" id="configBtn" onclick="openConfigModal()">⚙️</button>
             <button class="btn-header" onclick="logout()">Sair</button>
         </div>
         <h1>👨‍👩‍👧 Domingo Kids</h1>
@@ -550,10 +588,16 @@
             <input type="text" id="childName" placeholder="Ex: Maria Silva" required>
             <label>Data de nascimento</label>
             <input type="date" id="childBirthDate">
-            <label>Alergias (opcional)</label>
-            <textarea id="childAllergies" placeholder="Ex: leite, amendoim, lactose..."></textarea>
-            <label>Necessidades especiais (opcional)</label>
-            <textarea id="childSpecialNeeds" placeholder="Ex: autismo, TDAH, mobilidade reduzida..."></textarea>
+            <label class="campo-check">
+                <input type="checkbox" id="childHasAllergies" onchange="toggleCampoExtra('childHasAllergies', 'childAllergies')">
+                Possui alergia?
+            </label>
+            <textarea id="childAllergies" placeholder="Ex: leite, amendoim, lactose..." style="display:none;"></textarea>
+            <label class="campo-check">
+                <input type="checkbox" id="childHasSpecialNeeds" onchange="toggleCampoExtra('childHasSpecialNeeds', 'childSpecialNeeds')">
+                Possui necessidades especiais?
+            </label>
+            <textarea id="childSpecialNeeds" placeholder="Ex: autismo, TDAH, mobilidade reduzida..." style="display:none;"></textarea>
             <label>Foto da criança</label>
             <input type="file" id="childPhoto" accept="image/jpeg, image/png, image/webp">
             <div id="currentPhotoPreview" class="photo-preview"></div>
@@ -593,6 +637,7 @@
                             <div style="flex: 1;">
                                 <div style="font-weight: 600; color: #0f172a;" id="fatherNameDisplay">Pai não informado</div>
                                 <div style="font-size: 0.85rem; color: #475569; margin-top: 4px;" id="fatherPhoneDisplay">📞 -</div>
+                                <span id="fatherPendenteBadge" class="badge-pendente" style="display:none; margin-top:0.45rem;">Complete o cadastro</span>
                             </div>
                             <button class="btn-edit-card" onclick="openEditFatherModal()">✏️</button>
                         </div>
@@ -603,6 +648,7 @@
                             <div style="flex: 1;">
                                 <div style="font-weight: 600; color: #0f172a;" id="motherNameDisplay">Mãe não informada</div>
                                 <div style="font-size: 0.85rem; color: #475569; margin-top: 4px;" id="motherPhoneDisplay">📞 -</div>
+                                <span id="motherPendenteBadge" class="badge-pendente" style="display:none; margin-top:0.45rem;">Complete o cadastro</span>
                             </div>
                             <button class="btn-edit-card" onclick="openEditMotherModal()">✏️</button>
                         </div>
@@ -810,7 +856,32 @@
                 document.getElementById('addressDisplay').innerText = family.address || 'Endereço não informado';
                 document.getElementById('cellGroupDisplay').innerHTML = `Célula: ${escapeHtml(family.cell_group || 'não informada')}`;
                 window.currentFamilyData = family;
+                sincronizarIndicadoresCadastro(family);
             }
+        }
+
+        // ==================== INDICADOR DE CADASTRO INCOMPLETO ====================
+        // Responsáveis com nome/telefone faltando.
+        function responsaveisIncompletos(family) {
+            const f = family || {};
+            const faltando = [];
+            if (!f.father_name || !f.father_phone) faltando.push('pai');
+            if (!f.mother_name || !f.mother_phone) faltando.push('mãe');
+            return faltando;
+        }
+
+        // Mostra/oculta o balaozinho "Complete o cadastro".
+        function aplicarBadgePendente(id, ativo) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = ativo ? 'inline-flex' : 'none';
+        }
+
+        function sincronizarIndicadoresCadastro(family) {
+            const faltando = responsaveisIncompletos(family);
+            aplicarBadgePendente('configPendenteBadge', faltando.length > 0);
+            aplicarBadgePendente('fatherPendenteBadge', faltando.includes('pai'));
+            aplicarBadgePendente('motherPendenteBadge', faltando.includes('mãe'));
         }
 
         // ==================== EDIÇÃO DO NOME DA FAMÍLIA ====================
@@ -864,10 +935,8 @@
             const photoFile = document.getElementById('editFatherPhoto').files[0];
             let photoUrl = null;
             if (photoFile) {
-                const formData = new FormData();
-                formData.append('image', photoFile);
                 try {
-                    photoUrl = await uploadImagem(formData);
+                    photoUrl = await uploadImagem(photoFile, 'pai');
                 } catch (err) {
                     alert('Erro ao enviar foto do pai');
                     return;
@@ -911,10 +980,8 @@
             const photoFile = document.getElementById('editMotherPhoto').files[0];
             let photoUrl = null;
             if (photoFile) {
-                const formData = new FormData();
-                formData.append('image', photoFile);
                 try {
-                    photoUrl = await uploadImagem(formData);
+                    photoUrl = await uploadImagem(photoFile, 'mae');
                 } catch (err) {
                     alert('Erro ao enviar foto da mãe');
                     return;
@@ -1101,8 +1168,12 @@
             document.getElementById('childId').value = '';
             document.getElementById('childName').value = '';
             document.getElementById('childBirthDate').value = '';
+            document.getElementById('childHasAllergies').checked = false;
             document.getElementById('childAllergies').value = '';
+            document.getElementById('childAllergies').style.display = 'none';
+            document.getElementById('childHasSpecialNeeds').checked = false;
             document.getElementById('childSpecialNeeds').value = '';
+            document.getElementById('childSpecialNeeds').style.display = 'none';
             document.getElementById('childPhoto').value = '';
             document.getElementById('currentPhotoPreview').innerHTML = '';
             document.getElementById('childModal').style.display = 'flex';
@@ -1123,8 +1194,14 @@
             document.getElementById('childId').value = child.id;
             document.getElementById('childName').value = child.name || '';
             document.getElementById('childBirthDate').value = child.birth_date || '';
+            const temAlergia = !!(child.allergies && String(child.allergies).trim());
+            document.getElementById('childHasAllergies').checked = temAlergia;
             document.getElementById('childAllergies').value = child.allergies || '';
+            document.getElementById('childAllergies').style.display = temAlergia ? 'block' : 'none';
+            const temNecessidade = !!(child.special_needs && String(child.special_needs).trim());
+            document.getElementById('childHasSpecialNeeds').checked = temNecessidade;
             document.getElementById('childSpecialNeeds').value = child.special_needs || '';
+            document.getElementById('childSpecialNeeds').style.display = temNecessidade ? 'block' : 'none';
             document.getElementById('childPhoto').value = '';
             const previewDiv = document.getElementById('currentPhotoPreview');
             if (child.photo_url) {
@@ -1163,16 +1240,16 @@
                 const childId = document.getElementById('childId').value;
                 const name = document.getElementById('childName').value.trim();
                 const birthDate = document.getElementById('childBirthDate').value;
-                const allergies = document.getElementById('childAllergies').value.trim();
-                const specialNeeds = document.getElementById('childSpecialNeeds').value.trim();
+                const allergies = document.getElementById('childHasAllergies').checked
+                    ? document.getElementById('childAllergies').value.trim() : '';
+                const specialNeeds = document.getElementById('childHasSpecialNeeds').checked
+                    ? document.getElementById('childSpecialNeeds').value.trim() : '';
                 const photoFile = document.getElementById('childPhoto').files[0];
                 if (!name) { alert('O nome da criança é obrigatório.'); return; }
                 let photoUrl = null;
                 if (photoFile) {
-                    const formData = new FormData();
-                    formData.append('image', photoFile);
                     try {
-                        photoUrl = await uploadImagem(formData);
+                        photoUrl = await uploadImagem(photoFile, 'crianca', childId || null);
                     } catch (err) { alert('Erro ao enviar a foto.'); return; }
                 }
                 const childData = { name, birth_date: birthDate || null, allergies: allergies || null, special_needs: specialNeeds || null, family_id: currentFamilyId, is_active: true };
@@ -1196,6 +1273,14 @@
         }
 
         function closeChildModal() { document.getElementById('childModal').style.display = 'none'; }
+
+        // Mostra/oculta o campo de texto conforme o checkbox (alergia/necessidades).
+        function toggleCampoExtra(checkId, campoId) {
+            const marcado = document.getElementById(checkId).checked;
+            const campo = document.getElementById(campoId);
+            campo.style.display = marcado ? 'block' : 'none';
+            if (marcado) campo.focus();
+        }
 
         // ==================== QR CODE ====================
         async function generateQR() {
@@ -1260,20 +1345,83 @@
             return '';
         }
 
-        async function uploadImagem(formData) {
-            const { data } = await supabaseClient.auth.getSession();
-            const token = data && data.session ? data.session.access_token : '';
-            const response = await fetch(FUNCTIONS_URL + '/imgbb-upload', {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + token,
-                    'apikey': SB_KEY
-                },
-                body: formData
-            });
-            const result = await response.json().catch(function () { return {}; });
-            if (!response.ok || !result.url) throw new Error('Falha no upload');
-            return result.url;
+        // Comprime a imagem no cliente: redimensiona (maior lado <= 720) e
+        // converte para WebP, respeitando a orientacao EXIF.
+        async function comprimirImagem(file, maxLado, qualidade) {
+            maxLado = maxLado || 720;
+            qualidade = qualidade || 0.8;
+            try {
+                let fonte;
+                if (window.createImageBitmap) {
+                    fonte = await createImageBitmap(file, { imageOrientation: 'from-image' });
+                } else {
+                    fonte = await new Promise(function (resolve, reject) {
+                        const img = new Image();
+                        img.onload = function () { resolve(img); };
+                        img.onerror = reject;
+                        img.src = URL.createObjectURL(file);
+                    });
+                }
+                const largura = fonte.width, altura = fonte.height;
+                const escala = Math.min(1, maxLado / Math.max(largura, altura));
+                const w = Math.max(1, Math.round(largura * escala));
+                const h = Math.max(1, Math.round(altura * escala));
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, w, h);
+                ctx.drawImage(fonte, 0, 0, w, h);
+                if (fonte.close) fonte.close();
+                let blob = await new Promise(function (resolve) {
+                    canvas.toBlob(resolve, 'image/webp', qualidade);
+                });
+                if (!blob || blob.type !== 'image/webp') {
+                    blob = await new Promise(function (resolve) {
+                        canvas.toBlob(resolve, 'image/jpeg', qualidade);
+                    });
+                }
+                if (!blob) return { blob: file, ext: (file.type.split('/')[1] || 'jpg') };
+                return { blob: blob, ext: blob.type === 'image/webp' ? 'webp' : 'jpg' };
+            } catch (e) {
+                console.warn('Compressao falhou, usando arquivo original:', e);
+                return { blob: file, ext: (file.type.split('/')[1] || 'jpg') };
+            }
+        }
+
+        // Sobe a imagem tratada. Backend configuravel em config.js.
+        //   kind: 'pai' | 'mae' | 'crianca'
+        async function uploadImagem(file, kind, childId) {
+            // Fallback: imgBB (Edge Function).
+            if (typeof PHOTO_BACKEND !== 'undefined' && PHOTO_BACKEND === 'imgbb') {
+                const formData = new FormData();
+                formData.append('image', file);
+                const { data } = await supabaseClient.auth.getSession();
+                const token = data && data.session ? data.session.access_token : '';
+                const response = await fetch(FUNCTIONS_URL + '/imgbb-upload', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token, 'apikey': SB_KEY },
+                    body: formData
+                });
+                const result = await response.json().catch(function () { return {}; });
+                if (!response.ok || !result.url) throw new Error('Falha no upload');
+                return result.url;
+            }
+
+            // Padrao: Supabase Storage.
+            if (!currentFamilyId) throw new Error('Familia nao carregada');
+            const tratada = await comprimirImagem(file);
+            const ident = (kind === 'crianca')
+                ? (childId || (window.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Date.now())))
+                : kind;
+            const path = currentFamilyId + '/' + kind + '-' + ident + '-v' + Date.now() + '.' + tratada.ext;
+            const contentType = tratada.blob.type || (tratada.ext === 'webp' ? 'image/webp' : 'image/jpeg');
+            const { error } = await supabaseClient.storage
+                .from(PHOTO_BUCKET)
+                .upload(path, tratada.blob, { contentType: contentType, upsert: false, cacheControl: '31536000' });
+            if (error) throw new Error('Falha no upload: ' + error.message);
+            const { data: pub } = supabaseClient.storage.from(PHOTO_BUCKET).getPublicUrl(path);
+            return pub.publicUrl;
         }
 
 
