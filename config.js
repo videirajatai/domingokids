@@ -26,6 +26,16 @@ const PHOTO_BUCKET = 'kids-photos';
 async function encerrarSessao(destino) {
     const alvo = destino || 'index.html';
     try {
+        if (typeof registrarEvento === 'function') {
+            await registrarEvento('logout', {
+                category: 'auth',
+                severity: 'info',
+                description: 'Sessão encerrada pelo usuário',
+                metadata: { destino: alvo }
+            });
+        }
+    } catch (e) {}
+    try {
         const temBio = !!localStorage.getItem('dk_webauthn');
         if (!temBio && typeof supabaseClient !== 'undefined' && supabaseClient) {
             await supabaseClient.auth.signOut();

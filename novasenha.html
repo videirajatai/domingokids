@@ -42,6 +42,7 @@
     <meta name="twitter:image" content="https://videirajatai.com.br/domingokids/og-cover.png">
 
     <script src="config.js?v=4"></script>
+    <script src="js/eventos.js?v=1"></script>
 
     <style>
         /* ===== Cores suaves (estilo Videira) ===== */
@@ -342,15 +343,26 @@
                     } else {
                         exibirErro('Erro ao redefinir senha: ' + error.message);
                     }
+                    registrarEvento('senha_redefinida_falha', {
+                        category: 'auth',
+                        severity: 'warning',
+                        description: 'Falha ao redefinir senha',
+                        metadata: { erro: error.message }
+                    });
                     btn.disabled = false;
                     btn.innerText = 'Redefinir Senha';
                     return;
                 }
         
                 // Invalida a sessão de recuperação IMEDIATAMENTE após o uso,
-                // pra garantir que não dá pra reutilizá-la nem "voltar" pra essa tela
                 recoverySessionValida = false;
                 await supabaseClient.auth.signOut();
+
+                registrarEvento('senha_redefinida', {
+                    category: 'auth',
+                    severity: 'success',
+                    description: 'Senha redefinida com sucesso'
+                });
         
                 exibirSucesso('Senha redefinida com sucesso! Redirecionando para o login...');
                 btn.innerText = 'Concluído';
@@ -361,6 +373,12 @@
         
             } catch (err) {
                 console.error(err);
+                registrarEvento('senha_redefinida_falha', {
+                    category: 'auth',
+                    severity: 'error',
+                    description: 'Erro inesperado ao redefinir senha',
+                    metadata: { erro: (err && err.message) ? err.message : String(err) }
+                });
                 exibirErro('Erro inesperado. Tente novamente.');
                 btn.disabled = false;
                 btn.innerText = 'Redefinir Senha';

@@ -42,6 +42,7 @@
     <meta name="twitter:image" content="https://videirajatai.com.br/domingokids/og-cover.png">
 
     <script src="config.js?v=4"></script>
+    <script src="js/eventos.js?v=1"></script>
     <script src="js/modal-lock.js?v=1"></script>
     <script src="js/push.js"></script>
     <style>
@@ -512,6 +513,44 @@
         .log-item:last-child { border-bottom: none; }
         .log-item .log-meta { color: var(--text-light); font-size: 0.72rem; }
 
+        .eventos-resumo {
+            display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.9rem;
+        }
+        .eventos-resumo .resumo {
+            flex: 1 1 110px; background: var(--input-bg);
+            border: 1px solid var(--border-color); border-radius: 10px;
+            padding: 0.5rem 0.7rem;
+        }
+        .eventos-resumo .resumo strong { display: block; font-size: 1.15rem; color: var(--primary); }
+        .eventos-resumo .resumo small { color: var(--text-light); font-size: 0.7rem; }
+        .eventos-filtros {
+            display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.9rem;
+        }
+        .eventos-filtros input, .eventos-filtros select {
+            padding: 0.45rem 0.6rem; border-radius: 9px;
+            border: 1px solid var(--border-color); background: var(--input-bg);
+            color: var(--text-main); font-size: 0.8rem; outline: none;
+        }
+        .evento-item {
+            padding: 0.6rem 0; border-bottom: 1px solid var(--border-color); font-size: 0.82rem;
+        }
+        .evento-item:last-child { border-bottom: none; }
+        .evento-item .evento-top { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+        .evento-item .evento-meta { color: var(--text-light); font-size: 0.72rem; }
+        .ev-badge {
+            display: inline-block; padding: 0.1rem 0.5rem; border-radius: 20px;
+            font-size: 0.68rem; font-weight: 600; text-transform: uppercase;
+        }
+        .ev-info { background: #e8eefc; color: #2b4a8b; }
+        .ev-success { background: #d1e7dd; color: #2d6a4f; }
+        .ev-warning { background: #fff3cd; color: #8a6d1a; }
+        .ev-error { background: #f8d7da; color: #a33; }
+        .evento-item details { margin-top: 0.35rem; }
+        .evento-item pre {
+            background: var(--input-bg); padding: 0.5rem; border-radius: 8px;
+            overflow-x: auto; font-size: 0.7rem; white-space: pre-wrap; word-break: break-word;
+        }
+
         textarea { resize: vertical; }
     </style>
 </head>
@@ -534,6 +573,7 @@
         <div class="tabs">
             <button class="tab active" id="tab-usuarios" onclick="mudarSecao('usuarios')">Usuarios</button>
             <button class="tab" id="tab-notificacoes" onclick="mudarSecao('notificacoes')">Notificacoes</button>
+            <button class="tab" id="tab-eventos" onclick="mudarSecao('eventos')">Eventos</button>
         </div>
 
         <div id="secao-usuarios">
@@ -597,6 +637,54 @@
                     <button class="btn btn-secondary" onclick="carregarLogs()">Recarregar</button>
                 </div>
                 <div id="listaLogs">
+                    <div class="empty-state">Carregando...</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="secao-eventos" style="display:none;">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Eventos dos usuários</h2>
+                    <button class="btn btn-secondary" onclick="carregarEventos()">Recarregar</button>
+                    <button class="btn btn-outline" onclick="exportarEventosCSV()">Exportar CSV</button>
+                </div>
+                <div class="eventos-resumo" id="eventosResumo"></div>
+                <div class="eventos-filtros">
+                    <input type="date" id="filtroDe" title="Data inicial">
+                    <input type="date" id="filtroAte" title="Data final">
+                    <select id="filtroCategoria">
+                        <option value="">Todas as categorias</option>
+                        <option value="auth">auth</option>
+                        <option value="family">family</option>
+                        <option value="children">children</option>
+                        <option value="checkin">checkin</option>
+                        <option value="checkout">checkout</option>
+                        <option value="session">session</option>
+                        <option value="scanner">scanner</option>
+                        <option value="admin">admin</option>
+                        <option value="report">report</option>
+                        <option value="history">history</option>
+                        <option value="qr">qr</option>
+                        <option value="system">system</option>
+                    </select>
+                    <select id="filtroSeveridade">
+                        <option value="">Todas as severidades</option>
+                        <option value="info">info</option>
+                        <option value="success">success</option>
+                        <option value="warning">warning</option>
+                        <option value="error">error</option>
+                    </select>
+                    <select id="filtroLimite">
+                        <option value="50">50 eventos</option>
+                        <option value="100" selected>100 eventos</option>
+                        <option value="300">300 eventos</option>
+                    </select>
+                    <input type="search" id="filtroBusca" placeholder="Buscar usuário, tipo, descrição..." oninput="filtrarEventos()">
+                    <button class="btn btn-primary" onclick="carregarEventos()">Filtrar</button>
+                    <button class="btn btn-secondary" onclick="limparFiltrosEventos()">Limpar</button>
+                </div>
+                <div id="listaEventos">
                     <div class="empty-state">Carregando...</div>
                 </div>
             </div>
@@ -804,6 +892,8 @@
 
             const novoRole = document.getElementById('select-role').value;
             const userId = usuarioEditando.id;
+            const roleAntes = usuarioEditando.role || null;
+            const usuarioAlvo = usuarioEditando.username || usuarioEditando.email || userId;
 
             if (usuarioEditando.role === 'admin' && novoRole !== 'admin') {
                 const outrosAdmins = (listaUsuarios || []).filter(u => u.role === 'admin' && u.id !== userId).length;
@@ -819,10 +909,26 @@
                 .eq('id', userId);
 
             if (error) {
+                registrarEvento('admin_papel_falha', {
+                    category: 'admin',
+                    severity: 'warning',
+                    description: 'Falha ao alterar papel do usuário',
+                    entityType: 'kids_profiles',
+                    entityId: userId,
+                    metadata: { usuario: usuarioAlvo, erro: error.message }
+                });
                 showToast('Erro ao atualizar: ' + error.message, 'error');
                 return;
             }
 
+            registrarEvento('admin_papel_alterado', {
+                category: 'admin',
+                severity: 'success',
+                description: 'Papel do usuário alterado',
+                entityType: 'kids_profiles',
+                entityId: userId,
+                metadata: { usuario: usuarioAlvo, antes: roleAntes, depois: novoRole }
+            });
             showToast('Papel atualizado com sucesso!', 'success');
             fecharModalEdicao();
             carregarUsuarios();
@@ -894,10 +1000,26 @@
             }
 
             if (!ok) {
+                registrarEvento('admin_usuario_excluir_falha', {
+                    category: 'admin',
+                    severity: 'warning',
+                    description: 'Falha ao excluir usuário',
+                    entityType: 'kids_profiles',
+                    entityId: usuarioExcluindo.id,
+                    metadata: { usuario: usuarioExcluindo.username || usuarioExcluindo.email || null, erro: msg }
+                });
                 showToast('Erro ao excluir: ' + msg, 'error');
                 return;
             }
 
+            registrarEvento('admin_usuario_excluido', {
+                category: 'admin',
+                severity: 'success',
+                description: 'Usuário excluído',
+                entityType: 'kids_profiles',
+                entityId: usuarioExcluindo.id,
+                metadata: { usuario: usuarioExcluindo.username || usuarioExcluindo.email || null, role: usuarioExcluindo.role || null }
+            });
             showToast('Usuário excluído.', 'success');
             fecharModalExclusao();
             carregarUsuarios();
@@ -915,11 +1037,17 @@
 
         function mudarSecao(secao) {
             const usuarios = secao === 'usuarios';
+            const notificacoes = secao === 'notificacoes';
+            const eventos = secao === 'eventos';
             document.getElementById('secao-usuarios').style.display = usuarios ? 'block' : 'none';
-            document.getElementById('secao-notificacoes').style.display = usuarios ? 'none' : 'block';
+            document.getElementById('secao-notificacoes').style.display = notificacoes ? 'block' : 'none';
+            document.getElementById('secao-eventos').style.display = eventos ? 'block' : 'none';
             document.getElementById('tab-usuarios').classList.toggle('active', usuarios);
-            document.getElementById('tab-notificacoes').classList.toggle('active', !usuarios);
-            if (!usuarios) { carregarNotificacoes(); carregarLogs(); }
+            document.getElementById('tab-notificacoes').classList.toggle('active', notificacoes);
+            document.getElementById('tab-eventos').classList.toggle('active', eventos);
+            if (notificacoes) { carregarNotificacoes(); carregarLogs(); }
+            if (eventos) { carregarEventos(); iniciarAutoRefreshEventos(); }
+            else { pararAutoRefreshEventos(); }
         }
 
         async function carregarNotificacoes() {
@@ -954,10 +1082,26 @@
                 .from('kids_push_config')
                 .upsert({ chave, ativo, atualizado_em: new Date().toISOString() }, { onConflict: 'chave' });
             if (error) {
+                registrarEvento('admin_notificacao_falha', {
+                    category: 'admin',
+                    severity: 'warning',
+                    description: 'Falha ao alterar notificação',
+                    entityType: 'kids_push_config',
+                    entityId: chave,
+                    metadata: { chave: chave, ativo: ativo, erro: error.message }
+                });
                 showToast('Erro ao salvar: ' + error.message, 'error');
                 carregarNotificacoes();
                 return;
             }
+            registrarEvento('admin_notificacao_alterada', {
+                category: 'admin',
+                severity: 'info',
+                description: 'Notificação ' + (ativo ? 'ativada' : 'desativada'),
+                entityType: 'kids_push_config',
+                entityId: chave,
+                metadata: { chave: chave, ativo: ativo }
+            });
             showToast('Notificacao atualizada.', 'success');
         }
 
@@ -970,11 +1114,23 @@
             }
             const ok = await enviarPush({ event: 'aviso', title: title || 'Aviso', body });
             if (ok) {
+                registrarEvento('admin_aviso_enviado', {
+                    category: 'admin',
+                    severity: 'success',
+                    description: 'Aviso geral enviado',
+                    metadata: { titulo: title || 'Aviso' }
+                });
                 showToast('Aviso enviado.', 'success');
                 document.getElementById('avisoTitulo').value = '';
                 document.getElementById('avisoMensagem').value = '';
                 setTimeout(carregarLogs, 1000);
             } else {
+                registrarEvento('admin_aviso_falha', {
+                    category: 'admin',
+                    severity: 'warning',
+                    description: 'Falha ao enviar aviso geral',
+                    metadata: { titulo: title || 'Aviso' }
+                });
                 showToast('Falha ao enviar. Verifique se o aviso esta ativo.', 'error');
             }
         }
@@ -982,6 +1138,11 @@
         async function enviarTeste() {
             const body = (document.getElementById('avisoMensagem').value || '').trim();
             const ok = await enviarPush({ event: 'aviso', selfTest: true, body: body || undefined });
+            registrarEvento('admin_aviso_teste', {
+                category: 'admin',
+                severity: ok ? 'success' : 'warning',
+                description: ok ? 'Aviso de teste enviado' : 'Falha ao enviar aviso de teste'
+            });
             showToast(ok ? 'Teste enviado para este dispositivo.' : 'Falha ao enviar teste.', ok ? 'success' : 'error');
             if (ok) setTimeout(carregarLogs, 1000);
         }
@@ -1009,6 +1170,137 @@
                     <div class="log-meta">${escapeHtml(l.destinatarios)} envio(s) - ${escapeHtml(formatarDataSP(l.enviado_em))}</div>
                 </div>
             `).join('');
+        }
+
+        // ==================== EVENTOS ====================
+        let eventosCache = [];
+        let timerEventos = null;
+
+        const EVENTO_COLS = ['created_at', 'actor_username', 'actor_role', 'event_type', 'event_category', 'severity', 'description', 'entity_type', 'entity_id', 'child_name', 'room', 'page'];
+
+        async function carregarEventos() {
+            const container = document.getElementById('listaEventos');
+            container.innerHTML = '<div class="empty-state">Carregando...</div>';
+            const limite = Number(document.getElementById('filtroLimite').value || 100);
+            let query = supabaseClient
+                .from('kids_events_log')
+                .select('id, created_at, actor_username, actor_role, event_type, event_category, severity, description, entity_type, entity_id, child_id, child_name, room, session_id, source, page, user_id, metadata')
+                .order('created_at', { ascending: false })
+                .limit(limite);
+
+            const de = document.getElementById('filtroDe').value;
+            const ate = document.getElementById('filtroAte').value;
+            const categoria = document.getElementById('filtroCategoria').value;
+            const severidade = document.getElementById('filtroSeveridade').value;
+            if (de) query = query.gte('created_at', new Date(de + 'T00:00:00-03:00').toISOString());
+            if (ate) query = query.lte('created_at', new Date(ate + 'T23:59:59-03:00').toISOString());
+            if (categoria) query = query.eq('event_category', categoria);
+            if (severidade) query = query.eq('severity', severidade);
+
+            const { data, error } = await query;
+            if (error) {
+                console.error(error);
+                container.innerHTML = '<div class="empty-state">Erro ao carregar: ' + escapeHtml(error.message) + '</div>';
+                return;
+            }
+            eventosCache = data || [];
+            filtrarEventos();
+            renderResumoEventos();
+        }
+
+        function filtrarEventos() {
+            const busca = (document.getElementById('filtroBusca').value || '').trim().toLowerCase();
+            let lista = eventosCache || [];
+            if (busca) {
+                lista = lista.filter(function (e) {
+                    return [e.actor_username, e.actor_role, e.event_type, e.event_category, e.severity, e.description, e.child_name, e.room, e.page]
+                        .join(' ').toLowerCase().includes(busca);
+                });
+            }
+            renderEventos(lista);
+        }
+
+        function renderResumoEventos() {
+            const container = document.getElementById('eventosResumo');
+            const lista = eventosCache || [];
+            const logins = lista.filter(e => e.event_category === 'auth').length;
+            const checkins = lista.filter(e => e.event_category === 'checkin').length;
+            const checkouts = lista.filter(e => e.event_category === 'checkout').length;
+            const erros = lista.filter(e => e.severity === 'error').length;
+            const cartao = (rotulo, valor) => '<div class="resumo"><strong>' + valor + '</strong><small>' + rotulo + '</small></div>';
+            container.innerHTML =
+                cartao('eventos carregados', lista.length) +
+                cartao('auth', logins) +
+                cartao('check-ins', checkins) +
+                cartao('check-outs', checkouts) +
+                cartao('erros', erros);
+        }
+
+        function renderEventos(lista) {
+            const container = document.getElementById('listaEventos');
+            if (!lista || !lista.length) {
+                container.innerHTML = '<div class="empty-state">Nenhum evento encontrado.</div>';
+                return;
+            }
+            container.innerHTML = lista.map(function (e) {
+                const sev = ['info', 'success', 'warning', 'error'].includes(e.severity) ? e.severity : 'info';
+                const ator = e.actor_username || (e.user_id ? String(e.user_id).slice(0, 8) : 'anônimo');
+                const meta = (e.metadata && Object.keys(e.metadata).length) ? JSON.stringify(e.metadata, null, 2) : '';
+                const contexto = [e.child_name, e.room].filter(Boolean).join(' - ');
+                return '' +
+                    '<div class="evento-item">' +
+                        '<div class="evento-top">' +
+                            '<span class="ev-badge ev-' + sev + '">' + escapeHtml(sev) + '</span>' +
+                            '<strong>' + escapeHtml(e.event_type) + '</strong>' +
+                            '<span class="evento-meta">' + escapeHtml(formatarDataSP(e.created_at)) + '</span>' +
+                        '</div>' +
+                        '<div class="evento-meta">' + escapeHtml(ator) + (e.actor_role ? ' (' + escapeHtml(e.actor_role) + ')' : '') + ' - ' + escapeHtml(e.event_category || '') + '</div>' +
+                        (e.description ? '<div>' + escapeHtml(e.description) + '</div>' : '') +
+                        (contexto ? '<div class="evento-meta">' + escapeHtml(contexto) + '</div>' : '') +
+                        (meta ? '<details><summary class="evento-meta">detalhes</summary><pre>' + escapeHtml(meta) + '</pre></details>' : '') +
+                    '</div>';
+            }).join('');
+        }
+
+        function limparFiltrosEventos() {
+            document.getElementById('filtroDe').value = '';
+            document.getElementById('filtroAte').value = '';
+            document.getElementById('filtroCategoria').value = '';
+            document.getElementById('filtroSeveridade').value = '';
+            document.getElementById('filtroBusca').value = '';
+            document.getElementById('filtroLimite').value = '100';
+            carregarEventos();
+        }
+
+        function exportarEventosCSV() {
+            const lista = eventosCache || [];
+            if (!lista.length) { showToast('Nenhum evento para exportar.', 'error'); return; }
+            const esc = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+            const linhas = [EVENTO_COLS.join(';')].concat(lista.map(e => EVENTO_COLS.map(c => esc(e[c])).join(';')));
+            const blob = new Blob(['\ufeff' + linhas.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'eventos-domingokids-' + new Date().toISOString().slice(0, 10) + '.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            registrarEvento('admin_eventos_exportados', {
+                category: 'admin',
+                severity: 'info',
+                description: 'Exportou CSV de eventos',
+                metadata: { total: lista.length }
+            });
+        }
+
+        function iniciarAutoRefreshEventos() {
+            pararAutoRefreshEventos();
+            timerEventos = setInterval(function () { carregarEventos(); }, 20000);
+        }
+
+        function pararAutoRefreshEventos() {
+            if (timerEventos) { clearInterval(timerEventos); timerEventos = null; }
         }
 
         // ==================== UTILITÁRIOS ====================

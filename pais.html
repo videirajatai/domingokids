@@ -42,6 +42,7 @@
     <meta name="twitter:image" content="https://videirajatai.com.br/domingokids/og-cover.png">
 
     <script src="config.js?v=4"></script>
+    <script src="js/eventos.js?v=1"></script>
     <script src="js/modal-lock.js?v=1"></script>
     <script src="js/push.js"></script>
     <style>
@@ -867,6 +868,7 @@
             }
         
             currentFamilyId = family.id;
+            registrarEvento('familia_criada', { category: 'family', severity: 'success', description: 'Família criada', entityType: 'families', entityId: family.id });
             showToast('Família criada com sucesso!');
             document.getElementById('qrSection').style.display = 'block';
             await loadChildren();
@@ -910,6 +912,7 @@
                 sessionStorage.removeItem('dk_convite');
                 codigoConvitePendente = null;
                 currentFamilyId = data.family_id;
+                registrarEvento('familia_entrou_codigo', { category: 'family', severity: 'success', description: 'Entrou na família com código', metadata: { codigo: codigo } });
                 showToast('Você entrou na família ' + (data.family_name || '') + '!');
                 document.getElementById('qrSection').style.display = 'block';
                 await loadChildren();
@@ -921,6 +924,7 @@
                     if (!ok) showToast('Ative as notificações para receber os avisos das crianças.', 'info');
                 });
             } catch (err) {
+                registrarEvento('familia_entrou_codigo_falha', { category: 'family', severity: 'warning', description: 'Falha ao entrar na família com código' });
                 showToast(mensagemErroConvite(err), 'error');
                 if (btn) { btn.disabled = false; btn.innerText = 'Entrar'; }
             }
@@ -957,6 +961,7 @@
             }
             el.innerText = data.code;
             el.dataset.codigo = data.code;
+            registrarEvento('codigo_visualizado', { category: 'family', severity: 'info', description: 'Código da família visualizado' });
         }
 
         function linkConvite(codigo) {
@@ -988,6 +993,7 @@
         function copiarCodigoFamilia() {
             const el = document.getElementById('shareCodeDisplay');
             copiarTexto(el.dataset.codigo || el.innerText, 'Código copiado!');
+            registrarEvento('codigo_copiado', { category: 'family', severity: 'info', description: 'Código da família copiado' });
         }
 
         function copiarLinkConvite() {
@@ -995,6 +1001,7 @@
             const codigo = el.dataset.codigo || el.innerText;
             if (!codigo || codigo === '------') return;
             copiarTexto(linkConvite(codigo), 'Link copiado!');
+            registrarEvento('link_convite_copiado', { category: 'family', severity: 'info', description: 'Link de convite copiado' });
         }
 
         function compartilharWhatsApp() {
@@ -1005,6 +1012,7 @@
             const texto = 'Olá! Entre no Domingo Kids com o código da ' + nome + ': ' + codigo +
                 '\n\nOu use este link: ' + linkConvite(codigo);
             window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank');
+            registrarEvento('convite_whatsapp', { category: 'family', severity: 'info', description: 'Convite compartilhado pelo WhatsApp' });
         }
 
         async function regenerarCodigoFamilia() {
@@ -1022,6 +1030,7 @@
             el.innerText = data;
             el.dataset.codigo = data;
             showToast('Novo código gerado!');
+            registrarEvento('codigo_regenerado', { category: 'family', severity: 'success', description: 'Código da família regenerado' });
         }
 
         // Sair da família (desvincula o perfil; os dados continuam com a família).
@@ -1037,6 +1046,7 @@
                 return;
             }
             showToast('Você saiu da família.');
+            registrarEvento('familia_saiu', { category: 'family', severity: 'success', description: 'Saiu da família' });
             setTimeout(() => window.location.reload(), 800);
         }
 
@@ -1130,6 +1140,7 @@
         async function saveFamilyNameData() {
             const familyName = document.getElementById('editFamilyName').value.trim();
             if (!familyName) { alert('O nome da família é obrigatório.'); return; }
+            const nomeAntes = window.currentFamilyData ? window.currentFamilyData.family_name || null : null;
             const { error } = await supabaseClient
                 .from('kids_families')
                 .update({ family_name: familyName })
@@ -1138,6 +1149,7 @@
             else {
                 alert('Nome da família atualizado!');
                 closeEditFamilyNameModal();
+                registrarEvento('familia_nome_editado', { category: 'family', severity: 'success', description: 'Nome da família editado', entityType: 'families', entityId: currentFamilyId, metadata: { antes: nomeAntes, depois: familyName } });
                 await loadFamilyData();
             }
         }
@@ -1170,6 +1182,7 @@
                 try {
                     photoUrl = await uploadImagem(photoFile, 'pai');
                 } catch (err) {
+                    registrarEvento('dados_pai_falha', { category: 'family', severity: 'warning', description: 'Falha ao enviar a foto do pai' });
                     alert('Erro ao enviar foto do pai');
                     return;
                 }
@@ -1184,6 +1197,7 @@
             else {
                 showToast('Dados do pai salvos!');
                 closeEditFatherModal();
+                registrarEvento('dados_pai_editados', { category: 'family', severity: 'success', description: 'Dados do pai editados', entityType: 'families', entityId: currentFamilyId });
                 await loadFamilyData();
             }
         }
@@ -1215,6 +1229,7 @@
                 try {
                     photoUrl = await uploadImagem(photoFile, 'mae');
                 } catch (err) {
+                    registrarEvento('dados_mae_falha', { category: 'family', severity: 'warning', description: 'Falha ao enviar a foto da mãe' });
                     alert('Erro ao enviar foto da mãe');
                     return;
                 }
@@ -1229,6 +1244,7 @@
             else {
                 showToast('Dados da mãe salvos!');
                 closeEditMotherModal();
+                registrarEvento('dados_mae_editados', { category: 'family', severity: 'success', description: 'Dados da mãe editados', entityType: 'families', entityId: currentFamilyId });
                 await loadFamilyData();
             }
         }
@@ -1247,6 +1263,7 @@
         async function saveResidenceData() {
             const address = document.getElementById('editAddress').value.trim();
             const cellGroup = document.getElementById('editCellGroup').value.trim();
+            const residenciaAntes = window.currentFamilyData ? { address: window.currentFamilyData.address || null, cell_group: window.currentFamilyData.cell_group || null } : null;
             const { error } = await supabaseClient
                 .from('kids_families')
                 .update({ address: address, cell_group: cellGroup })
@@ -1255,6 +1272,7 @@
             else {
                 showToast('Dados de residência salvos!');
                 closeEditResidenceModal();
+                registrarEvento('residencia_editada', { category: 'family', severity: 'success', description: 'Dados de residência editados', entityType: 'families', entityId: currentFamilyId, metadata: { antes: residenciaAntes, depois: { address: address, cell_group: cellGroup } } });
                 await loadFamilyData();
             }
         }
@@ -1314,6 +1332,7 @@
                 alert('Família não encontrada.');
                 return;
             }
+            registrarEvento('historico_visualizado', { category: 'history', severity: 'info', description: 'Histórico visualizado', entityType: 'families', entityId: currentFamilyId });
             const { data: children } = await supabaseClient
                 .from('kids_children')
                 .select('id, name')
@@ -1408,6 +1427,7 @@
             document.getElementById('childSpecialNeeds').style.display = 'none';
             document.getElementById('childPhoto').value = '';
             document.getElementById('currentPhotoPreview').innerHTML = '';
+            registrarEvento('form_crianca_aberto', { category: 'children', severity: 'info', description: 'Formulário de nova criança aberto' });
             document.getElementById('childModal').style.display = 'flex';
         }
 
@@ -1422,6 +1442,7 @@
                 alert('Erro ao carregar dados da criança.');
                 return;
             }
+            registrarEvento('form_crianca_edicao_aberto', { category: 'children', severity: 'info', description: 'Formulário de edição de criança aberto', entityType: 'kids_children', entityId: childId });
             document.getElementById('modalTitle').innerText = 'Editar Criança';
             document.getElementById('childId').value = child.id;
             document.getElementById('childName').value = child.name || '';
@@ -1482,15 +1503,21 @@
                 if (photoFile) {
                     try {
                         photoUrl = await uploadImagem(photoFile, 'crianca', childId || null);
-                    } catch (err) { alert('Erro ao enviar a foto.'); return; }
+                    } catch (err) { registrarEvento('crianca_salvar_falha', { category: 'children', severity: 'warning', description: 'Falha ao enviar a foto da criança', entityType: 'kids_children', entityId: childId || null }); alert('Erro ao enviar a foto.'); return; }
                 }
                 const childData = { name, birth_date: birthDate || null, allergies: allergies || null, special_needs: specialNeeds || null, family_id: currentFamilyId, is_active: true };
                 if (photoUrl) childData.photo_url = photoUrl;
                 let result;
                 if (childId) result = await supabaseClient.from('kids_children').update(childData).eq('id', childId).eq('family_id', currentFamilyId);
                 else result = await supabaseClient.from('kids_children').insert([childData]);
-                if (result.error) alert('Erro ao salvar: ' + result.error.message);
-                else { showToast(childId ? 'Criança atualizada!' : 'Criança adicionada!'); closeChildModal(); await loadChildren(); }
+                if (result.error) { registrarEvento('crianca_salvar_falha', { category: 'children', severity: 'error', description: 'Falha ao salvar criança', entityType: 'kids_children', entityId: childId || null }); alert('Erro ao salvar: ' + result.error.message); }
+                else {
+                    if (childId) registrarEvento('crianca_editada', { category: 'children', severity: 'success', description: 'Criança editada', entityType: 'kids_children', entityId: childId, metadata: { nome: name } });
+                    else registrarEvento('crianca_criada', { category: 'children', severity: 'success', description: 'Criança criada', entityType: 'kids_children', entityId: result.data && result.data[0] ? result.data[0].id : null, metadata: { nome: name } });
+                    showToast(childId ? 'Criança atualizada!' : 'Criança adicionada!');
+                    closeChildModal();
+                    await loadChildren();
+                }
             } finally {
                 savingChild = false;
                 if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Salvar'; }
@@ -1500,8 +1527,8 @@
         async function deleteChild(childId) {
             if (!confirm('Tem certeza que deseja excluir esta criança?')) return;
             const { error } = await supabaseClient.from('kids_children').delete().eq('id', childId).eq('family_id', currentFamilyId);
-            if (error) alert('Erro ao excluir: ' + error.message);
-            else { showToast('Criança removida.'); await loadChildren(); await loadLastRegister(); }
+            if (error) { registrarEvento('crianca_excluir_falha', { category: 'children', severity: 'warning', description: 'Falha ao excluir criança', entityType: 'kids_children', entityId: childId }); alert('Erro ao excluir: ' + error.message); }
+            else { registrarEvento('crianca_excluida', { category: 'children', severity: 'success', description: 'Criança excluída', entityType: 'kids_children', entityId: childId }); showToast('Criança removida.'); await loadChildren(); await loadLastRegister(); }
         }
 
         function closeChildModal() { document.getElementById('childModal').style.display = 'none'; }
@@ -1521,6 +1548,7 @@
                 showToast('Selecione uma criança para gerar o QR Code.', 'error');
                 return;
             }
+            const childName = document.getElementById('childSelect').selectedOptions?.[0]?.text || null;
             const token = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
             const expiresAt = new Date();
             expiresAt.setHours(expiresAt.getHours() + 4);
@@ -1533,6 +1561,7 @@
                     expires_at: expiresAt.toISOString()
                 });
             if (error) {
+                registrarEvento('qr_falha', { category: 'qr', severity: 'warning', description: 'Falha ao gerar QR Code', entityType: 'kids_children', entityId: childId, childName: childName });
                 showToast('Erro ao gerar QR: ' + error.message, 'error');
                 return;
             }
@@ -1544,6 +1573,7 @@
                 height: 200
             });
             showToast('✅ QR Code gerado! Válido por 4 horas.', 'success');
+            registrarEvento('qr_gerado', { category: 'qr', severity: 'success', description: 'QR Code gerado', entityType: 'kids_children', entityId: childId, childName: childName });
         }
 
          function refreshPresentList() {

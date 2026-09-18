@@ -47,6 +47,7 @@
 
     
     <script src="config.js?v=4"></script>
+    <script src="js/eventos.js?v=1"></script>
     <script src="js/modal-lock.js?v=1"></script>
     <script src="js/push.js"></script>
 
@@ -1025,6 +1026,7 @@
                 return;
             }
             currentStaffId = user.id;
+            registrarEvento('equipe_aberta', { category:'session', severity:'info', description:'Equipe acessou o painel' });
             registrarPush();
             await loadSessions();
             await loadCameras();
@@ -1117,6 +1119,7 @@
             currentSessionId = document.getElementById('sessionSelect').value;
             await loadPresentList();
             showToast('Sessão alterada', 'info');
+            registrarEvento('sessao_alterada', { category:'session', severity:'info', description:'Sessão alterada', metadata: { sessionId: currentSessionId } });
         }
 
         function refreshPresentList() {
@@ -1132,6 +1135,7 @@
                 await loadPresentList();
                 // Opcional: manter seleção no localStorage
                 localStorage.setItem('kidsCheckinRoomFilter', currentRoomFilter);
+                registrarEvento('filtro_sala_alterado', { category:'session', severity:'info', description:'Filtro de sala alterado', metadata: { filtro: currentRoomFilter } });
             });
             // Restaurar filtro salvo, se houver
             const savedFilter = localStorage.getItem('kidsCheckinRoomFilter');
@@ -1227,6 +1231,7 @@
             const selectedCamera = availableCameras[currentCameraIndex];
             // Salva no localStorage
             localStorage.setItem('kidsCheckinCameraId', selectedCamera.id);
+            registrarEvento('camera_trocada', { category:'scanner', severity:'info', description:'Câmera trocada', metadata: { indice: currentCameraIndex } });
             // Se o scanner estiver ativo, reinicia
             if (scannerActive) {
                 stopScanner();
@@ -1281,8 +1286,10 @@
                 document.getElementById('startScannerBtn').style.display = 'none';
                 document.getElementById('stopScannerBtn').style.display = 'inline-block';
                 showToast('Câmera ativada', 'success');
+                registrarEvento('scanner_aberto', { category:'scanner', severity:'success', description:'Scanner aberto' });
             } catch(e) {
                 showToast('Erro ao acessar câmera: '+e, 'error');
+                registrarEvento('scanner_falha', { category:'scanner', severity:'warning', description:'Falha ao abrir o scanner' });
             }
         }
 
@@ -1314,11 +1321,13 @@
             if (tokenError || !tokenData) {
                 document.getElementById('scanResult').innerHTML = '❌ QR inválido.';
                 showToast('QR inválido', 'error');
+                registrarEvento('qr_invalido', { category:'scanner', severity:'warning', description:'QR inválido lido' });
                 return;
             }
             if (new Date(tokenData.expires_at) < new Date()) {
                 document.getElementById('scanResult').innerHTML = '❌ QR expirado.';
                 showToast('QR expirado', 'error');
+                registrarEvento('qr_expirado', { category:'scanner', severity:'warning', description:'QR expirado lido' });
                 return;
             }
             const childId = tokenData.child_id;
@@ -1467,10 +1476,12 @@
                     .select()
                     .single();
                 if (insertError) {
+                    registrarEvento('checkin_falha', { category:'checkin', severity:'error', description:'Falha no check-in' });
                     showToast('Erro no check‑in', 'error');
                     document.getElementById('scanResult').innerHTML = '❌ Erro no check‑in.';
                     return;
                 }
+                registrarEvento('checkin_realizado', { category:'checkin', severity:'success', description:'Check-in realizado', childId, childName, room, sessionId: currentSessionId });
                 const roomDisplay = room === 'todos' ? 'Todos' : room;
                 document.getElementById('scanResult').innerHTML = `✅ Check‑in: ${escapeHtml(childName)} (${escapeHtml(roomDisplay)})`;
                 showToast(`Check‑in: ${childName} - Sala ${roomDisplay}`, 'success');
@@ -1687,6 +1698,7 @@
             const etiquetaBase64 = canvasEtiqueta.toDataURL('image/png');
         
             // Envia para impressora (RawBT)
+            registrarEvento('etiqueta_impressa', { category:'checkin', severity:'info', description:'Etiqueta impressa', childName: childName });
             window.location.href = 'rawbt:' + etiquetaBase64;
         }
         
@@ -1725,6 +1737,7 @@
                 { isVisitor, respName: child.visitor_responsible_name || '' }
             );
             showToast('2ª via enviada para impressão', 'success');
+            registrarEvento('etiqueta_reimpressa', { category:'checkin', severity:'success', description:'Etiqueta reimpressa', childId: child.id, childName: child.name || null });
         }
 
         // ========== DETALHES DA CRIANÇA ==========
@@ -1902,10 +1915,12 @@
                 .from('kids_check_ins')
                 .update({ checked_out_at: new Date().toISOString() })
                 .eq('id', checkinId);
+            if (error) registrarEvento('checkout_manual_falha', { category:'checkout', severity:'warning', description:'Falha no check-out manual' });
             if (error) { showToast('Erro no check-out: ' + error.message, 'error'); return; }
             // Fecha o modal de detalhes imediatamente e segue em segundo plano.
             closeChildDetailsModal();
             showToast('Check‑out manual realizado', 'success');
+            registrarEvento('checkout_manual', { category:'checkout', severity:'success', description:'Check-out manual realizado', entityType:'checkin', entityId: checkinId });
             enviarPush({ event: 'checkout', checkinId: checkinId }).catch(function () {});
             loadPresentList().catch(function (e) { console.error('Lista de presentes:', e); });
             expirarTokenDoCheckin(checkinId);
@@ -1970,6 +1985,7 @@
             for (const upd of updates) {
                 await supabaseClient.from('kids_check_ins').update({ room: upd.room }).eq('id', upd.id);
             }
+            registrarEvento('sala_alterada', { category:'checkin', severity:'info', description:'Salas atualizadas', metadata: { total: childrenForRoom.length } });
             closeRoomModal();
             await loadPresentList();
             showToast('Salas atualizadas', 'success');
@@ -2011,6 +2027,7 @@
                 .select()
                 .single();
             if (tokenError || !tokenRow) { showToast('Erro ao gerar QR do visitante', 'error'); return; }
+            registrarEvento('visitante_cadastrado', { category:'checkin', severity:'success', description:'Visitante cadastrado', childId: child.id, childName: childName });
 
             // Limpa e fecha o modal de visitante
             document.getElementById('visitantName').value = '';
@@ -2048,9 +2065,11 @@
             const { error } = await supabaseClient.from('kids_sessions').insert({
                 name, session_date: date, start_time: start, end_time: end, is_active: true
             });
+            if (error) registrarEvento('sessao_criar_falha', { category:'session', severity:'warning', description:'Falha ao criar sessão' });
             if (error) showToast(error.message, 'error');
             else {
                 showToast('Sessão criada!', 'success');
+                registrarEvento('sessao_criada', { category:'session', severity:'success', description:'Sessão criada', metadata: { nome: name } });
                 closeSessionModal();
                 await loadSessions();
                 document.getElementById('sessionName').value = '';
@@ -2166,8 +2185,10 @@
                 .from('kids_check_ins')
                 .update({ checked_out_at: new Date().toISOString() })
                 .eq('id', checkinId);
+            if (error) registrarEvento('checkout_falha', { category:'checkout', severity:'error', description:'Falha no check-out', entityType:'checkin', entityId: checkinId });
             if (error) { showToast('Erro no check-out: ' + error.message, 'error'); return; }
             showToast('Check‑out realizado com sucesso!', 'success');
+            registrarEvento('checkout_realizado', { category:'checkout', severity:'success', description:'Check-out realizado', entityType:'checkin', entityId: checkinId });
             document.getElementById('scanResult').innerHTML = `✅ Check‑out confirmado!`;
             // Push, lista e expiração do token em segundo plano (não travam a tela).
             enviarPush({ event: 'checkout', checkinId: checkinId }).catch(function () {});
@@ -2251,6 +2272,7 @@
             } else if (tipo === 'crianca') {
                 await gerarPDFCrianca();
             }
+            registrarEvento('relatorio_gerado', { category:'report', severity:'info', description:'Relatório gerado', metadata: { tipo: tipo } });
         }
         
         // ---------- RELATÓRIO POR SESSÃO ----------
